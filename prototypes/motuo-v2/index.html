@@ -156,6 +156,8 @@ dialog{background:#101a24;border:1px solid #354958;color:var(--ink);border-radiu
 <link rel="stylesheet" href="motion-ui.css">
 <link rel="stylesheet" href="drive-ui.css">
 <link rel="stylesheet" href="vehicle-stage.css">
+<link rel="stylesheet" href="vehicle-3d.css">
+<script type="importmap">{"imports":{"three":"./vendor/three/three.module.js","three/addons/":"./vendor/three/addons/"}}</script>
 </head>
 <body>
 <svg width="0" height="0" aria-hidden="true" style="position:absolute"><defs>
@@ -200,9 +202,10 @@ dialog{background:#101a24;border:1px solid #354958;color:var(--ink);border-radiu
     <aside class="sound-intro" id="sound-intro" hidden role="status"><div class="sonic-emblem" aria-hidden="true"><i></i><i></i><i></i><svg class="icon"><use href="#i-mic"/></svg></div><div><span>FEEL YOUR MACHINE</span><h2 id="sound-intro-title">让声浪，点亮仪表。</h2><p id="sound-intro-copy">开启麦克风后，流线与刻度随声浪起伏。</p></div></aside>
     <div class="world-atmosphere" aria-hidden="true"><i></i><i></i></div><div class="perimeter-flow" aria-hidden="true"></div><canvas class="fx-canvas" id="fx-canvas" aria-hidden="true"></canvas>
     <div class="event-flash" id="event-flash" aria-hidden="true"></div>
-    <div class="vehicle-stage" id="vehicle-stage" aria-label="GSX250R 待机展示">
+    <div class="vehicle-stage" id="vehicle-stage" aria-label="摩托车 3D 待机展示">
      <div class="vehicle-orbit" aria-hidden="true"></div><div class="vehicle-floor" aria-hidden="true"></div>
-     <div class="vehicle-render"><img src="assets/gsx250r-panda-v1.png" alt="黑白熊猫配色 GSX250R 车型视觉概念渲染" fetchpriority="high"><div class="headlight-bloom" aria-hidden="true"></div></div>
+     <div class="vehicle-render vehicle-host" id="cockpit-vehicle-host"><div class="vehicle-loading"><i></i><span data-vehicle-status>正在装载 3D 车库…</span><button data-vehicle-retry hidden>重试 3D</button></div></div>
+     <div class="standby-3d-tools"><span>临时 3D · 待替换车型</span><button data-page="garage" aria-label="进入 3D 车库改色">旋转 · 改色 <svg class="icon"><use href="#i-sliders"/></svg></button></div>
      <div class="vehicle-title"><span>YOUR MACHINE. YOUR WORLD.</span><strong>GSX<span>250</span>R</strong><small id="vehicle-caption">机器已就位 · 等你出发</small></div>
     </div>
     <div class="scene-tools"><div class="scene-name"><b id="scene-label">01 / AMBER FAN</b><span id="scene-name">琥珀扇面</span></div><div class="scene-counters"><span style="color:#e7bf84">DEMO</span><span>CHAPTER <b id="chapter-count">00</b></span><span id="scene-input">MIC OFF</span></div><div class="signal-scroll" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
@@ -245,7 +248,24 @@ dialog{background:#101a24;border:1px solid #354958;color:var(--ink);border-radiu
     <div class="pause-shade"><svg class="icon" style="width:12px;height:12px"><use href="#i-pause"/></svg>已暂停 · 等你再出发</div>
     <div class="alert-strip" id="alert-strip" role="status"><svg class="icon"><use href="#i-warning"/></svg><span id="alert-text"></span></div>
    </section>
-   <section class="content-page" id="page-garage" aria-label="车库"><div class="intro"><div class="eyebrow">KNOW YOUR MACHINE</div><h2>认识你的机器。</h2><p>从第一次校准，到下一次保养。每一条记录，都是你和它的默契。</p></div><div class="garage-showroom"><img src="assets/gsx250r-panda-v1.png" alt="与待机仪表共用的 GSX250R 视觉概念渲染"><div><span>YOUR MACHINE / GSX250R</span><h3>下一段旅程，<br>和它一起。</h3><small>AI 视觉概念 · 年款与实车配置待确认</small></div></div><div class="cards"><article class="card"><svg class="icon"><use href="#i-bike"/></svg><h3>SUZUKI GSX250R</h3><div class="big">248 <small style="font-size:12px">cc</small></div><p>演示车辆档案<br>年份、ABS 和轮胎规格待本人确认</p><button data-info="车辆档案将在原生 App 中保存；当前是界面预览。">查看车辆档案 →</button></article><article class="card"><svg class="icon"><use href="#i-spark"/></svg><h3>维修手册伙伴</h3><p>每一项参数，都能回到手册原页。<br>手册服务尚待 NAS 恢复。</p><button data-info="真实手册导入曾停在 175 / 616 页；当前页面不提供模拟维修答案。">查看手册状态 →</button></article><article class="card"><svg class="icon"><use href="#i-sliders"/></svg><h3>出发前的仪式</h3><p>停车扶正、固定支架，再做安装校准。<br>手机位置变化后重新校准。</p><button data-info="此 HTML 不读取 GPS 或 IMU。安装校准在原生 App 中进行。">了解安装校准 →</button></article></div></section>
+   <section class="content-page" id="page-garage" aria-label="车库"><div class="intro"><div class="eyebrow">KNOW YOUR MACHINE</div><h2>认识你的机器。</h2><p>从第一次校准，到下一次保养。每一条记录，都是你和它的默契。</p></div><div class="garage-configurator" id="garage-showroom">
+     <div class="garage-scene">
+      <div class="garage-scene-heading"><span>THE PERSONAL GARAGE</span><h3>你的车。你的配色。</h3><p>360° 看车，让每一面都有个性。</p></div>
+      <div class="garage-vehicle-host vehicle-host" id="garage-vehicle-host"><div class="vehicle-loading"><i></i><span data-vehicle-status>正在装载 3D 车库…</span><button data-vehicle-retry hidden>重试 3D</button></div></div>
+      <div class="garage-orbit-guide" aria-hidden="true"></div>
+      <div class="garage-view-controls" role="group" aria-label="3D 视角"><button data-vehicle-control data-vehicle-view="hero">主视角</button><button data-vehicle-control data-vehicle-view="front">车头</button><button data-vehicle-control data-vehicle-view="side">侧面</button><button data-vehicle-control data-vehicle-view="rear">车尾</button></div>
+      <div class="garage-scene-foot"><span data-vehicle-status>装载中</span><div><button data-vehicle-control data-vehicle-zoom="1.18" aria-label="放大车辆">＋</button><button data-vehicle-control data-vehicle-zoom="0.847457627" aria-label="缩小车辆">−</button><button data-vehicle-control id="vehicle-reset" aria-label="重置车辆视角">复位</button></div></div>
+     </div>
+     <aside class="paint-studio" aria-label="车辆外观编辑">
+      <div class="paint-kicker">01 / FINISH STUDIO</div><h3 id="paint-name">熊猫白</h3><p>车身与饰条，分别定义。<br>一辆车，可以有很多种心情。</p>
+      <div class="paint-swatches" role="group" aria-label="车漆预设"><button data-vehicle-control data-paint="panda" aria-label="熊猫白" aria-pressed="true" style="--swatch:#f2f1ec"></button><button data-vehicle-control data-paint="stealth" aria-label="曜石黑" aria-pressed="false" style="--swatch:#252b35"></button><button data-vehicle-control data-paint="glacier" aria-label="冰川蓝" aria-pressed="false" style="--swatch:#409bc6"></button><button data-vehicle-control data-paint="ember" aria-label="熔岩红" aria-pressed="false" style="--swatch:#c93241"></button><button data-vehicle-control data-paint="violet" aria-label="电光紫" aria-pressed="false" style="--swatch:#7854ba"></button></div>
+      <div class="paint-custom"><label>车身颜色<input data-vehicle-control type="color" id="body-color" value="#f2f1ec" aria-label="自定义车身颜色"></label><label>饰条颜色<input data-vehicle-control type="color" id="accent-color" value="#171b22" aria-label="自定义饰条颜色"></label></div>
+      <div class="paint-finish" role="group" aria-label="漆面质感"><button data-vehicle-control data-finish="gloss" aria-pressed="true">高光漆面</button><button data-vehicle-control data-finish="satin" aria-pressed="false">缎面漆面</button></div>
+      <button data-vehicle-control class="vehicle-auto" id="vehicle-auto" aria-pressed="true">自动环绕 开</button>
+      <small class="paint-save-state" id="paint-save-state">外观自动保存在此浏览器</small>
+      <div class="model-provenance"><b>临时展示模型 · 待替换</b><span>非 GSX250R 精确复刻，不代表实车配置。</span><a href="https://3dassets.dev/assets/motorcycle-racing-and-street-bikes-road-sportbike-e1418015" target="_blank" rel="noopener noreferrer">Road sportbike · CC0 ↗</a></div>
+     </aside>
+    </div><div class="cards"><article class="card"><svg class="icon"><use href="#i-bike"/></svg><h3>SUZUKI GSX250R</h3><div class="big">248 <small style="font-size:12px">cc</small></div><p>演示车辆档案<br>年份、ABS 和轮胎规格待本人确认</p><button data-info="车辆档案将在原生 App 中保存；当前是界面预览。">查看车辆档案 →</button></article><article class="card"><svg class="icon"><use href="#i-spark"/></svg><h3>维修手册伙伴</h3><p>每一项参数，都能回到手册原页。<br>手册服务尚待 NAS 恢复。</p><button data-info="真实手册导入曾停在 175 / 616 页；当前页面不提供模拟维修答案。">查看手册状态 →</button></article><article class="card"><svg class="icon"><use href="#i-sliders"/></svg><h3>出发前的仪式</h3><p>停车扶正、固定支架，再做安装校准。<br>手机位置变化后重新校准。</p><button data-info="此 HTML 不读取 GPS 或 IMU。安装校准在原生 App 中进行。">了解安装校准 →</button></article></div></section>
    <section class="content-page" id="page-history" aria-label="骑行档案"><div class="intro"><div class="eyebrow">YOUR ROAD JOURNAL</div><h2>把路上的感觉留下。</h2><p id="history-note">完成一次演示骑行，就能在这里查看本次复盘。</p></div><div id="history-empty" class="card" style="max-width:520px"><svg class="icon"><use href="#i-history"/></svg><h3>下一段故事，等你出发</h3><p>本页不会读取你的真实骑行与位置。</p><button id="history-start">前往驾驶舱 →</button></div><div id="history-card" hidden class="card" style="max-width:520px"><span class="tag">DEMO · 本次演示</span><h3>去往雾岚观景台</h3><p id="history-summary"></p><button id="history-view">打开复盘 →</button></div></section>
    <section class="content-page" id="page-settings" aria-label="控制中心"><div class="intro"><div class="eyebrow">MAKE IT YOURS</div><h2>按你的节奏设定。</h2><p>先感受界面，再把它带上路。</p></div><div class="settings-list"><div class="setting-row"><div><strong>开始骑行后全屏</strong><small>暂停保持全屏，结束后恢复导航栏</small></div><span class="tag neutral">已设定</span></div><div class="setting-row"><div><strong>减少动态效果</strong><small>降低流光与强度变化，保留所有信息</small></div><button class="switch" id="reduce-motion" aria-label="减少动态效果" aria-pressed="false"></button></div><div class="setting-row"><div><strong>地图与导航</strong><small>开源路线 · 当前为示意地图与模拟指引</small></div><button id="map-info">查看方案</button></div><div class="setting-row"><div><strong>个人 NAS</strong><small>远程入口与 DNS 尚待恢复；不影响本页演示</small></div><span class="tag">待恢复</span></div><div class="setting-row"><div><strong>Apple Watch / 配件</strong><small>演示状态不代表真实设备已连接</small></div><span class="tag neutral">未连接</span></div></div></section>
    <section class="content-page" id="page-recap" aria-label="演示骑行复盘"><div class="recap"><div class="recap-mark"><svg class="icon"><use href="#i-check"/></svg></div><div class="eyebrow">RIDE COMPLETE / DEMO</div><h2>这一程，很有节奏。</h2><p>把每个瞬间，收进你的骑行专辑。</p><div class="recap-route" id="recap-route"><span class="map-label">本次演示轨迹</span></div><div class="recap-metrics"><div><span class="eyebrow">DISTANCE</span><strong id="recap-distance">0.00</strong><small>模拟里程 · km</small></div><div><span class="eyebrow">DURATION</span><strong id="recap-time">00:00</strong><small>有效演示时间</small></div><div><span class="eyebrow">CHAPTERS</span><strong id="recap-speed">0</strong><small>模拟状态片段</small></div></div><div id="recap-chapters" class="recap-chapters"></div><div class="recap-note"><div class="eyebrow">本地摘要 · 演示</div><span id="recap-copy"></span><div style="margin-top:10px;font-size:10px;color:var(--muted)">AI 总结待服务恢复后接入；当前文字来自演示状态统计。</div></div><button class="primary" id="recap-done"><svg class="icon"><use href="#i-gauge"/></svg>返回驾驶舱</button></div></section>
@@ -275,12 +295,14 @@ dialog{background:#101a24;border:1px solid #354958;color:var(--ink);border-radiu
 <script src="inertial-speed.js"></script>
 <script src="sound-trend.js"></script>
 <script src="departure-transition.js"></script>
+<script src="vehicle-garage.js"></script>
 <script>
 (()=>{
  'use strict';
  const $=id=>document.getElementById(id), all=q=>[...document.querySelectorAll(q)];
  const driveTracker=window.MotuoDriveSignals.create(), speedTracker=window.MotuoInertialSpeed.create(), soundTracker=window.MotuoSoundTrend.create();
- const departure=window.MotuoDeparture.create(document,{onSettled:()=>queueMicrotask(resizeFX)});
+ const garage=window.MotuoGarage.create(document);
+ const departure=window.MotuoDeparture.create(document,{getVehicle:()=>garage.getViewer(),onSettled:()=>queueMicrotask(()=>{syncVehicle();resizeFX();})});
  const state={phase:'idle',page:'cockpit',mode:'daily',scene:'gravity',view:'hud',scenario:'normal',speed:0,speedReading:{speedKmh:null,source:'unavailable',reason:'no_gps_anchor'},gpsEntrySpeed:0,stoppedSince:null,departureUntil:0,distance:0,seconds:0,maxSpeed:0,progress:0,music:false,song:0,reduced:false,motion:'ready',motionKey:'ready',visualSeconds:0,themeStarted:0,beat:0,rhythmBeat:0,eventVisualStart:0,bannerUntil:0,trace:[],traceSampleAt:-1,scenarioStarted:0,rerouteReady:false,adoptedReroute:false,events:new Set(),timeline:[],lastRide:null,destination:'雾岚观景台',lastFrame:performance.now()};
  const songs=['Midnight Drive','Neon Horizon','After the Rain'];
  const songBPM=[108,116,96];
@@ -297,8 +319,8 @@ dialog{background:#101a24;border:1px solid #354958;color:var(--ink);border-radiu
  function toast(text){$('toast').textContent=text;$('toast').classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('visible'),3300);}
  function showDialog(id){$(id).showModal();}
  function info(text){$('info-copy').textContent=text;showDialog('info-dialog');}
- function setPage(page){if(state.phase!=='idle' && page!=='cockpit')return;if(page!=='cockpit')stopInput();state.page=page;all('.content-page').forEach(el=>el.classList.toggle('active',el.id==='page-'+page));$('cockpit').hidden=page!=='cockpit';$('bottom').hidden=page!=='cockpit';$('view-switch').hidden=page!=='cockpit';$('trip-info').hidden=page!=='cockpit';all('[data-page]').forEach(b=>{b.classList.toggle('active',b.dataset.page===page);if(b.dataset.page===page)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});const titles={cockpit:state.phase==='idle'?'准备出发':'路上见',garage:'我的车库',history:'骑行档案',settings:'控制中心',recap:'骑后复盘'};$('page-title').textContent=titles[page];$('page-subtitle').textContent=page==='cockpit'?(state.phase==='idle'?'YOUR NEXT CHAPTER':'RIDE THE FREQUENCY'):'MOTUO / DEMO';const panel=$('page-'+page);if(panel)panel.scrollTop=0;$('page-title').focus({preventScroll:true});}
- function setView(view){cancelDeparture();state.view=state.mode==='sport'?'hud':view;$('cockpit').classList.toggle('map-focus',state.view==='map');queueMicrotask(resizeFX);$('map-toggle').setAttribute('aria-pressed',String(state.view==='map'));}
+ function setPage(page){if(state.phase!=='idle' && page!=='cockpit')return;if(page!=='cockpit')stopInput();state.page=page;all('.content-page').forEach(el=>el.classList.toggle('active',el.id==='page-'+page));$('cockpit').hidden=page!=='cockpit';$('bottom').hidden=page!=='cockpit';$('view-switch').hidden=page!=='cockpit';$('trip-info').hidden=page!=='cockpit';all('[data-page]').forEach(b=>{b.classList.toggle('active',b.dataset.page===page);if(b.dataset.page===page)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});const titles={cockpit:state.phase==='idle'?'准备出发':'路上见',garage:'我的车库',history:'骑行档案',settings:'控制中心',recap:'骑后复盘'};$('page-title').textContent=titles[page];$('page-subtitle').textContent=page==='cockpit'?(state.phase==='idle'?'YOUR NEXT CHAPTER':'RIDE THE FREQUENCY'):'MOTUO / DEMO';const panel=$('page-'+page);if(panel)panel.scrollTop=0;$('page-title').focus({preventScroll:true});syncVehicle();}
+ function setView(view){cancelDeparture();state.view=state.mode==='sport'?'hud':view;$('cockpit').classList.toggle('map-focus',state.view==='map');queueMicrotask(resizeFX);$('map-toggle').setAttribute('aria-pressed',String(state.view==='map'));syncVehicle();}
  function setMode(mode){cancelDeparture();state.mode=mode;$('app').classList.toggle('sport-mode',mode==='sport');$('map-toggle').hidden=mode==='sport';all('[data-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===mode)));setView('hud');render();pulseEvent();sceneIntro();}
  function sceneIntro(){state.themeStarted=state.visualSeconds;queueMicrotask(resizeFX);const el=$('cockpit');el.classList.remove('assembling');void el.offsetWidth;el.classList.add('assembling');}
  function pulseEvent(){state.eventVisualStart=state.visualSeconds;state.bannerUntil=state.visualSeconds+2.4;if(state.reduced)return;const el=$('event-flash');el.classList.remove('pulse');void el.offsetWidth;el.classList.add('pulse');}
@@ -547,6 +569,7 @@ dialog{background:#101a24;border:1px solid #354958;color:var(--ink);border-radiu
   departure.play(snapshot,{reduced:state.reduced});
   queueMicrotask(resizeFX);
  }
+ function syncVehicle(){garage.update({page:state.page,parked:$('cockpit').classList.contains('vehicle-rest')&&state.view!=='map',departing:$('cockpit').classList.contains('departing'),reduced:state.reduced,active:!document.hidden});}
  function renderVehicle(){
   const idle=state.phase==='idle';
   const stopped=state.phase==='riding'&&state.scenario!=='gps'&&state.motion==='stop'&&state.speedReading.source==='gps'&&state.speedReading.speedKmh<.5;
@@ -554,6 +577,7 @@ dialog{background:#101a24;border:1px solid #354958;color:var(--ink);border-radiu
   const parked=idle||(stopped&&state.seconds-state.stoppedSince>1&&state.seconds>state.departureUntil);
   $('cockpit').classList.toggle('vehicle-rest',parked);
   $('vehicle-stage').setAttribute('aria-hidden',String(!parked&&!$('cockpit').classList.contains('departing')));
+  syncVehicle();
   $('vehicle-caption').textContent=idle?'机器已就位 · 等你出发':'停稳等候 · 旅程仍在继续';
  }
 
@@ -591,7 +615,9 @@ dialog{background:#101a24;border:1px solid #354958;color:var(--ink);border-radiu
  window.addEventListener('resize',cancelDeparture);
  $('preview-launch').addEventListener('click',startShowcase);
  reducedMedia.addEventListener?.('change',e=>{state.reduced=e.matches;if(state.reduced)cancelDeparture();$('reduce-motion').setAttribute('aria-pressed',String(state.reduced));$('app').classList.toggle('reduced-effects',state.reduced);});
- document.addEventListener('visibilitychange',()=>{driveTracker.reset();speedTracker.reset();soundTracker.reset();state.speedReading={speedKmh:null,source:'unavailable',reason:'imu_gap'};cancelDeparture();$('app').classList.toggle('motion-background',document.hidden);});
+ document.addEventListener('visibilitychange',()=>{driveTracker.reset();speedTracker.reset();soundTracker.reset();state.speedReading={speedKmh:null,source:'unavailable',reason:'imu_gap'};cancelDeparture();$('app').classList.toggle('motion-background',document.hidden);syncVehicle();});
+ window.addEventListener('pagehide',()=>{cancelDeparture();garage.update({active:false});});
+ window.addEventListener('pageshow',()=>syncVehicle());
  updateMusic();renderInput();resizeFX();render();soundIntro();requestAnimationFrame(frame);
 
 })();

@@ -24,8 +24,17 @@ function harness(options) {
       },
       getBoundingClientRect: () => ({ ...node.rect }),
       setAttribute(name, value) { this[name] = value; },
-      append(child) { this.children.push(child); child.parent = this; },
-      remove() { this.removed = true; if (this.parent) this.parent.children = this.parent.children.filter(child => child !== this); },
+      appendChild(child) {
+        if (child.parentNode) child.parentNode.children = child.parentNode.children.filter(value => value !== child);
+        this.children.push(child); child.parentNode = this; child.removed = false;
+        return child;
+      },
+      append(child) { this.appendChild(child); },
+      remove() {
+        this.removed = true;
+        if (this.parentNode) this.parentNode.children = this.parentNode.children.filter(child => child !== this);
+        this.parentNode = null;
+      },
       animate(frames, options) {
         let resolve, reject;
         const finished = new Promise((yes, no) => { resolve = yes; reject = no; });
@@ -54,7 +63,26 @@ function harness(options) {
     currentSrc: 'assets/panda.png', src: 'assets/old.png',
     rect: { left: 10, top: 20, width: 300, height: 300 },
   });
-  return { controller: create(doc, options), nodes, body, animations, created };
+  return { controller: create(doc, options), nodes, body, animations, created, makeNode };
+}
+
+function liveHarness(onSettled = () => {}) {
+  let viewer;
+  const h = harness({ getVehicle: () => viewer, onSettled });
+  const host = h.makeNode('cockpit-host');
+  const canvas = h.makeNode('canvas', { left: 140, top: 65, width: 410, height: 230 });
+  // Cloning or snapshotting a WebGL canvas loses its live renderer. Fail on either.
+  canvas.cloneNode = canvas.toDataURL = () => assert.fail('Departure must transfer the original live canvas');
+  host.appendChild(canvas);
+  const calls = [];
+  viewer = {
+    canvas,
+    mount(nextHost) { calls.push(['mount', nextHost]); nextHost.appendChild(canvas); },
+    setInteractive(value) { calls.push(['interactive', value]); },
+    startDeparture(duration) { calls.push(['start', duration]); },
+    stopDeparture() { calls.push(['stop']); },
+  };
+  return Object.assign(h, { host, canvas, calls, viewer });
 }
 
 test('capture measures the old layout without starting effects; FLIP begins at those bounds', () => {
@@ -187,4 +215,76 @@ test('onSettled runs once after resources are cleared, for cancel and natural co
   assert.equal(settled, 2);
   h.controller.capture(); h.controller.cancel();
   assert.equal(settled, 2);
+});
+
+test('live departure reparents the original canvas and restores it before completion reconciliation', async () => {
+  let h, settled = 0;
+  h = liveHarness(() => {
+    settled++;
+    assert.equal(h.canvas.parentNode, h.host, 'restoration precedes onSettled');
+    assert.equal(h.body.children.length, 0);
+    assert.equal(h.nodes.get('#cockpit').classList.contains('departing'), false);
+  });
+  const snapshot = h.controller.capture();
+  assert.equal(snapshot.live.viewer, h.viewer);
+  assert.equal(snapshot.live.host, h.host);
+  assert.equal(h.canvas.parentNode, h.host, 'capture only measures');
+  h.controller.play(snapshot);
+  const ghost = h.body.children[0];
+  assert.deepEqual(ghost.children, [h.canvas]);
+  assert.equal(h.host.children.length, 0);
+  assert.equal(h.created.some(node => node.name === 'img' || node.name === 'canvas'), false);
+  assert.equal(ghost.style.width, '410px');
+  assert.equal(ghost.style.height, '230px');
+  assert.deepEqual(h.calls.map(call => call[0]), ['mount', 'interactive', 'start']);
+  assert.equal(h.calls[2][1], 1150);
+  h.animations.forEach(animation => animation.finish());
+  await flush();
+  assert.deepEqual(h.host.children, [h.canvas]);
+  assert.equal(settled, 1);
+  assert.deepEqual(h.calls.slice(-2).map(call => call[0]), ['stop', 'mount']);
+});
+
+test('cancel and switching to reduced motion restore the live canvas exactly once', async () => {
+  for (const action of ['cancel', 'reduced']) {
+    const h = liveHarness(), snapshot = h.controller.capture();
+    h.controller.play(snapshot);
+    if (action === 'cancel') h.controller.cancel();
+    else h.controller.play(snapshot, { reduced: true });
+    h.controller.cancel();
+    await flush();
+    assert.deepEqual(h.host.children, [h.canvas], action);
+    assert.equal(h.canvas.parentNode, h.host);
+    assert.equal(h.body.children.length, 0);
+    assert.equal(h.calls.filter(call => call[0] === 'stop').length, 1);
+    assert.equal(h.calls.filter(call => call[0] === 'start').length, 1);
+  }
+});
+
+test('restart keeps one live canvas and stale completion cannot remount it out of the active departure', async () => {
+  let h;
+  const reconciled = [];
+  h = liveHarness(() => queueMicrotask(() => {
+    // The page uses this same deferred reconciliation so a restarted departure
+    // can establish ownership before garage state is synchronized.
+    reconciled.push({ departing: h.nodes.get('#cockpit').classList.contains('departing'), parent: h.canvas.parentNode });
+  }));
+  const snapshot = h.controller.capture();
+  h.controller.play(snapshot);
+  const old = [...h.animations], firstGhost = h.body.children[0];
+  h.controller.play(snapshot);
+  const secondGhost = h.body.children[0], current = h.animations.slice(old.length);
+  old.forEach(animation => animation.finish());
+  await flush();
+  assert.equal(firstGhost.removed, true);
+  assert.equal(h.canvas.parentNode, secondGhost);
+  assert.equal(h.host.children.length, 0);
+  assert.deepEqual(secondGhost.children, [h.canvas]);
+  assert.equal(h.calls.filter(call => call[0] === 'stop').length, 1);
+  assert.deepEqual(reconciled, [{ departing: true, parent: secondGhost }]);
+  current.forEach(animation => animation.finish());
+  await flush();
+  assert.equal(h.canvas.parentNode, h.host);
+  assert.equal(h.calls.filter(call => call[0] === 'stop').length, 2);
+  assert.deepEqual(reconciled[1], { departing: false, parent: h.host });
 });

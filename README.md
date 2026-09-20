@@ -4,7 +4,9 @@
 
 **0.1.0 (1) 已通过Apple处理并分发至TestFlight内部组，本人可接受邀请安装。** 实际iPhone/Watch安装和实车验收仍待完成。 2026-09-20 最终模拟器31单元＋2 UI测试通过。NAS曾完成API/AI smoke，但当前节点离线，正式手册导入尚未完成。实际证据与待验收事项见 [STATUS](docs/STATUS.md)。
 
-**下一版先评审 HTML 效果：** [打开独立交互原型](prototypes/motuo-v2/index.html) · [预览方式与验收](prototypes/motuo-v2/README.md)。日常模式为仪表＋音乐；运动模式为无地图的多层游戏仪表，可切换霓虹赛道、频谱星环、极光矩阵，含面板装配、状态弹条、模拟速度曲线、合成音频 FFT 与波形。开始骑行后进入页面内全屏，结束后复盘。原生 App 尚未按原型修改。地图方向已按用户要求改为完全开源，国内也不依赖高德；正式数据与导航仍待接入。
+**下一版先评审 HTML 效果：** [打开独立交互原型](prototypes/motuo-v2/index.html) · [预览方式与验收](prototypes/motuo-v2/README.md)。日常模式和无地图的运动模式均使用外界声浪响应，可切换霓虹赛道、频谱星环、极光矩阵，保留面板装配、状态弹条和模拟速度曲线。参考 [Flyme 的界面层级](docs/research/flyme-reference-20260920.md)，大说明卡出现 2.8 秒后隐藏，以小胶囊保留输入状态；两模式开始骑行后均隐藏品牌栏和导航，暂停保持页面内全屏，结束进入复盘并恢复。
+
+麦克风默认关闭，用户显式启用后通过独立 `getUserMedia` 在本机计算 RMS、FFT 和波形，不保存原音、不上传、不回放；模拟声浪必须另行选择并标注。音乐保留独立试听和控歌，不驱动特效；当前尚不能从混合环境声中分辨发动机或识别油门、RPM、负载、挡位。原生 App 尚未按原型修改，仍须先确认 HTML 再迁移与发布；真实输入和实车识别边界见 [骑行状态与声浪反馈](docs/RIDE_STATES.md)。地图方向已按用户要求改为完全开源，国内也不依赖高德；正式数据与导航仍待接入。
 
 ![明确标注演示数据的横屏 HUD](ios/Screenshots/landscape-hud-iceblue.png)
 
@@ -22,7 +24,7 @@
 
 | 路径 | 内容 |
 |---|---|
-| `prototypes/motuo-v2/` | 独立 HTML 效果预览，不含真实定位或服务调用 |
+| `prototypes/motuo-v2/` | 独立 HTML 效果预览，可显式启用本机麦克风；不含真实定位或服务调用 |
 | `ios/` | SwiftUI iPhone / Watch 工程、单元与 UI 测试 |
 | `server/` | TypeScript / Fastify API、PostgreSQL schema 与集成测试 |
 | `worker/` | Python PDF 排版抽取、中文分词、OCR、任务恢复 |

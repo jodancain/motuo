@@ -4,6 +4,8 @@
 
 **0.1.0 (1) 已通过Apple处理并分发至TestFlight内部组，本人可接受邀请安装。** 实际iPhone/Watch安装和实车验收仍待完成。 2026-09-20 最终模拟器31单元＋2 UI测试通过。NAS曾完成API/AI smoke，但当前节点离线，正式手册导入尚未完成。实际证据与待验收事项见 [STATUS](docs/STATUS.md)。
 
+**下一版先评审 HTML 效果：** [打开独立交互原型](prototypes/motuo-v2/index.html) · [预览方式与验收](prototypes/motuo-v2/README.md)。日常模式为仪表＋音乐；运动模式为无地图的节拍游戏仪表，含起步/巡航/减速动画与可试听合成节拍。开始骑行后进入页面内全屏，结束后复盘。原生 App 尚未按原型修改。地图方向已按用户要求改为完全开源，国内也不依赖高德；正式数据与导航仍待接入。
+
 ![明确标注演示数据的横屏 HUD](ios/Screenshots/landscape-hud-iceblue.png)
 
 ## 已实现
@@ -11,7 +13,7 @@
 - 横竖屏 HUD、动画能量环、车库、校准、音乐、骑后复盘和轨迹回放；演示与真实数据分开。
 - CoreLocation / CoreMotion 采集，SwiftData 元数据，带校验和的本地遥测块；暂停、继续、强杀恢复、断网后重试同步。
 - 速度有效性、加减速、转向和疑似换挡事件；缺测保持未知，不猜测实际挡位、转速、油量或精确车辆倾角。
-- MusicKit 授权、订阅判断、曲目搜索、歌单和播放控制；高德地点交接与外部导航入口。内嵌摩托算路待官方权限与 SDK 接入。
+- MusicKit 授权、订阅判断、曲目搜索、歌单和播放控制；当前安装版仍有高德地点交接与外部导航入口；下一版在 HTML 评审后替换为开源地图/导航，见 [开源地图方案](docs/OPEN_MAPS.md)。
 - Watch 状态与摘要，带去重、过期和冷却的前台可达触觉事件；BLE / Bonjour 发现、HUD 状态协议和本机模拟器。
 - 车辆和保养记录、PDF 分块导入、中文检索、物理页引用及 PDFKit 跳页；NAS 异步 AI 总结与无依据时的原文/本地回退。
 - 个人学习候选：只用同校准下的实测记录及人工确认窗口，按整次骑行留出验证，显式启用和回退。当前验收状态见 [STATUS](docs/STATUS.md)，不宣称已获得实车识别准确率。
@@ -20,6 +22,7 @@
 
 | 路径 | 内容 |
 |---|---|
+| `prototypes/motuo-v2/` | 独立 HTML 效果预览，不含真实定位或服务调用 |
 | `ios/` | SwiftUI iPhone / Watch 工程、单元与 UI 测试 |
 | `server/` | TypeScript / Fastify API、PostgreSQL schema 与集成测试 |
 | `worker/` | Python PDF 排版抽取、中文分词、OCR、任务恢复 |

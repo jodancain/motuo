@@ -1,0 +1,86 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "name": "health",
+      "passed": true
+    },
+    {
+      "name": "unauthenticated_401",
+      "passed": true
+    },
+    {
+      "name": "pair",
+      "passed": true
+    },
+    {
+      "name": "pair_code_single_use",
+      "passed": true
+    },
+    {
+      "name": "vehicle_create",
+      "passed": true
+    },
+    {
+      "name": "ride_create",
+      "passed": true
+    },
+    {
+      "name": "checksum_422",
+      "passed": true
+    },
+    {
+      "name": "raw_chunk",
+      "passed": true
+    },
+    {
+      "name": "chunk_idempotence",
+      "passed": true
+    },
+    {
+      "name": "missing_chunk_409",
+      "passed": true
+    },
+    {
+      "name": "finish",
+      "passed": true
+    },
+    {
+      "name": "report_ready",
+      "passed": true
+    },
+    {
+      "name": "simulated_report_label",
+      "passed": true
+    },
+    {
+      "name": "missing_speed_not_zero",
+      "passed": true
+    },
+    {
+      "name": "feedback",
+      "passed": true
+    },
+    {
+      "name": "maintenance",
+      "passed": true
+    },
+    {
+      "name": "no_evidence",
+      "passed": true
+    },
+    {
+      "name": "ai_configuration",
+      "configured": true,
+      "reportSource": "ai"
+    },
+    {
+      "name": "account_cleanup",
+      "passed": true
+    },
+    {
+      "name": "token_revocation",
+      "passed": true
+    }
+  ]
+}

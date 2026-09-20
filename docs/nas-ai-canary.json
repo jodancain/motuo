@@ -1,0 +1,7 @@
+{
+  "configured": true,
+  "model": "cx/gpt-5.6-sol",
+  "http": 200,
+  "passed": true,
+  "elapsedMS": 4446
+}

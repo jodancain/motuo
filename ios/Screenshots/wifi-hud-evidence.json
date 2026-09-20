@@ -1,0 +1,37 @@
+{
+  "kind": "local_simulator_fixture",
+  "transport": "Bonjour Wi-Fi TCP",
+  "source": "simulated",
+  "movingFrames": 63,
+  "pausedFrames": 16,
+  "allMovingUnitsKMH": true,
+  "allPausedOmitSpeed": true,
+  "noNavigationInstruction": true,
+  "firstMoving": {
+    "mode": "rideInfo",
+    "source": "simulated",
+    "status": "行驶中",
+    "distanceKm": 0.008248171097805701,
+    "type": "state",
+    "speed": {
+      "current": 37.125707095586485
+    },
+    "v": 1,
+    "units": {
+      "speed": "kmh"
+    },
+    "timestamp": "2026-09-14T09:29:24Z"
+  },
+  "firstPaused": {
+    "timestamp": "2026-09-14T09:30:27Z",
+    "v": 1,
+    "type": "state",
+    "units": {
+      "speed": "kmh"
+    },
+    "source": "simulated",
+    "distanceKm": 0.6528101911038197,
+    "mode": "rideInfo",
+    "status": "骑行已暂停"
+  }
+}

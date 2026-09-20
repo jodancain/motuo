@@ -1,0 +1,1734 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Motuo API",
+    "version": "0.1.0"
+  },
+  "servers": [
+    {
+      "url": "https://motuo.yundongyl.cn"
+    }
+  ],
+  "security": [
+    {
+      "DeviceBearer": []
+    }
+  ],
+  "paths": {
+    "/healthz": {
+      "get": {
+        "summary": "Database-aware health",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Invalid device token"
+          },
+          "404": {
+            "description": "Resource not visible to this owner"
+          },
+          "409": {
+            "description": "Version, chunk or reference conflict"
+          },
+          "422": {
+            "description": "Checksum, telemetry or file validation failed"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [],
+        "security": []
+      }
+    },
+    "/v1/pair": {
+      "post": {
+        "summary": "Consume one-time pairing code",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "token",
+                    "deviceId",
+                    "ownerId"
+                  ],
+                  "properties": {
+                    "token": {
+                      "type": "string"
+                    },
+                    "deviceId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "ownerId": {
+                      "type": "string",
+                      "format": "uuid"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Invalid device token"
+          },
+          "404": {
+            "description": "Resource not visible to this owner"
+          },
+          "409": {
+            "description": "Version, chunk or reference conflict"
+          },
+          "422": {
+            "description": "Checksum, telemetry or file validation failed"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "code",
+                  "deviceName"
+                ],
+                "properties": {
+                  "code": {
+                    "type": "string"
+                  },
+                  "deviceName": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/v1/capabilities": {
+      "get": {
+        "summary": "Configured provider capabilities",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Invalid device token"
+          },
+          "404": {
+            "description": "Resource not visible to this owner"
+          },
+          "409": {
+            "description": "Version, chunk or reference conflict"
+          },
+          "422": {
+            "description": "Checksum, telemetry or file validation failed"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": []
+      }
+    },
+    "/v1/vehicles": {
+      "get": {
+        "summary": "List owned vehicles",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "items"
+                  ],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Vehicle"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Invalid device token"
+          },
+          "404": {
+            "description": "Resource not visible to this owner"
+          },
+          "409": {
+            "description": "Version, chunk or reference conflict"
+          },
+          "422": {
+            "description": "Checksum, telemetry or file validation failed"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": []
+      }
+    },
+    "/v1/vehicles/{id}": {
+      "put": {
+        "summary": "Create or update owned Vehicle",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Vehicle"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Invalid device token"
+          },
+          "404": {
+            "description": "Resource not visible to this owner"
+          },
+          "409": {
+            "description": "Version, chunk or reference conflict"
+          },
+          "422": {
+            "description": "Checksum, telemetry or file validation failed"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Vehicle"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete owned Vehicle",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Invalid device token"
+          },
+          "404": {
+            "description": "Resource not visible to this owner"
+          },
+          "409": {
+            "description": "Version, chunk or reference conflict"
+          },
+          "422": {
+            "description": "Checksum, telemetry or file validation failed"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/rides": {
+      "get": {
+        "summary": "List owned rides",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "items"
+                  ],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Ride"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Invalid device token"
+          },
+          "404": {
+            "description": "Resource not visible to this owner"
+          },
+          "409": {
+            "description": "Version, chunk or reference conflict"
+          },
+          "422": {
+            "description": "Checksum, telemetry or file validation failed"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": []
+      }
+    },
+    "/v1/rides/{id}": {
+      "put": {
+        "summary": "Create or update owned Ride",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ride"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Invalid device token"
+          },
+          "404": {
+            "description": "Resource not visible to this owner"
+          },
+          "409": {
+            "description": "Version, chunk or reference conflict"
+          },
+          "422": {
+            "description": "Checksum, telemetry or file validation failed"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Ride"
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete owned Ride",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Invalid device token"
+          },
+          "404": {
+            "description": "Resource not visible to this owner"
+          },
+          "409": {
+            "description": "Version, chunk or reference conflict"
+          },
+          "422": {
+            "description": "Checksum, telemetry or file validation failed"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      },
+      "get": {
+        "summary": "Read an owned ride",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ride"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Invalid device token"
+          },
+          "404": {
+            "description": "Resource not visible to this owner"
+          },
+          "409": {
+            "description": "Version, chunk or reference conflict"
+          },
+          "422": {
+            "description": "Checksum, telemetry or file validation failed"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/rides/{id}/chunks/{sequence}": {
+      "put": {
+        "summary": "Idempotent SHA-256 raw JSONL upload",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Invalid device token"
+          },
+          "404": {
+            "description": "Resource not visible to this owner"
+          },
+          "409": {
+            "description": "Version, chunk or reference conflict"
+          },
+          "422": {
+            "description": "Checksum, telemetry or file validation failed"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sequence",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "X-Content-SHA256",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{64}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "description": "UTF-8 JSONL exact bytes (max 4 MiB), verified by X-Content-SHA256. Samples preserve their measurement timestamps; optional stream (location/motion/simulation) and segmentId UUID must appear together. New clients always provide both. monotonicS is seconds relative to the continuous recording segment, not device uptime. Ordering is non-decreasing only within each (segmentId, stream), including across chunks at finish. Different streams may arrive out of order, and new segments may reset elapsed time. Legacy unlabelled mixed-stream timestamps are retained. simulation stream requires simulated source. UUID identifiers are case-insensitive and canonicalized to lowercase before database/filesystem use."
+      }
+    },
+    "/v1/rides/{id}/finish": {
+      "post": {
+        "summary": "Verify chunks and finalize immutable ride version",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Invalid device token"
+          },
+          "404": {
+            "description": "Resource not visible to this owner"
+          },
+          "409": {
+            "description": "Version, chunk or reference conflict"
+          },
+          "422": {
+            "description": "Checksum, telemetry or file validation failed"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "dataVersion",
+                  "expectedChunks",
+                  "summary",
+                  "endedAt"
+                ],
+                "properties": {
+                  "dataVersion": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "expectedChunks": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "summary": {
+                    "type": "object"
+                  },
+                  "endedAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/rides/{id}/report": {
+      "get": {
+        "summary": "Read version-bound asynchronous ride report",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Report"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Invalid device token"
+          },
+          "404": {
+            "description": "Resource not visible to this owner"
+          },
+          "409": {
+            "description": "Version, chunk or reference conflict"
+          },
+          "422": {
+            "description": "Checksum, telemetry or file validation failed"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/rides/{id}/events/{eventId}/feedback": {
+      "post": {
+        "summary": "Retain original event and user label",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Invalid device token"
+          },
+          "404": {
+            "description": "Resource not visible to this owner"
+          },
+          "409": {
+            "description": "Version, chunk or reference conflict"
+          },
+          "422": {
+            "description": "Checksum, telemetry or file validation failed"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "eventId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "label",
+                  "note"
+                ],
+                "properties": {
+                  "label": {
+                    "type": "string",
+                    "enum": [
+                      "confirmed",
+                      "rejected"
+                    ]
+                  },
+                  "note": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/manuals": {
+      "get": {
+        "summary": "List owned vehicle manuals",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "items"
+                  ],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Manual"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Invalid device token"
+          },
+          "404": {
+            "description": "Resource not visible to this owner"
+          },
+          "409": {
+            "description": "Version, chunk or reference conflict"
+          },
+          "422": {
+            "description": "Checksum, telemetry or file validation failed"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "vehicleId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      },
+      "post": {
+        "summary": "Declare bounded PDF upload",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Invalid device token"
+          },
+          "404": {
+            "description": "Resource not visible to this owner"
+          },
+          "409": {
+            "description": "Version, chunk or reference conflict"
+          },
+          "422": {
+            "description": "Checksum, telemetry or file validation failed"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "vehicleId",
+                  "fileName",
+                  "totalBytes",
+                  "sha256"
+                ],
+                "properties": {
+                  "vehicleId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "fileName": {
+                    "type": "string"
+                  },
+                  "totalBytes": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 268435456
+                  },
+                  "sha256": {
+                    "type": "string",
+                    "pattern": "^[a-fA-F0-9]{64}$"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/manuals/{id}": {
+      "get": {
+        "summary": "Read processing progress",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Manual"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Invalid device token"
+          },
+          "404": {
+            "description": "Resource not visible to this owner"
+          },
+          "409": {
+            "description": "Version, chunk or reference conflict"
+          },
+          "422": {
+            "description": "Checksum, telemetry or file validation failed"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Delete manual, pages and private files",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Invalid device token"
+          },
+          "404": {
+            "description": "Resource not visible to this owner"
+          },
+          "409": {
+            "description": "Version, chunk or reference conflict"
+          },
+          "422": {
+            "description": "Checksum, telemetry or file validation failed"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/v1/manuals/{id}/chunks/{sequence}": {
+      "put": {
+        "summary": "Idempotent SHA-256 PDF chunk upload",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Invalid device token"
+          },
+          "404": {
+            "description": "Resource not visible to this owner"
+          },
+          "409": {
+            "description": "Version, chunk or reference conflict"
+          },
+          "422": {
+            "description": "Checksum, telemetry or file validation failed"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "sequence",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "X-Content-SHA256",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{64}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/manuals/{id}/complete": {
+      "post": {
+        "summary": "Verify and queue immutable PDF",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Manual"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Invalid device token"
+          },
+          "404": {
+            "description": "Resource not visible to this owner"
+          },
+          "409": {
+            "description": "Version, chunk or reference conflict"
+          },
+          "422": {
+            "description": "Checksum, telemetry or file validation failed"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "expectedChunks"
+                ],
+                "properties": {
+                  "expectedChunks": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 64
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/manuals/{id}/file": {
+      "get": {
+        "summary": "Read authenticated original PDF",
+        "responses": {
+          "200": {
+            "description": "Full PDF",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "206": {
+            "description": "Partial PDF; Content-Range and Accept-Ranges headers"
+          },
+          "416": {
+            "description": "Invalid or unsatisfiable single range"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Range",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Single bytes=start-end or suffix range"
+          }
+        ]
+      }
+    },
+    "/v1/manuals/ask": {
+      "post": {
+        "summary": "Chinese manual retrieval and evidence-bound answer",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "answer",
+                    "source",
+                    "citations",
+                    "limitations"
+                  ],
+                  "properties": {
+                    "answer": {
+                      "type": "string"
+                    },
+                    "source": {
+                      "type": "string",
+                      "enum": [
+                        "ai",
+                        "extractive",
+                        "no_evidence"
+                      ]
+                    },
+                    "citations": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Citation"
+                      }
+                    },
+                    "limitations": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Invalid device token"
+          },
+          "404": {
+            "description": "Resource not visible to this owner"
+          },
+          "409": {
+            "description": "Version, chunk or reference conflict"
+          },
+          "422": {
+            "description": "Checksum, telemetry or file validation failed"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "vehicleId",
+                  "question"
+                ],
+                "properties": {
+                  "vehicleId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "question": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 2000
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/maintenance": {
+      "get": {
+        "summary": "List owned vehicle maintenance records",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "items"
+                  ],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Maintenance"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Invalid device token"
+          },
+          "404": {
+            "description": "Resource not visible to this owner"
+          },
+          "409": {
+            "description": "Version, chunk or reference conflict"
+          },
+          "422": {
+            "description": "Checksum, telemetry or file validation failed"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [
+          {
+            "name": "vehicleId",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      },
+      "post": {
+        "summary": "Create immutable maintenance record",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Maintenance"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Invalid device token"
+          },
+          "404": {
+            "description": "Resource not visible to this owner"
+          },
+          "409": {
+            "description": "Version, chunk or reference conflict"
+          },
+          "422": {
+            "description": "Checksum, telemetry or file validation failed"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Maintenance"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/account": {
+      "delete": {
+        "summary": "Delete account, token hashes, vehicle data and private files",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Invalid device token"
+          },
+          "404": {
+            "description": "Resource not visible to this owner"
+          },
+          "409": {
+            "description": "Version, chunk or reference conflict"
+          },
+          "422": {
+            "description": "Checksum, telemetry or file validation failed"
+          },
+          "429": {
+            "description": "Rate limited"
+          }
+        },
+        "parameters": []
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "DeviceBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "properties": {
+          "error": {
+            "type": "object",
+            "required": [
+              "code",
+              "message"
+            ],
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "Vehicle": {
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "make",
+          "model",
+          "displacementCC",
+          "odometerKM"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "make": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "year": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "abs": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "displacementCC": {
+            "type": "number",
+            "minimum": 0
+          },
+          "plate": {
+            "type": "string"
+          },
+          "tyres": {},
+          "modifications": {},
+          "odometerKM": {
+            "type": "number",
+            "minimum": 0
+          }
+        }
+      },
+      "Ride": {
+        "type": "object",
+        "required": [
+          "id",
+          "vehicleId",
+          "startedAt",
+          "endedAt",
+          "status",
+          "source",
+          "distanceM",
+          "durationS",
+          "maxSpeedMPS",
+          "meanSpeedMPS",
+          "dataVersion"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "vehicleId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "startedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "recording",
+              "paused",
+              "finished",
+              "interrupted"
+            ]
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "measured",
+              "simulated"
+            ]
+          },
+          "distanceM": {
+            "type": "number",
+            "minimum": 0
+          },
+          "durationS": {
+            "type": "number",
+            "minimum": 0
+          },
+          "maxSpeedMPS": {
+            "type": "number",
+            "minimum": 0
+          },
+          "meanSpeedMPS": {
+            "type": "number",
+            "minimum": 0
+          },
+          "dataVersion": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "events": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "summary": {
+            "type": "object"
+          }
+        }
+      },
+      "Manual": {
+        "type": "object",
+        "required": [
+          "id",
+          "vehicleId",
+          "fileName",
+          "totalBytes",
+          "pageCount",
+          "status",
+          "progress"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "vehicleId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fileName": {
+            "type": "string"
+          },
+          "totalBytes": {
+            "type": "integer",
+            "maximum": 268435456
+          },
+          "pageCount": {
+            "type": "integer",
+            "maximum": 1000
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "uploading",
+              "queued",
+              "processing",
+              "ready",
+              "failed"
+            ]
+          },
+          "progress": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "Citation": {
+        "type": "object",
+        "properties": {
+          "manualId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fileName": {
+            "type": "string"
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "printedPage": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "section": {
+            "type": "string"
+          },
+          "quote": {
+            "type": "string"
+          }
+        }
+      },
+      "Report": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "ready",
+              "failed",
+              "unavailable"
+            ]
+          },
+          "dataVersion": {
+            "type": "integer"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "ai",
+              "local"
+            ]
+          },
+          "text": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Maintenance": {
+        "type": "object",
+        "required": [
+          "id",
+          "vehicleId",
+          "performedAt",
+          "odometerKM",
+          "category",
+          "note"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "vehicleId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "performedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "odometerKM": {
+            "type": "number",
+            "minimum": 0
+          },
+          "category": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

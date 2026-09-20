@@ -1,0 +1,886 @@
+{
+  "schemaVersion": 1,
+  "sourceFile": "SUZUKI GSX250R 维修手册中文版(1).pdf",
+  "sourceSha256": "e9616014ff6c4b03cf4f072fff9180842383ea0798f4a84ba59d4b572a9e2bef",
+  "sourceBytes": 139983190,
+  "sourcePages": 616,
+  "validationScope": "Local extraction and citation evidence, not live model retrieval or repair effectiveness.",
+  "questions": [
+    {
+      "id": "GSX-001",
+      "question": "GSX250R 的 VIN 和发动机编号分别在哪里？",
+      "expectedAnswer": "VIN 打刻在转向柱右侧；发动机编号在左曲轴箱。",
+      "expectedTerms": [
+        "转向柱右侧",
+        "左曲轴箱"
+      ],
+      "expectedPages": [
+        19
+      ],
+      "expectedBehavior": "cited_answer",
+      "citations": [
+        {
+          "page": 19,
+          "printedPage": "0A-4",
+          "section": "一般信息",
+          "quote": "系列编号位置\nBENH20K10101005\n(VIN)车辆识别代号(1)打刻在转向柱右侧上；发动机编\n号(2) 打刻在左曲轴箱上。\n\n1\n\nIH20K1010002-01\n\n2\n\nIH20K1010003-01"
+        }
+      ]
+    },
+    {
+      "id": "GSX-002",
+      "question": "保养表中 I、R、T 各表示什么？",
+      "expectedAnswer": "I 表示按需要检查、清洁、调整、更换或润滑；R 是更换；T 是紧固。",
+      "expectedTerms": [
+        "I =",
+        "R = 更换",
+        "T = 紧固"
+      ],
+      "expectedPages": [
+        24
+      ],
+      "expectedBehavior": "cited_answer",
+      "citations": [
+        {
+          "page": 24,
+          "printedPage": "0B-2",
+          "section": "保养和润滑",
+          "quote": "I = 检查、清洁、调整、更换或润滑等必要操作。\nR = 更换。\nT = 紧固。\n\n项目 | | 间隔 | | | |\n| | 月 份 | 2 | 12 | 24 | 36\n| | 公 里 | 1000 | 5000 | 10000 | 15000"
+        }
+      ]
+    },
+    {
+      "id": "GSX-003",
+      "question": "手册要求驱动链条多长里程检查、清洗和润滑？",
+      "expectedAnswer": "每 1000 公里。",
+      "expectedTerms": [
+        "每1000 公里检查、清洗、机油润滑"
+      ],
+      "expectedPages": [
+        24
+      ],
+      "expectedBehavior": "cited_answer",
+      "citations": [
+        {
+          "page": 24,
+          "printedPage": "0B-2",
+          "section": "保养和润滑",
+          "quote": "驱动链条(I: 参阅(0B-3), I: 参阅( 0B-3页)) | | | I | I | I | I\n| | | 每1000 公里检查、清洗、机油润滑 | | |\n制动器 (I: 参阅(0B-3页)) | | | I | I | I | I"
+        }
+      ]
+    },
+    {
+      "id": "GSX-004",
+      "question": "手册定期保养表的公里数列是什么？",
+      "expectedAnswer": "1000、5000、10000、15000 公里。",
+      "expectedTerms": [
+        "1000",
+        "5000",
+        "10000",
+        "15000"
+      ],
+      "expectedPages": [
+        24
+      ],
+      "expectedBehavior": "cited_answer",
+      "citations": [
+        {
+          "page": 24,
+          "printedPage": "0B-2",
+          "section": "保养和润滑",
+          "quote": "公 里 | 1000 | 5000 | 10000 | 15000\n| | 英 里 | 600 | 3000 | 6000 | 9000\n空气滤清器滤芯 (I:参阅(0B-3页), R: 参阅(0B-3页)) | | | — | I | I | R"
+        }
+      ]
+    },
+    {
+      "id": "GSX-005",
+      "question": "手册记载的轴距和座垫高度是多少？",
+      "expectedAnswer": "轴距 1430 mm，座垫高度 790 mm。",
+      "expectedTerms": [
+        "1430 mm",
+        "790 mm"
+      ],
+      "expectedPages": [
+        30
+      ],
+      "expectedBehavior": "cited_answer",
+      "citations": [
+        {
+          "page": 30,
+          "printedPage": "0C-1",
+          "section": "维修信息",
+          "quote": "轴距 | 1430 mm | —\n最小离地间隙 | 160 mm | —\n座垫高度 | 790 mm | —\n整备质量 | 178 kg | —\n\n发动机\n\n项目 | 规格参数 | 备注\n型号 | 四冲程，水冷，SOHC | —\n气缸数 | 2 | —"
+        }
+      ]
+    },
+    {
+      "id": "GSX-006",
+      "question": "GSX250R 标准怠速是多少？",
+      "expectedAnswer": "1400 ± 100 r/min。",
+      "expectedTerms": [
+        "1400 ± 100 r/min"
+      ],
+      "expectedPages": [
+        30
+      ],
+      "expectedBehavior": "cited_answer",
+      "citations": [
+        {
+          "page": 30,
+          "printedPage": "0C-1",
+          "section": "维修信息",
+          "quote": "怠速 | 1400 ± 100 r/min | —\n\n传动系统\n\n项目 | | 规格参数 | 备注\n离合器 | | 湿式多片式 | —\n变速器 | | 六挡齿轮变速 | —\n变挡模式 | | 1-下，5-上 | —\n初级传动比 | | 3.238 (68/21) | —"
+        }
+      ]
+    },
+    {
+      "id": "GSX-007",
+      "question": "手册中的变速器挡数和变挡模式是什么？",
+      "expectedAnswer": "六挡齿轮变速，1-下、5-上。",
+      "expectedTerms": [
+        "六挡齿轮变速",
+        "1-下，5-上"
+      ],
+      "expectedPages": [
+        30
+      ],
+      "expectedBehavior": "cited_answer",
+      "citations": [
+        {
+          "page": 30,
+          "printedPage": "0C-1",
+          "section": "维修信息",
+          "quote": "变速器 | | 六挡齿轮变速 | —\n变挡模式 | | 1-下，5-上 | —\n初级传动比 | | 3.238 (68/21) | —\n变速比 | 一挡 | 2.416 (29/12) | —\n| 二挡 | 1.529 (26/17) | —"
+        }
+      ]
+    },
+    {
+      "id": "GSX-008",
+      "question": "一挡和六挡变速比分别是多少？",
+      "expectedAnswer": "一挡为 2.416 (29/12)，六挡为 0.807 (21/26)。",
+      "expectedTerms": [
+        "2.416 (29/12)",
+        "0.807 (21/26)"
+      ],
+      "expectedPages": [
+        30
+      ],
+      "expectedBehavior": "cited_answer",
+      "citations": [
+        {
+          "page": 30,
+          "printedPage": "0C-1",
+          "section": "维修信息",
+          "quote": "变速比 | 一挡 | 2.416 (29/12) | —\n| 二挡 | 1.529 (26/17) | —\n| 三挡 | 1.181 (26/22) | —\n| 四挡 | 1.043 (24/23) | —\n| 五挡 | 0.909 (20/22) | —\n| 六挡 | 0.807 (21/26) | —"
+        }
+      ]
+    },
+    {
+      "id": "GSX-009",
+      "question": "初级与末级传动比是多少？",
+      "expectedAnswer": "初级 3.238 (68/21)，末级 3.285 (46/14)。",
+      "expectedTerms": [
+        "3.238 (68/21)",
+        "3.285 (46/14)"
+      ],
+      "expectedPages": [
+        30
+      ],
+      "expectedBehavior": "cited_answer",
+      "citations": [
+        {
+          "page": 30,
+          "printedPage": "0C-1",
+          "section": "维修信息",
+          "quote": "初级传动比 | | 3.238 (68/21) | —\n变速比 | 一挡 | 2.416 (29/12) | —\n| 二挡 | 1.529 (26/17) | —\n| 三挡 | 1.181 (26/22) | —\n| 四挡 | 1.043 (24/23) | —\n| 五挡 | 0.909 (20/22) | —\n| 六挡 | 0.807 (21/26) | —\n末级传动比 | | 3.285 (46/14) | —"
+        }
+      ]
+    },
+    {
+      "id": "GSX-010",
+      "question": "GSX250R 燃油箱容量是多少？",
+      "expectedAnswer": "15 L。",
+      "expectedTerms": [
+        "燃油箱 | | 15 L"
+      ],
+      "expectedPages": [
+        31
+      ],
+      "expectedBehavior": "cited_answer",
+      "citations": [
+        {
+          "page": 31,
+          "printedPage": "0C-2",
+          "section": "维修信息",
+          "quote": "容量\n\n项目 | | 规格参数 | 备注\n燃油箱 | | 15 L | —\n发动机机油 | 更换机油 | 2100 ml | —\n| 包含更换滤芯 | 2200 ml | —\n发动机冷却液 | | 1350 ml | —"
+        }
+      ]
+    },
+    {
+      "id": "GSX-011",
+      "question": "只换机油和连滤芯一起更换，各需要多少机油？",
+      "expectedAnswer": "只换机油 2100 ml，包含更换滤芯 2200 ml。",
+      "expectedTerms": [
+        "2100 ml",
+        "2200 ml"
+      ],
+      "expectedPages": [
+        31
+      ],
+      "expectedBehavior": "cited_answer",
+      "citations": [
+        {
+          "page": 31,
+          "printedPage": "0C-2",
+          "section": "维修信息",
+          "quote": "发动机机油 | 更换机油 | 2100 ml | —\n| 包含更换滤芯 | 2200 ml | —\n发动机冷却液 | | 1350 ml | —"
+        }
+      ]
+    },
+    {
+      "id": "GSX-012",
+      "question": "手册标注的发动机冷却液总量是多少？",
+      "expectedAnswer": "1350 ml。",
+      "expectedTerms": [
+        "发动机冷却液 | | 1350 ml"
+      ],
+      "expectedPages": [
+        31
+      ],
+      "expectedBehavior": "cited_answer",
+      "citations": [
+        {
+          "page": 31,
+          "printedPage": "0C-2",
+          "section": "维修信息",
+          "quote": "容量\n\n项目 | | 规格参数 | 备注\n燃油箱 | | 15 L | —\n发动机机油 | 更换机油 | 2100 ml | —\n| 包含更换滤芯 | 2200 ml | —\n发动机冷却液 | | 1350 ml | —"
+        }
+      ]
+    },
+    {
+      "id": "GSX-013",
+      "question": "前后无内胎轮胎的规格分别是什么？",
+      "expectedAnswer": "前 110/80-17M/C 57H，后 140/70-17M/C 66H，均无内胎。",
+      "expectedTerms": [
+        "110/80-17M/C 57H",
+        "140/70-17M/C 66H",
+        "无内胎"
+      ],
+      "expectedPages": [
+        31
+      ],
+      "expectedBehavior": "cited_answer",
+      "citations": [
+        {
+          "page": 31,
+          "printedPage": "0C-2",
+          "section": "维修信息",
+          "quote": "前轮胎尺寸 | 110/80-17M/C 57H, 无内胎 | —\n后轮胎尺寸 | 140/70-17M/C 66H, 无内胎 | —\n\n电气系统\n\n项目 | 规格参数 | 备注\n点火类型 | 电气点火 (晶体管) | —\n火花塞 | NGK CPR7EA-9 or DENSO U22EPR9 | —"
+        }
+      ]
+    },
+    {
+      "id": "GSX-014",
+      "question": "主保险和普通保险的额定电流各是多少？",
+      "expectedAnswer": "主保险 30 A，普通保险 10 A。",
+      "expectedTerms": [
+        "主保险 | 30 A",
+        "保险 | 10 A"
+      ],
+      "expectedPages": [
+        31
+      ],
+      "expectedBehavior": "cited_answer",
+      "citations": [
+        {
+          "page": 31,
+          "printedPage": "0C-2",
+          "section": "维修信息",
+          "quote": "主保险 | 30 A | —\n保险 | 10 A | —\nABS 保险 | 25/15 A | GSX250R/A\n前照灯 | 12 V 60/55 W (H4) | —\n位置灯 | LED | —\n转向信号灯 | 12 V 10 W × 4 | —"
+        }
+      ]
+    },
+    {
+      "id": "GSX-015",
+      "question": "油门拉索的标准间隙是多少？",
+      "expectedAnswer": "2.0 – 4.0 mm。",
+      "expectedTerms": [
+        "油门拉索间隙 | | 2.0 – 4.0 mm"
+      ],
+      "expectedPages": [
+        32
+      ],
+      "expectedBehavior": "cited_answer",
+      "citations": [
+        {
+          "page": 32,
+          "printedPage": "0C-3",
+          "section": "维修信息",
+          "quote": "油门拉索间隙 | | 2.0 – 4.0 mm | —\n怠速 | 当发动机暖机时 | 1400 ± 100 r/min | —\n快怠速 | | 1500 ± 100 r/min | —\n气缸压缩压力 | | 1500 – 1900 kPa | 1200 kPa"
+        }
+      ]
+    },
+    {
+      "id": "GSX-016",
+      "question": "冷机时进气和排气气门间隙各是多少？",
+      "expectedAnswer": "进气 0.05 – 0.10 mm，排气 0.17 – 0.22 mm；适用于冷机。",
+      "expectedTerms": [
+        "冷",
+        "0.05 – 0.10 mm",
+        "0.17 – 0.22 mm"
+      ],
+      "expectedPages": [
+        33
+      ],
+      "expectedBehavior": "cited_answer",
+      "citations": [
+        {
+          "page": 33,
+          "printedPage": "0C-4",
+          "section": "维修信息",
+          "quote": "气门间隙 | 当发动机冷\n机时 | 进气 | 0.05 – 0.10 mm | —\n| | 排气 | 0.17 – 0.22 mm | —\n气门直径 | 进气 | | 27 mm | —\n| 排气 | | 22.5 mm | —\n气门杆跳动 | 进气 & 排气 | | — | 0.05 mm"
+        }
+      ]
+    },
+    {
+      "id": "GSX-017",
+      "question": "发动机大修后的机油加注标准量是多少？",
+      "expectedAnswer": "2400 ml。",
+      "expectedTerms": [
+        "发动机大修 | 2400 ml"
+      ],
+      "expectedPages": [
+        34
+      ],
+      "expectedBehavior": "cited_answer",
+      "citations": [
+        {
+          "page": 34,
+          "printedPage": "0C-5",
+          "section": "维修信息",
+          "quote": "机油更换量 | 更换机油 | 2100 ml | —\n| 更换机油和滤芯 | 2200 ml | —\n| 发动机大修 | 2400 ml | —"
+        }
+      ]
+    },
+    {
+      "id": "GSX-018",
+      "question": "发动机侧与副水箱侧冷却液容量各是多少？",
+      "expectedAnswer": "发动机侧约 1100 ml，副水箱侧约 250 ml。",
+      "expectedTerms": [
+        "发动机侧 | 大约 1100 ml",
+        "副水箱侧 | 大约 250 ml"
+      ],
+      "expectedPages": [
+        35
+      ],
+      "expectedBehavior": "cited_answer",
+      "citations": [
+        {
+          "page": 35,
+          "printedPage": "0C-6",
+          "section": "维修信息",
+          "quote": "发动机冷却液 | 发动机侧 | 大约 1100 ml | —\n| 副水箱侧 | 大约 250 ml | —\n散热器盖阀开启压力 | | 93.3 – 122.7 kPa | —\n冷却风扇继电器输入电\n压 | | 蓄电池电压 | —\n冷却风扇开闭温度 | OFF → ON | 大约 105 °C | —"
+        }
+      ]
+    },
+    {
+      "id": "GSX-019",
+      "question": "冷却风扇大约在什么温度开启和关闭？",
+      "expectedAnswer": "约 105 °C 开启，约 99 °C 关闭。",
+      "expectedTerms": [
+        "OFF → ON | 大约 105 °C",
+        "ON → OFF | 大约 99 °C"
+      ],
+      "expectedPages": [
+        35
+      ],
+      "expectedBehavior": "cited_answer",
+      "citations": [
+        {
+          "page": 35,
+          "printedPage": "0C-6",
+          "section": "维修信息",
+          "quote": "冷却风扇开闭温度 | OFF → ON | 大约 105 °C | —\n| ON → OFF | 大约 99 °C | —\n温度调节阀开启温度 | | 86.5 – 89.5 °C | —\n温度调节阀开度 | 在 100 °C (212 °F) | 8 mm或更高 | —"
+        }
+      ]
+    },
+    {
+      "id": "GSX-020",
+      "question": "燃油压力的标准范围是多少？",
+      "expectedAnswer": "289 – 299 kPa。",
+      "expectedTerms": [
+        "燃油压力 | | 289 – 299 kPa"
+      ],
+      "expectedPages": [
+        35
+      ],
+      "expectedBehavior": "cited_answer",
+      "citations": [
+        {
+          "page": 35,
+          "printedPage": "0C-6",
+          "section": "维修信息",
+          "quote": "燃油压力 | | 289 – 299 kPa | —\n\n点火系统\n\n项目 | 规格 | 标准值 | 极限值\n点火次序 | | 12 | —\n火花塞 | 型号 | NGK: CPR7EA-9 / DENSO: U22EPR9 | —\n| 间隙 | 0.8 – 0.9 mm | —"
+        }
+      ]
+    },
+    {
+      "id": "GSX-021",
+      "question": "蓄电池型号和容量是什么？",
+      "expectedAnswer": "型号 YTX9-BS，12 V、8 Ah/10 HR。",
+      "expectedTerms": [
+        "YTX9-BS",
+        "8 Ah"
+      ],
+      "expectedPages": [
+        36
+      ],
+      "expectedBehavior": "cited_answer",
+      "citations": [
+        {
+          "page": 36,
+          "printedPage": "0C-7",
+          "section": "维修信息",
+          "quote": "蓄电池 | 型号 | | YTX9-BS | —\n| 容量 | | 12 V 28.8 kC (8 Ah) / 10 HR | —\n\n前减震器\n\n项目 | 规格 | 标准值 | 极限值\n前减震器内管外径 | | 37 mm | —\n前减震器油位高度 | 没有弹簧，内管被完"
+        }
+      ]
+    },
+    {
+      "id": "GSX-022",
+      "question": "蓄电池漏电电流上限是多少？",
+      "expectedAnswer": "3 mA 或更低。",
+      "expectedTerms": [
+        "蓄电池漏电电流 | | | 3 mA 或更低"
+      ],
+      "expectedPages": [
+        36
+      ],
+      "expectedBehavior": "cited_answer",
+      "citations": [
+        {
+          "page": 36,
+          "printedPage": "0C-7",
+          "section": "维修信息",
+          "quote": "蓄电池漏电电流 | | | 3 mA 或更低 | —\n整流电压 | 充电输出 | 在 5000\nr/ min | 14.0 – 15.5 V | —\n磁电机线圈电阻 | | | 0.2 – 1.0 Ω | —\n磁电机空载电压 | 当发动机冷"
+        }
+      ]
+    },
+    {
+      "id": "GSX-023",
+      "question": "5000 r/min 下整流充电输出电压范围是多少？",
+      "expectedAnswer": "14.0 – 15.5 V。",
+      "expectedTerms": [
+        "5000",
+        "14.0 – 15.5 V"
+      ],
+      "expectedPages": [
+        36
+      ],
+      "expectedBehavior": "cited_answer",
+      "citations": [
+        {
+          "page": 36,
+          "printedPage": "0C-7",
+          "section": "维修信息",
+          "quote": "整流电压 | 充电输出 | 在 5000\nr/ min | 14.0 – 15.5 V | —\n磁电机线圈电阻 | | | 0.2 – 1.0 Ω | —\n磁电机空载电压 | 当发动机冷\n机时 | 在 5000\nr/ min | 50 V (AC) 或更高 | —"
+        }
+      ]
+    },
+    {
+      "id": "GSX-024",
+      "question": "单只前减震器的加油量是多少？",
+      "expectedAnswer": "366 ml。",
+      "expectedTerms": [
+        "前减震器加油量 | 单只 | 366 ml"
+      ],
+      "expectedPages": [
+        36
+      ],
+      "expectedBehavior": "cited_answer",
+      "citations": [
+        {
+          "page": 36,
+          "printedPage": "0C-7",
+          "section": "维修信息",
+          "quote": "前减震器加油量 | 单只 | 366 ml | —\n\n后减震器\n\n项目 | 规格 | 标准值 | 极限值\n后减震器弹簧调整 | | 第三位置 | —\n摇架轴跳动 | | — | 0.3 mm\n\n轮辋和轮胎\n\n项目 | 规格 | | 标准值 | 极限值"
+        }
+      ]
+    },
+    {
+      "id": "GSX-025",
+      "question": "冷态轮胎气压在单人和双人骑行时各是多少？",
+      "expectedAnswer": "手册表中单人、双人骑行的前后轮均为 250 kPa。",
+      "expectedTerms": [
+        "单人",
+        "双人",
+        "250 kPa"
+      ],
+      "expectedPages": [
+        36
+      ],
+      "expectedBehavior": "cited_answer",
+      "citations": [
+        {
+          "page": 36,
+          "printedPage": "0C-7",
+          "section": "维修信息",
+          "quote": "冷态轮胎气压 | 单人 | 前 | 250 kPa | —\n| | 后 | 250 kPa | —\n| 双人 | 前 | 250 kPa | —\n| | 后 | 250 kPa | —\n轮辋尺寸 | 前 | | 17 M/C x MT 3.00 | —"
+        }
+      ]
+    },
+    {
+      "id": "GSX-026",
+      "question": "前后轮胎花纹深度的推荐极限各是多少？",
+      "expectedAnswer": "前 1.6 mm，后 2.0 mm。",
+      "expectedTerms": [
+        "前 | — | 1.6 mm",
+        "后 | — | 2.0 mm"
+      ],
+      "expectedPages": [
+        36
+      ],
+      "expectedBehavior": "cited_answer",
+      "citations": [
+        {
+          "page": 36,
+          "printedPage": "0C-7",
+          "section": "维修信息",
+          "quote": "轮胎花纹深度 | 推荐深度 | 前 | — | 1.6 mm\n| | 后 | — | 2.0 mm\n冷态轮胎气压 | 单人 | 前 | 250 kPa | —\n| | 后 | 250 kPa | —\n| 双人 | 前 | 250 kPa | —"
+        }
+      ]
+    },
+    {
+      "id": "GSX-027",
+      "question": "驱动链条的型号、节数和松弛度标准是什么？",
+      "expectedAnswer": "RK520KRO，116 节；支起边撑时松弛度 20 – 30 mm。",
+      "expectedTerms": [
+        "RK520KRO",
+        "116 节",
+        "支起边撑",
+        "20 – 30 mm"
+      ],
+      "expectedPages": [
+        36
+      ],
+      "expectedBehavior": "cited_answer",
+      "citations": [
+        {
+          "page": 36,
+          "printedPage": "0C-7",
+          "section": "维修信息",
+          "quote": "驱动链条 | 型号 | RK520KRO | —\n| 节 | 116 节 | —\n20节长度 | | — | 319.4 mm\n驱动链松弛度 | 支起边撑 | 20 – 30 mm | —"
+        }
+      ]
+    },
+    {
+      "id": "GSX-028",
+      "question": "前制动盘标准厚度与厚度极限分别是多少？",
+      "expectedAnswer": "标准 5.0 mm，极限 4.5 mm。",
+      "expectedTerms": [
+        "前制动盘厚度 | | 5.0 mm | 4.5 mm"
+      ],
+      "expectedPages": [
+        37
+      ],
+      "expectedBehavior": "cited_answer",
+      "citations": [
+        {
+          "page": 37,
+          "printedPage": "0C-8",
+          "section": "维修信息",
+          "quote": "前制动盘厚度 | | 5.0 mm | 4.5 mm\n前制动盘跳动 | | — | 0.30 mm\n前制动钳活塞直径 | | 大约 27.0 mm | —\n\n后制动\n\n项目 | 规格 | 标准值 | 极限值\n后制动盘厚度 | | 4.5 mm | 4.0 mm"
+        }
+      ]
+    },
+    {
+      "id": "GSX-029",
+      "question": "后制动盘标准厚度与厚度极限分别是多少？",
+      "expectedAnswer": "标准 4.5 mm，极限 4.0 mm。",
+      "expectedTerms": [
+        "后制动盘厚度 | | 4.5 mm | 4.0 mm"
+      ],
+      "expectedPages": [
+        37
+      ],
+      "expectedBehavior": "cited_answer",
+      "citations": [
+        {
+          "page": 37,
+          "printedPage": "0C-8",
+          "section": "维修信息",
+          "quote": "后制动盘厚度 | | 4.5 mm | 4.0 mm\n后制动盘跳动 | | — | 0.30 mm\n后制动钳活塞直径 | | 大约 38.2 mm | —\n\nABS\n\n项目 | 规格 | 标准值 | 极限值\n轮辋速度传感器-传感器转子\n间间隙 | 前 | 0.38 – 1.35 mm | —"
+        }
+      ]
+    },
+    {
+      "id": "GSX-030",
+      "question": "挡位开关的输入电压范围是多少？",
+      "expectedAnswer": "4.5 – 5.5 V。",
+      "expectedTerms": [
+        "挡位开关输入电压 | | 4.5 – 5.5 V"
+      ],
+      "expectedPages": [
+        37
+      ],
+      "expectedBehavior": "cited_answer",
+      "citations": [
+        {
+          "page": 37,
+          "printedPage": "0C-8",
+          "section": "维修信息",
+          "quote": "挡位开关输入电压 | | 4.5 – 5.5 V | —\n挡位开关输出电压 | 从1挡到6挡 | 0.6 V 或更高 | —\n\n离合器\n\n项目 | 规格 | 标准值 | 极限值\n离合器拉索间隙 | | 10 – 15 mm | —\n离合器调节螺钉 | | 逆时针转1圈 | —"
+        }
+      ]
+    },
+    {
+      "id": "GSX-031",
+      "question": "离合器拉索间隙的标准值是多少？",
+      "expectedAnswer": "10 – 15 mm。",
+      "expectedTerms": [
+        "离合器拉索间隙 | | 10 – 15 mm"
+      ],
+      "expectedPages": [
+        37
+      ],
+      "expectedBehavior": "cited_answer",
+      "citations": [
+        {
+          "page": 37,
+          "printedPage": "0C-8",
+          "section": "维修信息",
+          "quote": "离合器拉索间隙 | | 10 – 15 mm | —\n离合器调节螺钉 | | 逆时针转1圈 | —\n主动摩擦片厚度 | No. 1 | 2.92 – 3.08 mm | 2.62 mm\n| No. 2 | 2.92 – 3.08 mm | 2.62 mm"
+        }
+      ]
+    },
+    {
+      "id": "GSX-032",
+      "question": "后制动踏板的标准高度是多少？",
+      "expectedAnswer": "45 – 55 mm。",
+      "expectedTerms": [
+        "后制动踏板高度 | | 45 – 55 mm"
+      ],
+      "expectedPages": [
+        37
+      ],
+      "expectedBehavior": "cited_answer",
+      "citations": [
+        {
+          "page": 37,
+          "printedPage": "0C-8",
+          "section": "维修信息",
+          "quote": "后制动踏板高度 | | 45 – 55 mm | —\n前制动液缸柱塞直径 | | 大约 11.0 mm | —\n后制动液缸柱塞直径 | | 大约 15.9 mm | —\n\n前制动\n\n项目 | 规格 | 标准值 | 极限值\n前制动盘厚度 | | 5.0 mm | 4.5 mm"
+        }
+      ]
+    },
+    {
+      "id": "GSX-033",
+      "question": "手册推荐的发动机机油粘度等级是什么？",
+      "expectedAnswer": "SAE 10W-40。",
+      "expectedTerms": [
+        "粘度等级 SAE 10W-40"
+      ],
+      "expectedPages": [
+        41
+      ],
+      "expectedBehavior": "cited_answer",
+      "citations": [
+        {
+          "page": 41,
+          "printedPage": "0C-12",
+          "section": "维修信息",
+          "quote": "发动机机油\nAPI 分类法\nSG, SH, SJ 或 SL\n\nJASO T903 标准 MA\n粘度等级 SAE 10W-40\n\n如果没有 SAE 10W-40 粘度等级的机油，根据当地气\n候情况按下表选购适当的替代品。\n\n发动机机油\n\nIF04K1030001-01"
+        }
+      ]
+    },
+    {
+      "id": "GSX-034",
+      "question": "手册允许的制动液规格是什么？",
+      "expectedAnswer": "DOT 3 或 DOT 4，并注明使用以乙二醇为基的制动液。",
+      "expectedTerms": [
+        "DOT 3 或 DOT 4",
+        "以乙二醇为基"
+      ],
+      "expectedPages": [
+        41
+      ],
+      "expectedBehavior": "cited_answer",
+      "citations": [
+        {
+          "page": 41,
+          "printedPage": "0C-12",
+          "section": "维修信息",
+          "quote": "制动液\n规格和类型: DOT 3 或 DOT 4\n\n! 危 险\n\n本车制动系统使用以乙二醇为基的制动液。不能\n使用或混用其他类型液体。（如以硅油和汽油为\n基的液体），否则将会造成严重损坏。不要使用\n陈腐的、使用过的、或不密封容器中的制动液,"
+        }
+      ]
+    },
+    {
+      "id": "GSX-035",
+      "question": "手册是否推荐 ENERGY CONSERVING 标识的机油？",
+      "expectedAnswer": "不推荐，手册指出其会影响发动机寿命和离合器性能。",
+      "expectedTerms": [
+        "不推荐使用有“ENERGY CONSERVING”标识的机油"
+      ],
+      "expectedPages": [
+        41
+      ],
+      "expectedBehavior": "cited_answer",
+      "citations": [
+        {
+          "page": 41,
+          "printedPage": "0C-12",
+          "section": "维修信息",
+          "quote": "不推荐使用有“ENERGY CONSERVING”标识的机油，这些\n机油 影响发动机寿命和离合器的性能。\n\nA\nPISERVICE\nS J A\nPISERVICE\nS J\nSAE SAE\n10W-40 E 10W-40 G\nN ERGYCONSERVI N"
+        }
+      ]
+    },
+    {
+      "id": "GSX-036",
+      "question": "机油放油螺塞的规定扭矩是多少？",
+      "expectedAnswer": "23 N·m。",
+      "expectedTerms": [
+        "放油螺塞 (a): 23 N·m"
+      ],
+      "expectedPages": [
+        223
+      ],
+      "expectedBehavior": "cited_answer",
+      "citations": [
+        {
+          "page": 223,
+          "printedPage": "1E-5",
+          "section": "发动机润滑系统",
+          "quote": "放油螺塞 (a): 23 N·m\n\n1, (a)\n\nIH20K1150006-01\n\n6) 从加油孔加入新的机油。\n\n发动机机油加油量\n机油更换[标准值]:2100 ml\n机油和滤芯更换[标准值]:2200 ml\n发动机大修[标准值]:2400 ml"
+        }
+      ]
+    },
+    {
+      "id": "GSX-037",
+      "question": "机油滤芯的规定扭矩是多少？",
+      "expectedAnswer": "20 N·m。",
+      "expectedTerms": [
+        "机油滤芯 (a): 20 N·m"
+      ],
+      "expectedPages": [
+        223
+      ],
+      "expectedBehavior": "cited_answer",
+      "citations": [
+        {
+          "page": 223,
+          "printedPage": "1E-5",
+          "section": "发动机润滑系统",
+          "quote": "机油滤芯 (a): 20 N·m\n\n1, (a)\n(A)\n\nID26J1150014-03\n\n5) 加入新机油。参阅（1E-4页）\n\n6) 检查发动机机油油位。参阅（1E-4页）"
+        }
+      ]
+    },
+    {
+      "id": "GSX-038",
+      "question": "火花塞的规定拧紧扭矩是多少？",
+      "expectedAnswer": "11 N·m。",
+      "expectedTerms": [
+        "火花塞: 11 N·m"
+      ],
+      "expectedPages": [
+        276
+      ],
+      "expectedBehavior": "cited_answer",
+      "citations": [
+        {
+          "page": 276,
+          "printedPage": "1H-6",
+          "section": "点火系统",
+          "quote": "火花塞: 11 N·m\n\n• 安装火花塞帽。参阅“点火线圈的安装位置”（1H-5\n页）\n火花塞的检查和清洁\nBENH20K11806003\n参阅“火花塞的拆卸和安装”（1H-6页）\n\n积碳清理\n检查火花塞的积碳情况。\n如果火花塞积碳，用金属丝或针清除火花塞积碳。"
+        }
+      ]
+    },
+    {
+      "id": "GSX-039",
+      "question": "火花塞型号和标准间隙是多少？",
+      "expectedAnswer": "NGK CPR7EA-9 或 DENSO U22EPR9，间隙 0.8 – 0.9 mm。",
+      "expectedTerms": [
+        "CPR7EA-9",
+        "U22EPR9",
+        "0.8 – 0.9 mm"
+      ],
+      "expectedPages": [
+        277
+      ],
+      "expectedBehavior": "cited_answer",
+      "citations": [
+        {
+          "page": 277,
+          "printedPage": "1H-7",
+          "section": "点火系统",
+          "quote": "火花塞\n型号[标准直]:NGK: CPR7EA-9 / DENSO: U22EPR9\n间隙[标准直]:0.8 – 0.9 mm\n\n“a”\n\nID26J1180010-02\n\n电极检查\n检查电极的磨损或燃烧状况。如果有磨损或烧蚀，则更\n换火花塞。同样，如果绝缘体部分或螺纹部分损坏，也"
+        }
+      ]
+    },
+    {
+      "id": "GSX-040",
+      "question": "调整驱动链条后的后轮轴螺母扭矩是多少？",
+      "expectedAnswer": "65 N·m；拧紧后再次检查链条松紧度。",
+      "expectedTerms": [
+        "后轮轴螺母：65 N·m",
+        "再次检查驱动链条的松紧度"
+      ],
+      "expectedPages": [
+        369
+      ],
+      "expectedBehavior": "cited_answer",
+      "citations": [
+        {
+          "page": 369,
+          "printedPage": "3A-3",
+          "section": "动力传动系统 / 轮轴",
+          "quote": "后轮轴螺母：65 N·m\n\n5) 拧紧后轮轴螺母后，再次检查驱动链条的松紧度。\n\n6) 拧紧左右两边的链条调节螺母。\n\n驱动链条的清洁和润滑\nBENH20K13106003\n\n1) 用边撑支起摩托车。\n\n2) 清理驱动链条(1)上的灰尘和锈蚀。注意不要损坏密"
+        }
+      ]
+    },
+    {
+      "id": "GSX-041",
+      "question": "能用煤油或高压清洗机清洗驱动链条吗？",
+      "expectedAnswer": "手册禁止使用煤油等挥发性溶剂、高压清洗机及钢丝刷清洗驱动链条。",
+      "expectedTerms": [
+        "煤油",
+        "不要用高压清洗机",
+        "不要用钢丝刷"
+      ],
+      "expectedPages": [
+        369
+      ],
+      "expectedBehavior": "cited_answer",
+      "citations": [
+        {
+          "page": 369,
+          "printedPage": "3A-3",
+          "section": "动力传动系统 / 轮轴",
+          "quote": "不要使用挥发性溶剂，例如油漆稀释剂、煤油和\n汽油。\n\n• 不要用高压清洗机来清洁驱动链条。\n\n• 不要用钢丝刷来清洁驱动链条。\n\n4) 用柔软的刷子来清洁驱动链条(1)。即使使用柔软的\n刷子，也要注意别损坏密封圈。\n\n5) 擦去水和中性清洗剂。"
+        }
+      ]
+    },
+    {
+      "id": "GSX-042",
+      "question": "只根据这本维修手册，告诉我现在这辆车确切挂在第几挡。",
+      "expectedBehavior": "insufficient_live_or_vehicle_evidence",
+      "expectedPages": [],
+      "expectedTerms": [],
+      "citations": []
+    },
+    {
+      "id": "GSX-043",
+      "question": "只根据这本维修手册，告诉我现在前后轮的实时胎压。",
+      "expectedBehavior": "insufficient_live_or_vehicle_evidence",
+      "expectedPages": [],
+      "expectedTerms": [],
+      "citations": []
+    },
+    {
+      "id": "GSX-044",
+      "question": "我没提供车型年份和 ABS 配置，能保证每项参数适合我的实车吗？",
+      "expectedBehavior": "insufficient_live_or_vehicle_evidence",
+      "expectedPages": [],
+      "expectedTerms": [],
+      "citations": []
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "name": "motuo-api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsc",
+    "start": "node dist/src/index.js",
+    "migrate": "tsx src/migrate.ts",
+    "pair": "tsx src/bootstrap.ts",
+    "test": "tsx --test test/*.test.ts",
+    "test:integration": "bash scripts/test-postgres.sh",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "fastify": "^5.6.2",
+    "@fastify/rate-limit": "^10.3.0",
+    "pg": "^8.16.3",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.0",
+    "@types/pg": "^8.15.5",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

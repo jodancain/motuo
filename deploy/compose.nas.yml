@@ -1,0 +1,79 @@
+name: motuo
+services:
+  postgres:
+    image: pgvector/pgvector:pg18
+    container_name: motuo-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: motuo
+      POSTGRES_USER: motuo
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?required}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - /volume1/docker/motuo/postgres:/var/lib/postgresql/data
+    networks: [motuo]
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U motuo -d motuo']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    mem_limit: 512m
+    logging: &logging
+      driver: json-file
+      options: {max-size: 10m, max-file: '3'}
+  api:
+    image: motuo-api:${MOTUO_RELEASE:?required}
+    build:
+      context: ../server
+      args:
+        NODE_IMAGE: node:22-alpine
+    container_name: motuo-api
+    restart: unless-stopped
+    user: '1000:1000'
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?required}
+      DATA_DIR: /data
+      PORT: '3020'
+      HOST: 0.0.0.0
+      AI_BASE_URL: ${AI_BASE_URL:-}
+      AI_MODEL: ${AI_MODEL:-}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_TIMEOUT_MS: '25000'
+      NODE_ENV: production
+    ports:
+      - '127.0.0.1:3020:3020'
+    volumes:
+      - /volume1/docker/motuo/data:/data
+    networks: [motuo]
+    depends_on:
+      postgres: {condition: service_healthy}
+    mem_limit: 512m
+    logging: *logging
+  worker:
+    image: motuo-worker:${MOTUO_RELEASE:?required}
+    build:
+      context: ../worker
+    container_name: motuo-worker
+    restart: unless-stopped
+    user: '1000:1000'
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?required}
+      DATA_DIR: /data
+      HOME: /tmp
+      PYTHONUNBUFFERED: '1'
+      OMP_THREAD_LIMIT: '1'
+      MANUAL_STALE_SECONDS: '300'
+      MOTUO_MAX_PAGES: '1000'
+    volumes:
+      - /volume1/docker/motuo/data:/data
+    networks: [motuo]
+    depends_on:
+      api: {condition: service_healthy}
+    mem_limit: 1536m
+    logging: *logging
+networks:
+  motuo:
+    name: motuo-net
+    ipam:
+      config:
+        - subnet: 172.30.110.0/24

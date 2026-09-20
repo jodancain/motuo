@@ -1,0 +1,18 @@
+CREATE TABLE IF NOT EXISTS owners (id UUID PRIMARY KEY, created_at TIMESTAMPTZ NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS devices (id UUID PRIMARY KEY, owner_id UUID NOT NULL REFERENCES owners ON DELETE CASCADE, name TEXT NOT NULL, token_hash TEXT UNIQUE NOT NULL, created_at TIMESTAMPTZ NOT NULL DEFAULT now());
+CREATE TABLE IF NOT EXISTS pairing_codes (code_hash TEXT PRIMARY KEY, owner_id UUID NOT NULL REFERENCES owners ON DELETE CASCADE, expires_at TIMESTAMPTZ NOT NULL, consumed_at TIMESTAMPTZ);
+CREATE TABLE IF NOT EXISTS vehicles (id UUID PRIMARY KEY, owner_id UUID NOT NULL REFERENCES owners ON DELETE CASCADE, data JSONB NOT NULL, created_at TIMESTAMPTZ DEFAULT now(), updated_at TIMESTAMPTZ DEFAULT now());
+CREATE INDEX IF NOT EXISTS vehicles_owner ON vehicles(owner_id);
+CREATE TABLE IF NOT EXISTS rides (id UUID PRIMARY KEY, owner_id UUID NOT NULL REFERENCES owners ON DELETE CASCADE, vehicle_id UUID REFERENCES vehicles ON DELETE RESTRICT, data JSONB NOT NULL, finalized_version INTEGER, created_at TIMESTAMPTZ DEFAULT now(), updated_at TIMESTAMPTZ DEFAULT now());
+CREATE INDEX IF NOT EXISTS rides_owner ON rides(owner_id);
+CREATE TABLE IF NOT EXISTS ride_chunks (ride_id UUID NOT NULL REFERENCES rides ON DELETE CASCADE, sequence INTEGER NOT NULL CHECK(sequence>=0), sha256 TEXT NOT NULL, bytes INTEGER NOT NULL, sample_count INTEGER NOT NULL, PRIMARY KEY(ride_id,sequence));
+CREATE TABLE IF NOT EXISTS reports (ride_id UUID PRIMARY KEY REFERENCES rides ON DELETE CASCADE, data_version INTEGER NOT NULL, status TEXT NOT NULL, source TEXT NOT NULL DEFAULT 'local', text TEXT NOT NULL DEFAULT '', created_at TIMESTAMPTZ NOT NULL DEFAULT now(), updated_at TIMESTAMPTZ DEFAULT now());
+CREATE TABLE IF NOT EXISTS event_feedback (ride_id UUID NOT NULL REFERENCES rides ON DELETE CASCADE, event_id UUID NOT NULL, label TEXT NOT NULL, note TEXT NOT NULL DEFAULT '', event_snapshot JSONB NOT NULL, updated_at TIMESTAMPTZ NOT NULL DEFAULT now(), PRIMARY KEY(ride_id,event_id));
+CREATE TABLE IF NOT EXISTS maintenance (id UUID PRIMARY KEY, owner_id UUID NOT NULL REFERENCES owners ON DELETE CASCADE, vehicle_id UUID NOT NULL REFERENCES vehicles ON DELETE RESTRICT, data JSONB NOT NULL, created_at TIMESTAMPTZ DEFAULT now());
+CREATE TABLE IF NOT EXISTS manuals (id UUID PRIMARY KEY, owner_id UUID NOT NULL REFERENCES owners ON DELETE CASCADE, vehicle_id UUID REFERENCES vehicles ON DELETE RESTRICT, file_name TEXT NOT NULL, total_bytes BIGINT NOT NULL, sha256 TEXT NOT NULL, status TEXT NOT NULL, progress INTEGER DEFAULT 0, page_count INTEGER DEFAULT 0, error TEXT NULL, created_at TIMESTAMPTZ DEFAULT now(), updated_at TIMESTAMPTZ DEFAULT now());
+CREATE INDEX IF NOT EXISTS manuals_owner ON manuals(owner_id,vehicle_id);
+CREATE INDEX IF NOT EXISTS manuals_queue ON manuals(status,created_at);
+CREATE TABLE IF NOT EXISTS manual_pages (manual_id UUID REFERENCES manuals ON DELETE CASCADE, page INTEGER, printed_page TEXT, section TEXT, text TEXT, tokens TEXT, quality TEXT, PRIMARY KEY(manual_id,page));
+CREATE INDEX IF NOT EXISTS manual_pages_search ON manual_pages USING GIN(to_tsvector('simple', coalesce(tokens,'')));
+CREATE TABLE IF NOT EXISTS manual_chunks (manual_id UUID NOT NULL REFERENCES manuals ON DELETE CASCADE, sequence INTEGER NOT NULL CHECK(sequence>=0), sha256 TEXT NOT NULL, bytes INTEGER NOT NULL, PRIMARY KEY(manual_id,sequence));
+CREATE TABLE IF NOT EXISTS file_cleanup (id UUID NOT NULL, kind TEXT NOT NULL CHECK(kind IN ('manual','ride')), created_at TIMESTAMPTZ DEFAULT now(), PRIMARY KEY(id,kind));

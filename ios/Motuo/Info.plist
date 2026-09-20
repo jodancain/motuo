@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleDisplayName</key>
+	<string>MOTUO</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>NSAppleMusicUsageDescription</key>
+	<string>访问你授权的 Apple Music 音乐，在骑行时播放。</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>连接你选择的胎压、HUD 与动态传感器配件。</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_motuo-hud._tcp</string>
+	</array>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>连接你选择的 Wi-Fi HUD 与摩托配件。</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>在锁屏或切换应用后继续记录你开启的骑行。</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>记录骑行路线、速度并提供导航；仅在你开始骑行后采集。</string>
+	<key>NSMotionUsageDescription</key>
+	<string>感知手机支架上的加速度与转动，生成骑行动态与复盘。</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+		<string>audio</string>
+		<string>bluetooth-central</string>
+	</array>
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIColorName</key>
+		<string>LaunchBackground</string>
+	</dict>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+</dict>
+</plist>

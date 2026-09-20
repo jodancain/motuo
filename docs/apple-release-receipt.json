@@ -1,0 +1,51 @@
+{
+  "targets": [
+    {
+      "bundleId": "cn.yundongyl.motuo",
+      "version": "0.1.0",
+      "build": "1",
+      "profile": "Motuo App Store",
+      "signedIdentifier": "7NUGZ3A48C.cn.yundongyl.motuo",
+      "codeSignatureVerified": true
+    },
+    {
+      "bundleId": "cn.yundongyl.motuo.watchkitapp",
+      "version": "0.1.0",
+      "build": "1",
+      "profile": "Motuo Watch App Store",
+      "signedIdentifier": "7NUGZ3A48C.cn.yundongyl.motuo.watchkitapp",
+      "codeSignatureVerified": true
+    }
+  ],
+  "physicalInstallVerified": false,
+  "verifiedDate": "2026-09-20",
+  "appId": "6814048230",
+  "groupId": "c8cf437a-46c0-4246-b64f-d18300dacea4",
+  "internalTesterCount": 1,
+  "upload": {
+    "result": "UPLOAD_SUCCEEDED",
+    "deliveryId": "4dac7de5-ebd3-4398-bb4c-84394ccf9187",
+    "uploadedAt": "2026-09-20T03:37:33.911Z"
+  },
+  "ipa": {
+    "bytes": 2158486,
+    "sha256": "ec7875ae8254a01d4306416105dec61e4ac060b63dc6a43a3a90786087a55c16"
+  },
+  "appleProcessingVerified": true,
+  "testerAvailabilityVerified": true,
+  "testerInvitationVerified": true,
+  "distribution": {
+    "verifiedAt": "2026-09-20T03:45:50.441569+00:00",
+    "buildId": "4dac7de5-ebd3-4398-bb4c-84394ccf9187",
+    "processingState": "VALID",
+    "internalBuildState": "IN_BETA_TESTING",
+    "groupName": "Motuo Internal",
+    "groupBuildCount": 1,
+    "internalTesterCount": 1,
+    "testerUIState": "INVITED",
+    "buildUIState": "正在测试",
+    "testNotesLocale": "zh-Hans",
+    "testNotesReadbackVerified": true,
+    "publicLinkEnabled": false
+  }
+}

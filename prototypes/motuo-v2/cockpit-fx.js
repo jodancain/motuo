@@ -30,15 +30,18 @@
 
  function daily(c,p){
   const {x,y,w,h,t,alpha,e,valid,wave}=p;
-  halo(c,x+w*.5,y+h*.61,w*.62,h*.65,'42,109,244',alpha*(.17+.035*Math.sin(t*.7)));
+  halo(c,x+w*(.5+.07*Math.sin(t*1.05)),y+h*.58,w*.62,h*.65,'42,109,244',alpha*(.2+.045*Math.sin(t*1.3)));
   floor(c,p,.13);
-  const baseline=y+h*.86,peak=h*.66,sigma=w*.19;
+  const baseline=y+h*.87;
   // Layered contour curves are an idle visual motif. Only the fine waveform is acoustic.
   const point=(u,layer)=>{
-   const px=x+u*w,shift=(layer-5)*.015+Math.sin(t*.33+layer*.35)*.015;
-   const d=u-.5-shift,hill=Math.exp(-d*d/(2*(sigma/w)*(sigma/w)));
-   const ripple=Math.sin(u*9-t*.8+layer*.22)*h*.014*Math.sin(PI*u);
-   return [px,baseline-hill*peak*(1-layer*.026)+ripple+(valid?sample(wave,u)*e*3:0)];
+   const px=x+u*w,phase=t*1.15-layer*.13;
+   const shift=(layer-7.5)*.009+Math.sin(phase)*.095;
+   const width=.18+.022*Math.sin(t*.95+layer*.09);
+   const peak=h*(.64+.075*Math.sin(t*1.45-layer*.17));
+   const d=u-.5-shift,hill=Math.exp(-d*d/(2*width*width));
+   const ripple=Math.sin(u*TAU*1.6-t*2.1+layer*.24)*h*.043*Math.sin(PI*u);
+   return [px,baseline-hill*peak*(1-layer*.023)+ripple+(valid?sample(wave,u)*e*5:0)];
   };
   for(let layer=15;layer>=0;layer--){
    c.beginPath();
@@ -47,9 +50,18 @@
    gradient.addColorStop(0,rgba('43,81,205',0));gradient.addColorStop(.21,rgba('55,124,252',alpha*(layer===0?.85:.19)));gradient.addColorStop(.47,rgba('142,221,255',alpha*(layer===0?1:.34)));gradient.addColorStop(.69,rgba('99,105,255',alpha*(layer===0?.8:.3)));gradient.addColorStop(1,rgba('114,69,213',0));
    c.strokeStyle=gradient;c.lineWidth=layer===0?2.2:layer%4===0?1.15:.65;c.stroke();
   }
+  // Moving highlights reveal the wave's shape, rather than animating only tiny dots.
+  for(let ribbon=0;ribbon<3;ribbon++){
+   const layer=ribbon*4,head=fract(t*.13+ribbon*.31);
+   for(let j=0;j<18;j++){
+    const u=head-j*.006;if(u<0)continue;
+    const a=point(u,layer),b=point(Math.max(0,u-.006),layer);
+    line(c,a[0],a[1],b[0],b[1],rgba(ribbon===2?'170,155,255':'173,231,255',alpha*(1-j/18)*Math.sin(PI*u)*.8),2.8);
+   }
+  }
   // Light packets flow along the contour regardless of microphone permission.
   for(let i=0;i<20;i++){
-   const layer=i%10,u=fract(i*.071+t*(.027+(i%3)*.008)),v=point(u,layer),fade=Math.sin(PI*u)*alpha;
+   const layer=i%10,u=fract(i*.071+t*(.08+(i%3)*.014)),v=point(u,layer),fade=Math.sin(PI*u)*alpha;
    const tail=point(Math.max(0,u-.018),layer);
    line(c,tail[0],tail[1],v[0],v[1],rgba(i%3?'111,209,255':'191,143,255',fade*.75),1.8);
    dot(c,v[0],v[1],i%4===0?1.8:1,rgba('218,243,255',fade*.8));

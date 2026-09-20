@@ -6,7 +6,7 @@ import vm from 'node:vm';
 // Exercise the production garage controller, replacing only its dynamic WebGL
 // module import. These are state/lifecycle contracts, not GPU or model fidelity tests.
 const source = readFileSync(new URL('../vehicle-garage.js', import.meta.url), 'utf8');
-const imported = "await import('./vehicle-viewer.js')";
+const imported = "await import('./vehicle-viewer.js?v=suzuki-20260920')";
 assert.equal(source.split(imported).length, 2, 'inject exactly the viewer module boundary');
 const flush = async () => { for (let i = 0; i < 12; i++) await Promise.resolve(); };
 const copy = value => JSON.parse(JSON.stringify(value));

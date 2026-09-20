@@ -66,9 +66,9 @@
       const run=++generation;
       viewer?.dispose();viewer=null;report('loading');
       try {
-        const {createVehicleViewer}=await import('./vehicle-viewer.js');
+        const {createVehicleViewer}=await import('./vehicle-viewer.js?v=suzuki-20260920');
         if(disposed||run!==generation)return;
-        viewer=createVehicleViewer({host:$('cockpit-vehicle-host'),modelURL:'./assets/models/road-sportbike.glb',
+        viewer=createVehicleViewer({host:$('cockpit-vehicle-host'),modelURL:'./assets/models/suzuki-gsx-r1000/model.glb',
           onStatus:next=>{if(!disposed&&run===generation)report(next);}});
         viewer.canvas.addEventListener('pointerdown',()=>{appearance.autoRotate=false;save();apply();});
         apply();reconcile();

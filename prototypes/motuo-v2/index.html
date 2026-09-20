@@ -156,7 +156,7 @@ dialog{background:#101a24;border:1px solid #354958;color:var(--ink);border-radiu
 <link rel="stylesheet" href="motion-ui.css">
 <link rel="stylesheet" href="drive-ui.css">
 <link rel="stylesheet" href="vehicle-stage.css">
-<link rel="stylesheet" href="vehicle-3d.css">
+<link rel="stylesheet" href="vehicle-3d.css?v=suzuki-20260920">
 <script type="importmap">{"imports":{"three":"./vendor/three/three.module.js","three/addons/":"./vendor/three/addons/"}}</script>
 </head>
 <body>
@@ -205,7 +205,7 @@ dialog{background:#101a24;border:1px solid #354958;color:var(--ink);border-radiu
     <div class="vehicle-stage" id="vehicle-stage" aria-label="摩托车 3D 待机展示">
      <div class="vehicle-orbit" aria-hidden="true"></div><div class="vehicle-floor" aria-hidden="true"></div>
      <div class="vehicle-render vehicle-host" id="cockpit-vehicle-host"><div class="vehicle-loading"><i></i><span data-vehicle-status>正在装载 3D 车库…</span><button data-vehicle-retry hidden>重试 3D</button></div></div>
-     <div class="standby-3d-tools"><span>临时 3D · 待替换车型</span><button data-page="garage" aria-label="进入 3D 车库改色">旋转 · 改色 <svg class="icon"><use href="#i-sliders"/></svg></button></div>
+     <div class="standby-3d-tools"><span>GSX-R1000 · 3D 展示</span><button data-page="garage" aria-label="进入 3D 车库改色">旋转 · 改色 <svg class="icon"><use href="#i-sliders"/></svg></button></div>
      <div class="vehicle-title"><span>YOUR MACHINE. YOUR WORLD.</span><strong>GSX<span>250</span>R</strong><small id="vehicle-caption">机器已就位 · 等你出发</small></div>
     </div>
     <div class="scene-tools"><div class="scene-name"><b id="scene-label">01 / AMBER FAN</b><span id="scene-name">琥珀扇面</span></div><div class="scene-counters"><span style="color:#e7bf84">DEMO</span><span>CHAPTER <b id="chapter-count">00</b></span><span id="scene-input">MIC OFF</span></div><div class="signal-scroll" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
@@ -263,7 +263,7 @@ dialog{background:#101a24;border:1px solid #354958;color:var(--ink);border-radiu
       <div class="paint-finish" role="group" aria-label="漆面质感"><button data-vehicle-control data-finish="gloss" aria-pressed="true">高光漆面</button><button data-vehicle-control data-finish="satin" aria-pressed="false">缎面漆面</button></div>
       <button data-vehicle-control class="vehicle-auto" id="vehicle-auto" aria-pressed="true">自动环绕 开</button>
       <small class="paint-save-state" id="paint-save-state">外观自动保存在此浏览器</small>
-      <div class="model-provenance"><b>临时展示模型 · 待替换</b><span>非 GSX250R 精确复刻，不代表实车配置。</span><a href="https://3dassets.dev/assets/motorcycle-racing-and-street-bikes-road-sportbike-e1418015" target="_blank" rel="noopener noreferrer">Road sportbike · CC0 ↗</a></div>
+      <div class="model-provenance"><b>SUZUKI GSX-R1000</b><span>来自你选择的本地模型。用于外观展示；GSX250R 车辆档案独立保留。</span><span>17 组网格 · 原始纹理 · 分区改色</span></div>
      </aside>
     </div><div class="cards"><article class="card"><svg class="icon"><use href="#i-bike"/></svg><h3>SUZUKI GSX250R</h3><div class="big">248 <small style="font-size:12px">cc</small></div><p>演示车辆档案<br>年份、ABS 和轮胎规格待本人确认</p><button data-info="车辆档案将在原生 App 中保存；当前是界面预览。">查看车辆档案 →</button></article><article class="card"><svg class="icon"><use href="#i-spark"/></svg><h3>维修手册伙伴</h3><p>每一项参数，都能回到手册原页。<br>手册服务尚待 NAS 恢复。</p><button data-info="真实手册导入曾停在 175 / 616 页；当前页面不提供模拟维修答案。">查看手册状态 →</button></article><article class="card"><svg class="icon"><use href="#i-sliders"/></svg><h3>出发前的仪式</h3><p>停车扶正、固定支架，再做安装校准。<br>手机位置变化后重新校准。</p><button data-info="此 HTML 不读取 GPS 或 IMU。安装校准在原生 App 中进行。">了解安装校准 →</button></article></div></section>
    <section class="content-page" id="page-history" aria-label="骑行档案"><div class="intro"><div class="eyebrow">YOUR ROAD JOURNAL</div><h2>把路上的感觉留下。</h2><p id="history-note">完成一次演示骑行，就能在这里查看本次复盘。</p></div><div id="history-empty" class="card" style="max-width:520px"><svg class="icon"><use href="#i-history"/></svg><h3>下一段故事，等你出发</h3><p>本页不会读取你的真实骑行与位置。</p><button id="history-start">前往驾驶舱 →</button></div><div id="history-card" hidden class="card" style="max-width:520px"><span class="tag">DEMO · 本次演示</span><h3>去往雾岚观景台</h3><p id="history-summary"></p><button id="history-view">打开复盘 →</button></div></section>
@@ -295,7 +295,7 @@ dialog{background:#101a24;border:1px solid #354958;color:var(--ink);border-radiu
 <script src="inertial-speed.js"></script>
 <script src="sound-trend.js"></script>
 <script src="departure-transition.js"></script>
-<script src="vehicle-garage.js"></script>
+<script src="vehicle-garage.js?v=suzuki-20260920"></script>
 <script>
 (()=>{
  'use strict';

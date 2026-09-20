@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { createMaskedPaint } from './vehicle-paint.js?v=suzuki-20260920';
+import { disposeTree } from './vehicle-resources.js';
 
 // A real mesh viewer. Its presentation animation never consumes vehicle telemetry.
 export function createVehicleViewer({ host, modelURL, onStatus = () => {} }) {
@@ -23,10 +25,13 @@ export function createVehicleViewer({ host, modelURL, onStatus = () => {} }) {
   scene.add(vehicle);
   const abort = new AbortController();
   const editable = { paint: new Set(), accent: new Set() };
+  const maskedPaint = new Map();
   const sourceMaterials = new Set();
   const appearance = { bodyColor: '#ecece7', accentColor: '#171a1d', finish: 'gloss' };
   const focus = new THREE.Vector3(0, 0.55, 0);
   const size = new THREE.Vector3(1, 1, 2.1);
+  const fitPoints = [];
+  const orbitFits = new Map();
   let currentHost = null;
   let renderer = null;
   let controls = null;
@@ -65,11 +70,12 @@ export function createVehicleViewer({ host, modelURL, onStatus = () => {} }) {
     canvas.dataset.active = String(active);
     canvas.dataset.interactive = String(interactive);
     canvas.dataset.yaw = controls ? THREE.MathUtils.radToDeg(controls.getAzimuthalAngle()).toFixed(2) : '0';
-    canvas.dataset.paint = editable.paint.size ? appearance.bodyColor : 'unavailable';
-    canvas.dataset.accent = editable.accent.size ? appearance.accentColor : 'unavailable';
+    canvas.dataset.paint = editable.paint.size || maskedPaint.size ? appearance.bodyColor : 'unavailable';
+    canvas.dataset.accent = editable.accent.size || maskedPaint.size ? appearance.accentColor : 'unavailable';
     canvas.dataset.finish = appearance.finish;
-    canvas.dataset.paintMaterials = String(editable.paint.size);
-    canvas.dataset.accentMaterials = String(editable.accent.size);
+    canvas.dataset.paintMaterials = String(editable.paint.size + maskedPaint.size);
+    canvas.dataset.accentMaterials = String(editable.accent.size + maskedPaint.size);
+    canvas.dataset.paintMask = maskedPaint.size ? 'suzuki-blue-atlas-v1' : 'none';
     canvas.dataset.meshes = String(meshCount);
     canvas.dataset.frame = String(frameCount);
   }
@@ -113,8 +119,8 @@ export function createVehicleViewer({ host, modelURL, onStatus = () => {} }) {
       // Never change framing while the shared canvas is in a departure transition.
       const offset = camera.position.clone().sub(controls.target);
       const direction = offset.clone().normalize();
-      const oldFit = fitDistance(direction, oldAspect);
-      const newFit = fitDistance(direction, camera.aspect);
+      const oldFit = fitForView(direction, oldAspect);
+      const newFit = fitForView(direction, camera.aspect);
       controls.maxDistance = Math.max(newFit * 2.3, 8);
       const distance = THREE.MathUtils.clamp(offset.length() * newFit / oldFit, controls.minDistance, controls.maxDistance);
       camera.position.copy(controls.target).add(offset.setLength(distance));
@@ -160,6 +166,7 @@ export function createVehicleViewer({ host, modelURL, onStatus = () => {} }) {
   function materialRole(material, mesh) {
     const explicit = material.userData?.vehicleRole ?? material.userData?.role ?? mesh.userData?.vehicleRole ?? mesh.userData?.role;
     if (typeof explicit === 'string') {
+      if (explicit === 'paint-mask') return 'paint-mask';
       if (/^(paint|body|fairing|bodycolor)$/i.test(explicit)) return 'paint';
       if (/^(trim|accent|guard|accentcolor)$/i.test(explicit)) return 'accent';
       return null;
@@ -182,6 +189,7 @@ export function createVehicleViewer({ host, modelURL, onStatus = () => {} }) {
       if (typeof next[key] === 'string' && /^#[0-9a-f]{6}$/i.test(next[key])) appearance[key] = next[key].toLowerCase();
     }
     if (next.finish === 'satin' || next.finish === 'gloss') appearance.finish = next.finish;
+    for (const paint of maskedPaint.values()) paint.update(appearance);
     for (const [role, materials] of Object.entries(editable)) {
       for (const material of materials) {
         material.color?.set(role === 'paint' ? appearance.bodyColor : appearance.accentColor);
@@ -200,9 +208,36 @@ export function createVehicleViewer({ host, modelURL, onStatus = () => {} }) {
   }
 
   function setAutoRotate(value) {
+    const starting = !!value && !autoRotate;
     autoRotate = !!value;
     controlsEnabled();
+    if (starting && loaded && controls && !departure) {
+      const offset = camera.position.clone().sub(controls.target);
+      const distance = Math.max(offset.length(), fitForView(offset.clone().normalize()));
+      controls.maxDistance = Math.max(distance * 2.3, 8);
+      camera.position.copy(controls.target).add(offset.setLength(distance));
+      controls.update();
+    }
     wake();
+  }
+
+  function fitForView(direction, aspect = camera.aspect) {
+    if (!autoRotate || !fitPoints.length) return fitDistance(direction, aspect);
+    const key = `${direction.y.toFixed(3)}:${aspect.toFixed(3)}`;
+    if (orbitFits.has(key)) return orbitFits.get(key);
+    const horizontal = Math.sqrt(Math.max(0, 1 - direction.y ** 2));
+    const orbitDirection = new THREE.Vector3();
+    let distance = 0;
+    // A fixed orbit radius prevents camera pumping while keeping mirrors and
+    // wheels inside the frame throughout a full turn. Cache on aspect/elevation.
+    for (let degree = 0; degree < 360; degree += 10) {
+      const angle = THREE.MathUtils.degToRad(degree);
+      orbitDirection.set(Math.sin(angle) * horizontal, direction.y, Math.cos(angle) * horizontal);
+      distance = Math.max(distance, fitDistance(orbitDirection, aspect));
+    }
+    distance *= 1.02;
+    orbitFits.set(key, distance);
+    return distance;
   }
 
   function fitDistance(direction, aspect = camera.aspect) {
@@ -212,17 +247,19 @@ export function createVehicleViewer({ host, modelURL, onStatus = () => {} }) {
     const tanVertical = Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
     const tanHorizontal = tanVertical * Math.max(aspect, 0.1);
     let distance = 0;
-    // Fit the eight actual box corners in camera space, rather than a loose sphere.
-    // Each corner has a different depth, so account for perspective foreshortening.
-    for (const x of [-size.x / 2, size.x / 2]) {
-      for (const y of [0, size.y]) {
-        for (const z of [-size.z / 2, size.z / 2]) {
-          const corner = new THREE.Vector3(x, y, z).sub(focus);
-          const towardCamera = corner.dot(view);
-          const projected = Math.max(Math.abs(corner.dot(right)) / tanHorizontal, Math.abs(corner.dot(up)) / tanVertical);
-          distance = Math.max(distance, towardCamera + projected * 1.15, towardCamera + camera.near * 3);
-        }
-      }
+    // Fit the real silhouette, including mirrors, instead of empty box corners.
+    // Detailed bikes have large empty regions above the wheels; box fitting made
+    // the approved model unnecessarily tiny in the shallow riding stage.
+    const points = fitPoints.length ? fitPoints : [
+      new THREE.Vector3(-size.x / 2, 0, -size.z / 2),
+      new THREE.Vector3(size.x / 2, size.y, size.z / 2)
+    ];
+    const corner = new THREE.Vector3();
+    for (const point of points) {
+      corner.copy(point).sub(focus);
+      const towardCamera = corner.dot(view);
+      const projected = Math.max(Math.abs(corner.dot(right)) / tanHorizontal, Math.abs(corner.dot(up)) / tanVertical);
+      distance = Math.max(distance, towardCamera + projected * 1.12, towardCamera + camera.near * 3);
     }
     return Math.max(distance, 0.5);
   }
@@ -230,14 +267,14 @@ export function createVehicleViewer({ host, modelURL, onStatus = () => {} }) {
   function setView(view = 'hero') {
     if (disposed || !controls) return;
     const directions = {
-      hero: [1.15, 0.58, 1.5], front: [0, 0.3, 1.7],
+      hero: [1.5, 0.48, 1.25], front: [0, 0.3, 1.7],
       side: [1.7, 0.3, 0], rear: [-1.15, 0.55, -1.5]
     };
     if (!directions[view]) return;
     stopDeparture();
     currentView = view;
     const direction = new THREE.Vector3(...directions[view]).normalize();
-    const distance = fitDistance(direction);
+    const distance = fitForView(direction);
     controls.target.copy(focus);
     camera.position.copy(focus).addScaledVector(direction, distance);
     controls.minDistance = Math.max(0.35, size.length() * 0.25);
@@ -329,23 +366,6 @@ export function createVehicleViewer({ host, modelURL, onStatus = () => {} }) {
     wake();
   }
 
-  function disposeTree(root, extraMaterials = []) {
-    const geometries = new Set();
-    const materials = new Set(extraMaterials);
-    const textures = new Set();
-    root.traverse(object => {
-      if (object.geometry) geometries.add(object.geometry);
-      object.shadow?.dispose?.();
-      for (const material of object.material ? Array.isArray(object.material) ? object.material : [object.material] : []) materials.add(material);
-    });
-    for (const material of materials) {
-      for (const value of Object.values(material)) if (value?.isTexture) textures.add(value);
-    }
-    geometries.forEach(geometry => geometry.dispose());
-    materials.forEach(material => material.dispose());
-    textures.forEach(texture => texture.dispose());
-  }
-
   function visibilityChanged() {
     if (document.hidden) {
       if (departure) departure.hiddenAt = performance.now();
@@ -425,8 +445,8 @@ export function createVehicleViewer({ host, modelURL, onStatus = () => {} }) {
     floor.position.y = -0.01;
     floor.receiveShadow = true;
     scene.add(floor);
-    scene.add(new THREE.HemisphereLight('#f2f5ff', '#2c3038', 0.4));
-    const key = new THREE.DirectionalLight('#fff9f0', 2.4);
+    scene.add(new THREE.HemisphereLight('#f2f5ff', '#2c3038', 0.65));
+    const key = new THREE.DirectionalLight('#fff9f0', 3.2);
     key.position.set(3, 5, 4);
     key.castShadow = true;
     key.shadow.mapSize.set(1024, 1024);
@@ -434,10 +454,10 @@ export function createVehicleViewer({ host, modelURL, onStatus = () => {} }) {
     key.shadow.bias = -0.0003;
     key.shadow.normalBias = 0.015;
     scene.add(key);
-    const fill = new THREE.DirectionalLight('#dbe7ff', 0.65);
+    const fill = new THREE.DirectionalLight('#dbe7ff', 1.05);
     fill.position.set(-3, 2, 3);
     scene.add(fill);
-    const rim = new THREE.DirectionalLight('#e2e9ff', 1.2);
+    const rim = new THREE.DirectionalLight('#e2e9ff', 1.6);
     rim.position.set(-2, 4, -4);
     scene.add(rim);
   }
@@ -449,7 +469,7 @@ export function createVehicleViewer({ host, modelURL, onStatus = () => {} }) {
       renderer.setClearColor(0x000000, 0);
       renderer.outputColorSpace = THREE.SRGBColorSpace;
       renderer.toneMapping = THREE.AgXToneMapping;
-      renderer.toneMappingExposure = 0.88;
+      renderer.toneMappingExposure = 1.02;
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFShadowMap;
       controls = new OrbitControls(camera, canvas);
@@ -469,7 +489,7 @@ export function createVehicleViewer({ host, modelURL, onStatus = () => {} }) {
       try { environmentTarget = pmrem.fromScene(room, 0.04); }
       finally { room.dispose(); pmrem.dispose(); }
       scene.environment = environmentTarget.texture;
-      scene.environmentIntensity = 0.38;
+      scene.environmentIntensity = 0.58;
       createStage();
       mount(host);
       setView('hero');
@@ -497,8 +517,13 @@ export function createVehicleViewer({ host, modelURL, onStatus = () => {} }) {
       normalized.position.set(-center.x, -fitted.min.y, -center.z);
       fitted.getSize(size);
       focus.set(0, size.y * 0.48, 0);
+      normalized.updateMatrixWorld(true);
       normalized.traverse(object => {
         if (!object.isMesh) return;
+        const positions = object.geometry.getAttribute('position');
+        for (let i = 0; i < positions.count; i++) {
+          fitPoints.push(new THREE.Vector3().fromBufferAttribute(positions, i).applyMatrix4(object.matrixWorld));
+        }
         meshCount += 1;
         object.castShadow = true;
         object.receiveShadow = true;
@@ -507,9 +532,16 @@ export function createVehicleViewer({ host, modelURL, onStatus = () => {} }) {
           const role = materialRole(material, object);
           if (!role) return material;
           sourceMaterials.add(material);
+          if (role === 'paint-mask') {
+            if (!maskedPaint.has(material)) maskedPaint.set(material, createMaskedPaint(THREE, material));
+            return maskedPaint.get(material).material;
+          }
           const copy = role === 'paint' && material.isMeshStandardMaterial && !material.isMeshPhysicalMaterial
             ? new THREE.MeshPhysicalMaterial() : material.clone();
-          if (copy.isMeshPhysicalMaterial && !material.isMeshPhysicalMaterial) THREE.MeshStandardMaterial.prototype.copy.call(copy, material);
+          if (copy.isMeshPhysicalMaterial && !material.isMeshPhysicalMaterial) {
+            THREE.MeshStandardMaterial.prototype.copy.call(copy, material);
+            copy.defines = { ...copy.defines, PHYSICAL: '' };
+          }
           editable[role].add(copy);
           return copy;
         });
@@ -529,8 +561,10 @@ export function createVehicleViewer({ host, modelURL, onStatus = () => {} }) {
       setView(currentView);
       controlsEnabled();
       resize();
-      const details = { meshCount, editableMaterials: { paint: editable.paint.size, accent: editable.accent.size }, dimensions: size.toArray(), source: 'glb', wheelAnimation: !!wheelAction };
-      notify('ready', editable.paint.size ? '三维车辆已就绪，可旋转、缩放和编辑颜色。' : '三维车辆已就绪，可旋转和缩放；当前模型尚未标记可编辑漆面。', details);
+      const details = { meshCount, editableMaterials: { paint: editable.paint.size + maskedPaint.size, accent: editable.accent.size + maskedPaint.size }, dimensions: size.toArray(), source: 'glb', wheelAnimation: !!wheelAction };
+      canvas.dataset.model = 'suzuki-gsx-r1000';
+      canvas.dataset.wheelAnimation = String(!!wheelAction);
+      notify('ready', details.editableMaterials.paint ? '三维车辆已就绪，可旋转、缩放和编辑颜色。' : '三维车辆已就绪，可旋转和缩放；当前模型尚未标记可编辑漆面。', details);
       wake();
       return details;
     } catch (error) {

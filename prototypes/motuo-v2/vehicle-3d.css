@@ -21,7 +21,7 @@ html[data-vehicle-state=error] .vehicle-loading i{animation:none;border-color:#a
 .garage-scene-heading>span,.paint-kicker{font:8px var(--mono);letter-spacing:2px;color:#8ca6be}
 .garage-scene-heading h3{font-weight:500;font-size:24px;margin:11px 0 6px;letter-spacing:1px;color:#e5ecf7}
 .garage-scene-heading p{font-size:10px;color:#7890a7;margin:0}
-.garage-vehicle-host{position:absolute;inset:64px 0 44px;z-index:1}
+.garage-vehicle-host{position:absolute;inset:64px 0 104px;z-index:1}
 .garage-orbit-guide{pointer-events:none;position:absolute;left:16%;right:16%;bottom:18%;height:17%;border:1px solid #7192b728;border-radius:50%;transform:rotate(-5deg);z-index:0}
 .garage-orbit-guide:before{content:'';position:absolute;inset:-10%;border:1px solid #6d8caf0c;border-radius:50%}
 .garage-view-controls{position:absolute;left:24px;bottom:56px;display:flex;gap:4px;z-index:3;border:1px solid #9bb5ce1c;background:#0a1420b3;backdrop-filter:blur(15px);border-radius:12px;padding:3px}
@@ -61,10 +61,10 @@ html[data-vehicle-state=error] .vehicle-loading i{animation:none;border-color:#a
  .standby-3d-tools>span{font-size:6px;letter-spacing:0}
  .standby-3d-tools button{min-height:36px;padding:0 9px;font-size:9px;border-radius:9px}
  .garage-configurator{grid-template-columns:1fr;border-radius:20px}
- .garage-scene{min-height:370px}
+ .garage-scene{min-height:430px}
  .garage-scene-heading{left:20px;top:20px}
  .garage-scene-heading h3{font-size:21px}
- .garage-vehicle-host{inset:61px -8px 28px}
+ .garage-vehicle-host{inset:61px -8px 104px}
  .garage-view-controls{left:16px;bottom:53px}
  .garage-view-controls button{min-width:48px;min-height:40px}
  .garage-scene-foot{left:20px;right:15px;bottom:7px}

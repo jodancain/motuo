@@ -18,3 +18,5 @@ ios/Local.xcconfig
 *.xcuserstate
 data/
 coverage/
+C5913/
+prototypes/motuo-v2/assets/models/suzuki-gsx-r1000/*.glb

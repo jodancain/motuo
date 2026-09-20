@@ -1,0 +1,1128 @@
+{
+  "schemaVersion": 1,
+  "name": "Suzuki 550 GSX R1000 (user-provided visual model)",
+  "file": "model.glb",
+  "sourceArchive": "Suzuki 550 GSX R1000[fbx,max,obj].rar",
+  "sourceArchiveBytes": 15927849,
+  "sourceArchiveSHA256": "09b0a598c437e89f25c306c01fb5b769554cf7f6f173e5d512d1ee35c6961072",
+  "sourceFiles": [
+    {
+      "member": "Suzuki 550 GSX R1000[fbx,max,obj]/master.mtl",
+      "name": "master.mtl",
+      "bytes": 468,
+      "sha256": "2b39c031075e4e3cbcc353b0e5b50b598263a2d3dd30b4802e7e099d0637c625"
+    },
+    {
+      "member": "Suzuki 550 GSX R1000[fbx,max,obj]/mat0_c.jpg",
+      "name": "mat0_c.jpg",
+      "bytes": 1061392,
+      "sha256": "bba097bfb17e888ffc1b34a2191b14f733bcbba32516dce9cc4bdd2812d5598e"
+    },
+    {
+      "member": "Suzuki 550 GSX R1000[fbx,max,obj]/mat0_n.jpg",
+      "name": "mat0_n.jpg",
+      "bytes": 2107904,
+      "sha256": "40bedda16f0e1544f9a7a1c2efe8adc9f0f2b5993e439c42e255dc39c16be8bf"
+    },
+    {
+      "member": "Suzuki 550 GSX R1000[fbx,max,obj]/mat1_c.jpg",
+      "name": "mat1_c.jpg",
+      "bytes": 186069,
+      "sha256": "e528918fb0d052384a0e3e5af4f23ff2a6cb77204db6104aa31ec85449e46ca3"
+    },
+    {
+      "member": "Suzuki 550 GSX R1000[fbx,max,obj]/mat1_n.jpg",
+      "name": "mat1_n.jpg",
+      "bytes": 313745,
+      "sha256": "8b876db26607fd31c5e15242edb05d03edb6b40fa4fbc1c1b27b0cdd07ef3025"
+    },
+    {
+      "member": "Suzuki 550 GSX R1000[fbx,max,obj]/mat2_c.jpg",
+      "name": "mat2_c.jpg",
+      "bytes": 8653,
+      "sha256": "6037e1f0a96129cb1824f1c952161398dbfb7edb85eb0fd73ee7098f04cac1ee"
+    },
+    {
+      "member": "Suzuki 550 GSX R1000[fbx,max,obj]/mat2_n.jpg",
+      "name": "mat2_n.jpg",
+      "bytes": 23524,
+      "sha256": "6d5d89ebb61cdcf7e4c42365e80c937127ec23e2f802cad9e675d6378bc4d933"
+    },
+    {
+      "member": "Suzuki 550 GSX R1000[fbx,max,obj]/mat3_c.jpg",
+      "name": "mat3_c.jpg",
+      "bytes": 119420,
+      "sha256": "68f363c8ea9f23de6570bdd396d63e6f801b1b190905605b367e1ccd08dc584d"
+    },
+    {
+      "member": "Suzuki 550 GSX R1000[fbx,max,obj]/mat3_n.jpg",
+      "name": "mat3_n.jpg",
+      "bytes": 238416,
+      "sha256": "61ae77ce07ccd3ef22ff5e086938770272dd1df4ef2a8ac60695f04aa266f1f6"
+    },
+    {
+      "member": "Suzuki 550 GSX R1000[fbx,max,obj]/mat4_c.jpg",
+      "name": "mat4_c.jpg",
+      "bytes": 250340,
+      "sha256": "5f287b311e09b166827bd121083af498d937ad75ecd54ccec01abf9adbee5f8c"
+    },
+    {
+      "member": "Suzuki 550 GSX R1000[fbx,max,obj]/mat4_n.jpg",
+      "name": "mat4_n.jpg",
+      "bytes": 288137,
+      "sha256": "d8487673287cb1e27bc7edcd118c506f93c5655d6d11880f25d97b2bdeb41ca4"
+    },
+    {
+      "member": "Suzuki 550 GSX R1000[fbx,max,obj]/mat5_c.jpg",
+      "name": "mat5_c.jpg",
+      "bytes": 20309,
+      "sha256": "ec681254c660ce96ffa6be8522c636d9081041f361dcf324a86d98407bb15e7d"
+    },
+    {
+      "member": "Suzuki 550 GSX R1000[fbx,max,obj]/mat5_n.jpg",
+      "name": "mat5_n.jpg",
+      "bytes": 77006,
+      "sha256": "80d2ce1fca4afcc79a0eac01d5ca5f38eadb1d9c1d84a54dcbdb0bb89410cdc0"
+    },
+    {
+      "member": "Suzuki 550 GSX R1000[fbx,max,obj]/mat6_c.jpg",
+      "name": "mat6_c.jpg",
+      "bytes": 34647,
+      "sha256": "1ecfc93be8ba43a4a8c7e2f36f8192f08146033cbe5a7e3bd2b1e1023408575b"
+    },
+    {
+      "member": "Suzuki 550 GSX R1000[fbx,max,obj]/mat6_n.jpg",
+      "name": "mat6_n.jpg",
+      "bytes": 86681,
+      "sha256": "7b77711f6fb21127c375d6da0ffb07a2e9e37aff2d6be2593afb4dc8af2a222c"
+    },
+    {
+      "member": "Suzuki 550 GSX R1000[fbx,max,obj]/mat7_c.jpg",
+      "name": "mat7_c.jpg",
+      "bytes": 31223,
+      "sha256": "b2520151a2276f7d9bad1b8a1ef91ffb184c7c460916d1e3e3c351a8653e68f7"
+    },
+    {
+      "member": "Suzuki 550 GSX R1000[fbx,max,obj]/mat7_n.jpg",
+      "name": "mat7_n.jpg",
+      "bytes": 109673,
+      "sha256": "ec49fb151b7010995a3a2e3261fda742d94842f757ec2cbbdd689f9e408bb2f1"
+    },
+    {
+      "member": "Suzuki 550 GSX R1000[fbx,max,obj]/mat8_c.jpg",
+      "name": "mat8_c.jpg",
+      "bytes": 111267,
+      "sha256": "635eb90778c445f7d00571f265cd6a224780395913efa26590303a0b28ea1afd"
+    },
+    {
+      "member": "Suzuki 550 GSX R1000[fbx,max,obj]/mat8_n.jpg",
+      "name": "mat8_n.jpg",
+      "bytes": 155488,
+      "sha256": "d49ac88978ef3e2797131fb46e517d046fdb73d0f9d9f888b85ef3a36ea6ed27"
+    },
+    {
+      "member": "Suzuki 550 GSX R1000[fbx,max,obj]/Suzuki_550_GSX_R1000.mtl",
+      "name": "Suzuki_550_GSX_R1000.mtl",
+      "bytes": 1942,
+      "sha256": "8017407c44562f1291f5e7b0bd8b42f298ca93d1ec66e7cc1b37ded995544ae2"
+    },
+    {
+      "member": "Suzuki 550 GSX R1000[fbx,max,obj]/Suzuki_550_GSX_R1000.obj",
+      "name": "Suzuki_550_GSX_R1000.obj",
+      "bytes": 5241460,
+      "sha256": "a4902d4e41793ade7c6351634b45662ef7b99040a1b3b5c52d92cf61d08ad40a"
+    }
+  ],
+  "sha256": "504ce1cc74eb20e0deb9cbf4216c06d8aa5ff6d3f0adf35285025940ce5ea559",
+  "bytes": 7186536,
+  "createdDate": "2026-09-20",
+  "generator": "scripts/prepare-suzuki-model.py",
+  "license": "User-provided asset; original publication/redistribution license not asserted",
+  "distribution": "Private local runtime only; keep model, textures and archive out of Git/public delivery",
+  "identity": "GSX-R1000 family appearance, explicitly not an exact GSX250R asset",
+  "imagePolicy": "Original JPEG bytes embedded unchanged; no pixel generation, recoloring or recompression",
+  "normalMapStatus": "Blue-purple tangent-space map appearance verified on mat0_n; green-channel convention unverified",
+  "originalBounds": {
+    "min": [
+      -2.3384,
+      -0.0,
+      -2.214
+    ],
+    "max": [
+      2.3408,
+      6.7394,
+      10.0
+    ]
+  },
+  "displayBounds": {
+    "min": [
+      -0.4022564270509251,
+      0.0,
+      -1.0499999999999998
+    ],
+    "max": [
+      0.4022564270509251,
+      1.158730964467005,
+      1.05
+    ]
+  },
+  "normalization": {
+    "upAxis": "+Y",
+    "forwardAxis": "+Z",
+    "sourceOrigin": [
+      0.0012000000000000899,
+      -0.0,
+      3.893
+    ],
+    "uniformScale": 0.17193384640576387,
+    "displayLength": 2.1,
+    "units": "Display metres; length chosen for presentation, not measured vehicle dimensions",
+    "uvTransform": "(u, v) -> (u, 1-v) to convert OBJ image origin to glTF",
+    "normalTransform": "Source directions retained and normalized; no green-channel image edit"
+  },
+  "sourceVertices": 28784,
+  "renderVertices": 40522,
+  "triangles": 52432,
+  "meshes": 17,
+  "materials": 9,
+  "nodes": 19,
+  "animations": [
+    {
+      "name": "wheel-roll",
+      "durationSeconds": 1,
+      "source": "Motuo-authored visual departure animation",
+      "measurement": false
+    }
+  ],
+  "meshSummary": [
+    {
+      "name": "mesh0_da",
+      "materials": [
+        "Mirrors"
+      ],
+      "vehicleRole": "fixed",
+      "wheelGroup": null,
+      "triangles": 2116,
+      "originalBounds": {
+        "min": [
+          -2.3384,
+          5.7751,
+          7.1779
+        ],
+        "max": [
+          2.3408,
+          6.5956,
+          7.7983
+        ]
+      },
+      "displayBounds": {
+        "min": [
+          -0.4022564270509251,
+          0.992935156377927,
+          0.5647854920582938
+        ],
+        "max": [
+          0.4022564270509251,
+          1.1340068773538563,
+          0.6714532503684297
+        ]
+      }
+    },
+    {
+      "name": "mesh1_da",
+      "materials": [
+        "Tyre"
+      ],
+      "vehicleRole": "fixed",
+      "wheelGroup": "rear",
+      "triangles": 1088,
+      "originalBounds": {
+        "min": [
+          -0.5512,
+          0.1321,
+          -1.8172
+        ],
+        "max": [
+          0.5512,
+          3.7665,
+          1.8172
+        ]
+      },
+      "displayBounds": {
+        "min": [
+          -0.09497625675454398,
+          0.022712461110201407,
+          -0.9817766497461927
+        ],
+        "max": [
+          0.09456361552317012,
+          0.6475888324873097,
+          -0.35690027836908467
+        ]
+      }
+    },
+    {
+      "name": "mesh2_da",
+      "materials": [
+        "Tyre"
+      ],
+      "vehicleRole": "fixed",
+      "wheelGroup": "front",
+      "triangles": 1088,
+      "originalBounds": {
+        "min": [
+          -0.358,
+          -0.0,
+          6.4935
+        ],
+        "max": [
+          0.358,
+          3.5065,
+          10.0
+        ]
+      },
+      "displayBounds": {
+        "min": [
+          -0.0617586376289504,
+          0.0,
+          0.447113967578189
+        ],
+        "max": [
+          0.06134599639757653,
+          0.602886032421811,
+          1.05
+        ]
+      }
+    },
+    {
+      "name": "mesh3_da",
+      "materials": [
+        "Rim"
+      ],
+      "vehicleRole": "fixed",
+      "wheelGroup": "rear",
+      "triangles": 1110,
+      "originalBounds": {
+        "min": [
+          -0.4449,
+          0.6867,
+          -1.2608
+        ],
+        "max": [
+          0.4449,
+          3.2089,
+          1.2625
+        ]
+      },
+      "displayBounds": {
+        "min": [
+          -0.07669968888161129,
+          0.11806697232683805,
+          -0.8861126576060258
+        ],
+        "max": [
+          0.07628704765023742,
+          0.5517185197314557,
+          -0.4522719829703618
+        ]
+      }
+    },
+    {
+      "name": "mesh4_da",
+      "materials": [
+        "Rim"
+      ],
+      "vehicleRole": "fixed",
+      "wheelGroup": "front",
+      "triangles": 1110,
+      "originalBounds": {
+        "min": [
+          -0.2735,
+          0.466,
+          6.9619
+        ],
+        "max": [
+          0.2735,
+          3.0369,
+          9.5334
+        ]
+      },
+      "displayBounds": {
+        "min": [
+          -0.04723022760766336,
+          0.08012117242508597,
+          0.5276477812346487
+        ],
+        "max": [
+          0.04681758637628949,
+          0.5221458981496643,
+          0.9697756672670707
+        ]
+      }
+    },
+    {
+      "name": "mesh5_da",
+      "materials": [
+        "Bike"
+      ],
+      "vehicleRole": "paint-mask",
+      "wheelGroup": null,
+      "triangles": 25534,
+      "originalBounds": {
+        "min": [
+          -1.5936,
+          0.8159,
+          -1.738
+        ],
+        "max": [
+          1.5936,
+          6.3902,
+          9.0356
+        ]
+      },
+      "displayBounds": {
+        "min": [
+          -0.2742000982479122,
+          0.14028082528246275,
+          -0.9681594891108564
+        ],
+        "max": [
+          0.27378745701653834,
+          1.0986916653021124,
+          0.8841869985262814
+        ]
+      }
+    },
+    {
+      "name": "mesh6_da",
+      "materials": [
+        "Brake"
+      ],
+      "vehicleRole": "fixed",
+      "wheelGroup": "front",
+      "triangles": 248,
+      "originalBounds": {
+        "min": [
+          -0.442,
+          0.8106,
+          7.3041
+        ],
+        "max": [
+          0.4414,
+          2.6953,
+          9.1894
+        ]
+      },
+      "displayBounds": {
+        "min": [
+          -0.07620108072703456,
+          0.1393695758965122,
+          0.5864835434747012
+        ],
+        "max": [
+          0.07568527918781724,
+          0.46341329621745536,
+          0.9106304241034876
+        ]
+      }
+    },
+    {
+      "name": "mesh7_da",
+      "materials": [
+        "Brake"
+      ],
+      "vehicleRole": "fixed",
+      "wheelGroup": "rear",
+      "triangles": 186,
+      "originalBounds": {
+        "min": [
+          -0.6169,
+          1.225,
+          -0.7243
+        ],
+        "max": [
+          0.6151,
+          2.6736,
+          0.7243
+        ]
+      },
+      "displayBounds": {
+        "min": [
+          -0.10627231046340266,
+          0.21061896184706075,
+          -0.7938701490093335
+        ],
+        "max": [
+          0.10555018830849842,
+          0.45968233175045026,
+          -0.544806779105944
+        ]
+      }
+    },
+    {
+      "name": "mesh8_da",
+      "materials": [
+        "Bike"
+      ],
+      "vehicleRole": "paint-mask",
+      "wheelGroup": null,
+      "triangles": 197,
+      "originalBounds": {
+        "min": [
+          0.5001,
+          1.3447,
+          2.3138
+        ],
+        "max": [
+          0.8728,
+          1.87,
+          3.7483
+        ]
+      },
+      "displayBounds": {
+        "min": [
+          0.08577779597183557,
+          0.23119944326183067,
+          -0.27151793024398224
+        ],
+        "max": [
+          0.14985754052726377,
+          0.32151629277877847,
+          -0.024878827574914
+        ]
+      }
+    },
+    {
+      "name": "mesh9_da",
+      "materials": [
+        "Bike"
+      ],
+      "vehicleRole": "paint-mask",
+      "wheelGroup": null,
+      "triangles": 738,
+      "originalBounds": {
+        "min": [
+          -0.7214,
+          3.7706,
+          -2.214
+        ],
+        "max": [
+          0.7214,
+          5.4681,
+          -0.3886
+        ]
+      },
+      "displayBounds": {
+        "min": [
+          -0.124239397412805,
+          0.6482937612575732,
+          -1.0499999999999998
+        ],
+        "max": [
+          0.12382675618143113,
+          0.9401514655313573,
+          -0.7361519567709186
+        ]
+      }
+    },
+    {
+      "name": "mesh10_da",
+      "materials": [
+        "Chain"
+      ],
+      "vehicleRole": "fixed",
+      "wheelGroup": null,
+      "triangles": 342,
+      "originalBounds": {
+        "min": [
+          0.55,
+          1.2197,
+          -0.7296
+        ],
+        "max": [
+          0.6832,
+          2.8409,
+          3.8581
+        ]
+      },
+      "displayBounds": {
+        "min": [
+          0.09435729490748321,
+          0.2097077124611102,
+          -0.7947813983952841
+        ],
+        "max": [
+          0.11725888324873095,
+          0.4884468642541346,
+          -0.006000491239561147
+        ]
+      }
+    },
+    {
+      "name": "mesh11_da",
+      "materials": [
+        "Bike"
+      ],
+      "vehicleRole": "paint-mask",
+      "wheelGroup": null,
+      "triangles": 3593,
+      "originalBounds": {
+        "min": [
+          -0.9368,
+          1.5519,
+          -1.0178
+        ],
+        "max": [
+          0.9679,
+          4.0629,
+          3.3281
+        ]
+      },
+      "displayBounds": {
+        "min": [
+          -0.16127394792860653,
+          0.26682413623710494,
+          -0.8443327329294252
+        ],
+        "max": [
+          0.16620844932045192,
+          0.698550024561978,
+          -0.09712542983461596
+        ]
+      }
+    },
+    {
+      "name": "mesh12_da",
+      "materials": [
+        "Bike"
+      ],
+      "vehicleRole": "paint-mask",
+      "wheelGroup": null,
+      "triangles": 5476,
+      "originalBounds": {
+        "min": [
+          -0.9432,
+          1.4386,
+          6.6479
+        ],
+        "max": [
+          0.9432,
+          3.9637,
+          9.2857
+        ]
+      },
+      "displayBounds": {
+        "min": [
+          -0.1623743245456034,
+          0.24734403143933192,
+          0.4736605534632389
+        ],
+        "max": [
+          0.16196168331422955,
+          0.6814941869985262,
+          0.9271876535123629
+        ]
+      }
+    },
+    {
+      "name": "mesh13_da",
+      "materials": [
+        "Bike"
+      ],
+      "vehicleRole": "paint-mask",
+      "wheelGroup": null,
+      "triangles": 6098,
+      "originalBounds": {
+        "min": [
+          -2.1254,
+          2.8115,
+          6.2628
+        ],
+        "max": [
+          2.1318,
+          6.1525,
+          7.9392
+        ]
+      },
+      "displayBounds": {
+        "min": [
+          -0.3656345177664974,
+          0.4833920091698051,
+          0.4074488292123793
+        ],
+        "max": [
+          0.3663222531521205,
+          1.0578229900114622,
+          0.6956787293270017
+        ]
+      }
+    },
+    {
+      "name": "mesh14_da",
+      "materials": [
+        "Glass"
+      ],
+      "vehicleRole": "fixed",
+      "wheelGroup": null,
+      "triangles": 1278,
+      "originalBounds": {
+        "min": [
+          -2.2439,
+          4.07,
+          -2.1882
+        ],
+        "max": [
+          2.2439,
+          6.7394,
+          9.0403
+        ]
+      },
+      "displayBounds": {
+        "min": [
+          -0.38600867856558047,
+          0.699770754871459,
+          -1.0455641067627313
+        ],
+        "max": [
+          0.38559603733420666,
+          1.158730964467005,
+          0.8849950876043884
+        ]
+      }
+    },
+    {
+      "name": "mesh15_da",
+      "materials": [
+        "Exhaust"
+      ],
+      "vehicleRole": "fixed",
+      "wheelGroup": null,
+      "triangles": 1302,
+      "originalBounds": {
+        "min": [
+          -1.7984,
+          0.844,
+          -1.546
+        ],
+        "max": [
+          0.2125,
+          4.1064,
+          6.0146
+        ]
+      },
+      "displayBounds": {
+        "min": [
+          -0.30941214999181266,
+          0.1451121663664647,
+          -0.9351481906009497
+        ],
+        "max": [
+          0.03632962174553789,
+          0.7060291468806287,
+          0.3647748485344686
+        ]
+      }
+    },
+    {
+      "name": "mesh16_da",
+      "materials": [
+        "Grips"
+      ],
+      "vehicleRole": "fixed",
+      "wheelGroup": null,
+      "triangles": 928,
+      "originalBounds": {
+        "min": [
+          -1.9287,
+          4.9099,
+          6.0633
+        ],
+        "max": [
+          1.9287,
+          5.3689,
+          6.6256
+        ]
+      },
+      "displayBounds": {
+        "min": [
+          -0.33181513017848374,
+          0.8441779924676601,
+          0.3731480268544293
+        ],
+        "max": [
+          0.33140248894710983,
+          0.9230956279679057,
+          0.4698264286883905
+        ]
+      }
+    }
+  ],
+  "wheels": {
+    "front": {
+      "members": [
+        "mesh2_da",
+        "mesh4_da",
+        "mesh6_da"
+      ],
+      "originalPivot": [
+        0.0,
+        1.75325,
+        8.24675
+      ],
+      "displayPivot": [
+        -0.0002063206156869321,
+        0.3014430162109055,
+        0.7485569837890945
+      ],
+      "axis": [
+        1,
+        0,
+        0
+      ],
+      "basis": "Tyre bounding-box center; visual pivot, not suspension kinematics",
+      "pivotNode": 17
+    },
+    "rear": {
+      "members": [
+        "mesh1_da",
+        "mesh3_da",
+        "mesh7_da"
+      ],
+      "originalPivot": [
+        0.0,
+        1.9493,
+        0.0
+      ],
+      "displayPivot": [
+        -0.0002063206156869321,
+        0.3351506467987555,
+        -0.6693384640576387
+      ],
+      "axis": [
+        1,
+        0,
+        0
+      ],
+      "basis": "Tyre bounding-box center; visual pivot, not suspension kinematics",
+      "pivotNode": 18
+    }
+  },
+  "materialSummary": [
+    {
+      "name": "Bike",
+      "index": 0,
+      "vehicleRole": "paint-mask",
+      "baseColor": "mat0_c.jpg",
+      "normal": "mat0_n.jpg",
+      "metallicFactor": 0.15,
+      "roughnessFactor": 0.36,
+      "normalScale": 0.35
+    },
+    {
+      "name": "Brake",
+      "index": 1,
+      "vehicleRole": "fixed",
+      "baseColor": "mat1_c.jpg",
+      "normal": "mat1_n.jpg",
+      "metallicFactor": 0.8,
+      "roughnessFactor": 0.43,
+      "normalScale": 0.35
+    },
+    {
+      "name": "Chain",
+      "index": 2,
+      "vehicleRole": "fixed",
+      "baseColor": "mat2_c.jpg",
+      "normal": "mat2_n.jpg",
+      "metallicFactor": 0.8,
+      "roughnessFactor": 0.48,
+      "normalScale": 0.35
+    },
+    {
+      "name": "Exhaust",
+      "index": 3,
+      "vehicleRole": "fixed",
+      "baseColor": "mat3_c.jpg",
+      "normal": "mat3_n.jpg",
+      "metallicFactor": 0.85,
+      "roughnessFactor": 0.31,
+      "normalScale": 0.35
+    },
+    {
+      "name": "Glass",
+      "index": 4,
+      "vehicleRole": "fixed",
+      "baseColor": "mat4_c.jpg",
+      "normal": "mat4_n.jpg",
+      "metallicFactor": 0.0,
+      "roughnessFactor": 0.12,
+      "normalScale": 0.35
+    },
+    {
+      "name": "Grips",
+      "index": 5,
+      "vehicleRole": "fixed",
+      "baseColor": "mat5_c.jpg",
+      "normal": "mat5_n.jpg",
+      "metallicFactor": 0.0,
+      "roughnessFactor": 0.85,
+      "normalScale": 0.35
+    },
+    {
+      "name": "Mirrors",
+      "index": 6,
+      "vehicleRole": "fixed",
+      "baseColor": "mat6_c.jpg",
+      "normal": "mat6_n.jpg",
+      "metallicFactor": 1.0,
+      "roughnessFactor": 0.12,
+      "normalScale": 0.35
+    },
+    {
+      "name": "Rim",
+      "index": 7,
+      "vehicleRole": "fixed",
+      "baseColor": "mat7_c.jpg",
+      "normal": "mat7_n.jpg",
+      "metallicFactor": 0.65,
+      "roughnessFactor": 0.32,
+      "normalScale": 0.35
+    },
+    {
+      "name": "Tyre",
+      "index": 8,
+      "vehicleRole": "fixed",
+      "baseColor": "mat8_c.jpg",
+      "normal": "mat8_n.jpg",
+      "metallicFactor": 0.0,
+      "roughnessFactor": 0.92,
+      "normalScale": 0.35
+    }
+  ],
+  "textures": [
+    {
+      "file": "mat0_c.jpg",
+      "material": "Bike",
+      "usage": "baseColor",
+      "bytes": 1061392,
+      "sha256": "bba097bfb17e888ffc1b34a2191b14f733bcbba32516dce9cc4bdd2812d5598e",
+      "width": 4096,
+      "height": 2048,
+      "components": 3,
+      "imageIndex": 0,
+      "pixelsModified": false
+    },
+    {
+      "file": "mat0_n.jpg",
+      "material": "Bike",
+      "usage": "normal",
+      "bytes": 2107904,
+      "sha256": "40bedda16f0e1544f9a7a1c2efe8adc9f0f2b5993e439c42e255dc39c16be8bf",
+      "width": 4096,
+      "height": 2048,
+      "components": 3,
+      "imageIndex": 1,
+      "pixelsModified": false
+    },
+    {
+      "file": "mat1_c.jpg",
+      "material": "Brake",
+      "usage": "baseColor",
+      "bytes": 186069,
+      "sha256": "e528918fb0d052384a0e3e5af4f23ff2a6cb77204db6104aa31ec85449e46ca3",
+      "width": 1024,
+      "height": 1024,
+      "components": 3,
+      "imageIndex": 2,
+      "pixelsModified": false
+    },
+    {
+      "file": "mat1_n.jpg",
+      "material": "Brake",
+      "usage": "normal",
+      "bytes": 313745,
+      "sha256": "8b876db26607fd31c5e15242edb05d03edb6b40fa4fbc1c1b27b0cdd07ef3025",
+      "width": 1024,
+      "height": 1024,
+      "components": 3,
+      "imageIndex": 3,
+      "pixelsModified": false
+    },
+    {
+      "file": "mat2_c.jpg",
+      "material": "Chain",
+      "usage": "baseColor",
+      "bytes": 8653,
+      "sha256": "6037e1f0a96129cb1824f1c952161398dbfb7edb85eb0fd73ee7098f04cac1ee",
+      "width": 256,
+      "height": 256,
+      "components": 3,
+      "imageIndex": 4,
+      "pixelsModified": false
+    },
+    {
+      "file": "mat2_n.jpg",
+      "material": "Chain",
+      "usage": "normal",
+      "bytes": 23524,
+      "sha256": "6d5d89ebb61cdcf7e4c42365e80c937127ec23e2f802cad9e675d6378bc4d933",
+      "width": 256,
+      "height": 256,
+      "components": 3,
+      "imageIndex": 5,
+      "pixelsModified": false
+    },
+    {
+      "file": "mat3_c.jpg",
+      "material": "Exhaust",
+      "usage": "baseColor",
+      "bytes": 119420,
+      "sha256": "68f363c8ea9f23de6570bdd396d63e6f801b1b190905605b367e1ccd08dc584d",
+      "width": 2048,
+      "height": 1024,
+      "components": 3,
+      "imageIndex": 6,
+      "pixelsModified": false
+    },
+    {
+      "file": "mat3_n.jpg",
+      "material": "Exhaust",
+      "usage": "normal",
+      "bytes": 238416,
+      "sha256": "61ae77ce07ccd3ef22ff5e086938770272dd1df4ef2a8ac60695f04aa266f1f6",
+      "width": 2048,
+      "height": 1024,
+      "components": 3,
+      "imageIndex": 7,
+      "pixelsModified": false
+    },
+    {
+      "file": "mat4_c.jpg",
+      "material": "Glass",
+      "usage": "baseColor",
+      "bytes": 250340,
+      "sha256": "5f287b311e09b166827bd121083af498d937ad75ecd54ccec01abf9adbee5f8c",
+      "width": 2048,
+      "height": 2048,
+      "components": 3,
+      "imageIndex": 8,
+      "pixelsModified": false
+    },
+    {
+      "file": "mat4_n.jpg",
+      "material": "Glass",
+      "usage": "normal",
+      "bytes": 288137,
+      "sha256": "d8487673287cb1e27bc7edcd118c506f93c5655d6d11880f25d97b2bdeb41ca4",
+      "width": 2048,
+      "height": 2048,
+      "components": 3,
+      "imageIndex": 9,
+      "pixelsModified": false
+    },
+    {
+      "file": "mat5_c.jpg",
+      "material": "Grips",
+      "usage": "baseColor",
+      "bytes": 20309,
+      "sha256": "ec681254c660ce96ffa6be8522c636d9081041f361dcf324a86d98407bb15e7d",
+      "width": 512,
+      "height": 512,
+      "components": 3,
+      "imageIndex": 10,
+      "pixelsModified": false
+    },
+    {
+      "file": "mat5_n.jpg",
+      "material": "Grips",
+      "usage": "normal",
+      "bytes": 77006,
+      "sha256": "80d2ce1fca4afcc79a0eac01d5ca5f38eadb1d9c1d84a54dcbdb0bb89410cdc0",
+      "width": 512,
+      "height": 512,
+      "components": 3,
+      "imageIndex": 11,
+      "pixelsModified": false
+    },
+    {
+      "file": "mat6_c.jpg",
+      "material": "Mirrors",
+      "usage": "baseColor",
+      "bytes": 34647,
+      "sha256": "1ecfc93be8ba43a4a8c7e2f36f8192f08146033cbe5a7e3bd2b1e1023408575b",
+      "width": 1024,
+      "height": 512,
+      "components": 3,
+      "imageIndex": 12,
+      "pixelsModified": false
+    },
+    {
+      "file": "mat6_n.jpg",
+      "material": "Mirrors",
+      "usage": "normal",
+      "bytes": 86681,
+      "sha256": "7b77711f6fb21127c375d6da0ffb07a2e9e37aff2d6be2593afb4dc8af2a222c",
+      "width": 1024,
+      "height": 512,
+      "components": 3,
+      "imageIndex": 13,
+      "pixelsModified": false
+    },
+    {
+      "file": "mat7_c.jpg",
+      "material": "Rim",
+      "usage": "baseColor",
+      "bytes": 31223,
+      "sha256": "b2520151a2276f7d9bad1b8a1ef91ffb184c7c460916d1e3e3c351a8653e68f7",
+      "width": 1024,
+      "height": 1024,
+      "components": 3,
+      "imageIndex": 14,
+      "pixelsModified": false
+    },
+    {
+      "file": "mat7_n.jpg",
+      "material": "Rim",
+      "usage": "normal",
+      "bytes": 109673,
+      "sha256": "ec49fb151b7010995a3a2e3261fda742d94842f757ec2cbbdd689f9e408bb2f1",
+      "width": 1024,
+      "height": 1024,
+      "components": 3,
+      "imageIndex": 15,
+      "pixelsModified": false
+    },
+    {
+      "file": "mat8_c.jpg",
+      "material": "Tyre",
+      "usage": "baseColor",
+      "bytes": 111267,
+      "sha256": "635eb90778c445f7d00571f265cd6a224780395913efa26590303a0b28ea1afd",
+      "width": 1024,
+      "height": 1024,
+      "components": 3,
+      "imageIndex": 16,
+      "pixelsModified": false
+    },
+    {
+      "file": "mat8_n.jpg",
+      "material": "Tyre",
+      "usage": "normal",
+      "bytes": 155488,
+      "sha256": "d49ac88978ef3e2797131fb46e517d046fdb73d0f9d9f888b85ef3a36ea6ed27",
+      "width": 1024,
+      "height": 1024,
+      "components": 3,
+      "imageIndex": 17,
+      "pixelsModified": false
+    }
+  ],
+  "verification": {
+    "header": "valid",
+    "topology": "preserved",
+    "sourceImages": "18 byte-identical JPEGs",
+    "materialRoles": "9 explicit roles",
+    "indicesAndAttributes": "finite and in bounds",
+    "wheelAnimation": "Two fixed-role wheel pivots; original rest transforms preserved"
+  }
+}

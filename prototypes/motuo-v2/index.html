@@ -153,6 +153,7 @@ dialog{background:#101a24;border:1px solid #354958;color:var(--ink);border-radiu
 }
 
 </style>
+<link rel="stylesheet" href="motion-ui.css">
 </head>
 <body>
 <svg width="0" height="0" aria-hidden="true" style="position:absolute"><defs>
@@ -181,8 +182,8 @@ dialog{background:#101a24;border:1px solid #354958;color:var(--ink);border-radiu
 <symbol id="i-mic" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="13" rx="4"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3m-4 0h8"/></symbol>
 <symbol id="i-expand" viewBox="0 0 24 24"><path d="M8 3H3v5M16 3h5v5M3 16v5h5m13-5v5h-5"/></symbol>
 </defs></svg>
-<div class="app yu7" id="app" data-scene="neon">
- <header class="topbar"><div class="brand"><span class="brand-mark"></span><span class="wordmark">MOTUO</span><span class="brand-sub">RIDE THE FREQUENCY</span></div><div class="top-actions"><span class="tag"><span class="dot"></span>DEMO · 交互预览</span><button class="scenario-open" id="scenarios-open" aria-label="打开演示场景"><svg class="icon"><use href="#i-sliders"/></svg>演示场景</button></div></header>
+<div class="app yu7 dynamic-cockpit" id="app" data-scene="gravity">
+ <header class="topbar"><div class="brand"><span class="brand-mark"></span><span class="wordmark">MOTUO</span><span class="brand-sub">RIDE THE FREQUENCY</span></div><div class="top-actions"><span class="tag"><span class="dot"></span>DEMO</span><button class="preview-launch" id="preview-launch" aria-label="开始车辆与声浪动效预演"><svg class="icon"><use href="#i-play"/></svg><span>动效预演</span></button><button class="scenario-open" id="scenarios-open" aria-label="打开演示场景"><svg class="icon"><use href="#i-sliders"/></svg>演示场景</button></div></header>
  <div class="shell">
   <nav class="rail" id="navigation" aria-label="主导航">
    <button class="active" data-page="cockpit" aria-current="page"><svg class="icon"><use href="#i-gauge"/></svg><span>驾驶舱</span></button>
@@ -195,7 +196,7 @@ dialog{background:#101a24;border:1px solid #354958;color:var(--ink);border-radiu
    <section class="cockpit" id="cockpit" aria-label="演示驾驶舱">
     <div class="ambient-caption"><span>GSX250R / MOTUO</span><b id="ambient-source">麦克风关闭</b></div>
     <aside class="sound-intro" id="sound-intro" hidden role="status"><div class="sonic-emblem" aria-hidden="true"><i></i><i></i><i></i><svg class="icon"><use href="#i-mic"/></svg></div><div><span>FEEL YOUR MACHINE</span><h2 id="sound-intro-title">让声浪，点亮仪表。</h2><p id="sound-intro-copy">开启麦克风后，流线与刻度随声浪起伏。</p></div></aside>
-    <canvas class="fx-canvas" id="fx-canvas" aria-hidden="true"></canvas>
+    <div class="world-atmosphere" aria-hidden="true"><i></i><i></i></div><div class="perimeter-flow" aria-hidden="true"></div><canvas class="fx-canvas" id="fx-canvas" aria-hidden="true"></canvas>
     <div class="event-flash" id="event-flash" aria-hidden="true"></div>
     <div class="scene-tools"><div class="scene-name"><b id="scene-label">01 / AMBER FAN</b><span id="scene-name">琥珀扇面</span></div><div class="scene-counters"><span style="color:#e7bf84">DEMO</span><span>CHAPTER <b id="chapter-count">00</b></span><span id="scene-input">MIC OFF</span></div><div class="signal-scroll" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
     <div class="event-banner" id="event-banner" aria-hidden="true"><svg class="icon"><use href="#i-spark"/></svg><div><strong id="banner-title">SYSTEM READY</strong><small id="banner-copy">模拟状态 · 等待出发</small></div></div>
@@ -206,7 +207,7 @@ dialog{background:#101a24;border:1px solid #354958;color:var(--ink);border-radiu
     <aside class="sport-stats"><div class="sport-stat"><div class="eyebrow">THROTTLE / 油门</div><strong id="throttle-value">—</strong><small id="throttle-source">未接车辆信号</small></div><div class="sport-stat"><div class="eyebrow">RIDE TIME</div><strong class="accent" data-time>00:00</strong><small><span data-distance>0.00</span> km · 模拟骑行</small></div><div class="sport-stat rhythm-stat"><div class="eyebrow">SOUND ENGINE</div><strong id="bpm-value">—</strong><small>外界声音 · 非转速</small></div><div class="audio-module"><div class="module-heading">AUDIO SPECTRUM<span id="fft-level">— dBFS</span></div><div class="fft-bars" id="fft-bars" aria-label="麦克风输入频谱"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><svg class="audio-wave" viewBox="0 0 200 30" preserveAspectRatio="none" aria-label="麦克风输入波形"><path id="audio-wave" d="M0 15L200 15"/></svg><div class="band-levels"><span>LOW <b id="low-level">—</b></span><span>MID <b id="mid-level">—</b></span><span>HIGH <b id="high-level">—</b></span></div><div class="audio-source" id="audio-source">麦克风关闭 · 无输入</div></div></aside>
     <div class="stage-caption"><b>RIDE THE FREQUENCY</b><br>随外界声浪起伏 · 音乐独立播放</div>
     <aside class="machine"><div><div class="eyebrow">YOUR MACHINE / 01</div><div class="machine-title">GSX250R</div><div class="machine-note">SUZUKI · 248 cc</div><div class="model-line"></div><div class="machine-note">每一次出发<br>都值得被记住。</div></div><div><div class="machine-stat"><div class="eyebrow">DISTANCE</div><div class="value"><span data-distance>0.00</span><small>km</small></div></div><div class="machine-stat"><div class="eyebrow">RIDE TIME</div><div class="value" style="font-size:23px;color:#c7d7e0" data-time>00:00</div></div></div><div class="signal-note"><span class="dot" style="color:var(--purple)"></span>支架动态 · 演示</div></aside>
-    <div class="instrument" id="instrument"><div class="yu7-field" id="yu7-field" aria-hidden="true"></div><div class="yu7-trip"><div class="eyebrow">本次里程</div><strong data-distance>0.00</strong><small>km</small><p>模拟骑行</p><div class="trip-line" aria-hidden="true"></div><div class="yu7-trip-time" data-time>00:00</div></div><div class="yu7-mode-panel"><div><div class="yu7-mode-name" id="yu7-mode-label">日常模式</div><div class="yu7-mode-bars" aria-hidden="true"><i></i><i></i><i></i></div><small class="mode-description">仪表视觉主题</small></div><div class="yu7-gear" aria-label="挡位未知">—</div><div class="gear-note">挡位 · 未接信号</div></div><div class="yu7-sound-caption"><b id="yu7-sound-source">声浪待命</b> · 非转速</div><div class="rim-labels"><span class="left">MOTION <em>SIMULATED</em></span><span class="right">AUDIO <em id="rim-source">DEMO</em></span></div><div class="gauge">
+    <div class="instrument" id="instrument"><div class="yu7-field" id="yu7-field" aria-hidden="true"></div><div class="yu7-trip"><div class="eyebrow">本次里程</div><strong data-distance>0.00</strong><small>km</small><p>模拟骑行</p><div class="trip-line" aria-hidden="true"></div><div class="yu7-trip-time" data-time>00:00</div></div><div class="yu7-mode-panel"><div><div class="yu7-mode-name" id="yu7-mode-label">日常模式</div><div class="yu7-mode-bars" aria-hidden="true"><i></i><i></i><i></i></div><small class="mode-description">仪表视觉主题</small></div><div class="yu7-gear" aria-label="挡位未知">—</div><div class="gear-note">挡位 · 未接信号</div></div><div class="motion-chapters" aria-label="模拟骑行阶段"><span data-chapter="launch">起步</span><span data-chapter="accelerate">加速</span><span data-chapter="cruise">巡航</span><span data-chapter="turn">转向</span><span data-chapter="brake">减速</span></div><div class="yu7-sound-caption"><i class="world-dot" aria-hidden="true"></i><span class="world-label">动态氛围 · </span><b id="yu7-sound-source">声浪待命</b> · 非转速</div><div class="rim-labels"><span class="left">MOTION <em>SIMULATED</em></span><span class="right">AUDIO <em id="rim-source">DEMO</em></span></div><div class="gauge">
      <svg class="gauge-art" viewBox="0 0 520 470" aria-hidden="true"><defs><linearGradient id="energy" x1="0" y1="1" x2="1" y2="0"><stop stop-color="#a18aff"/><stop offset=".5" stop-color="#7bdcfa"/><stop offset="1" stop-color="#b0eafa"/></linearGradient><radialGradient id="halo"><stop stop-color="#7bdcfa" stop-opacity=".055"/><stop offset="1" stop-color="#7bdcfa" stop-opacity="0"/></radialGradient></defs><ellipse cx="260" cy="244" rx="230" ry="220" fill="url(#halo)"/><path class="gauge-track" d="M89 374 A206 206 0 1 1 431 374"/><path class="gauge-ticks" d="M104 364 A188 188 0 1 1 416 364"/><path class="gauge-energy" id="energy-arc" d="M89 374 A206 206 0 1 1 431 374"/><g class="horizon-grid" stroke="#29414f" stroke-width=".7" fill="none"><path d="M143 366h234M129 385h262M112 408h296M90 439h340M260 335 85 442m175-107L173 442m87-107v107m0-107 87 107m-87-107 175 107"/></g><g fill="#637c8c" font-family="monospace" font-size="10"><text x="34" y="278">0</text><text x="63" y="133">40</text><text x="250" y="29">80</text><text x="434" y="133">120</text><text x="469" y="278">160</text></g></svg>
      <div class="speed-content"><div class="speed-caption">模拟速度</div><div class="speed-value" id="speed">0</div><div class="speed-unit">km/h</div><div class="ride-state"><span class="dot"></span><span id="ride-state">等待出发</span></div></div>
      <div class="instrument-meta"><div><span class="eyebrow">GEAR</span><strong>—</strong><span class="hint">未接车辆信号</span></div><div><span class="eyebrow">VISUAL PULSE</span><div class="motion-bars" id="motion-bars" aria-label="声音输入强度光效"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><span class="hint">声浪光效 · 非转速</span></div></div>
@@ -239,17 +240,18 @@ dialog{background:#101a24;border:1px solid #354958;color:var(--ink);border-radiu
  <button class="scenario" data-scenario="gps" aria-pressed="false"><svg class="icon"><use href="#i-warning"/></svg><div><strong>进入隧道 · GPS 缺失</strong><small>速度显示未知，路线与里程停止更新</small></div><span class="check">✓</span></button>
  <button class="scenario" data-scenario="nas" aria-pressed="false"><svg class="icon"><use href="#i-cloud"/></svg><div><strong>NAS 断连</strong><small>继续本地演示，重新规划暂不可用</small></div><span class="check">✓</span></button>
 </div><button class="secondary" id="request-fullscreen" style="width:100%;margin-top:16px"><svg class="icon"><use href="#i-expand"/></svg>尝试浏览器全屏</button></div></dialog>
-<dialog id="effects-dialog" aria-labelledby="effects-title"><div class="dialog-head"><div><div class="eyebrow">INSTRUMENT THEMES / 03</div><h2 id="effects-title">选择仪表主题</h2></div><button class="close" data-close aria-label="关闭特效主题"><svg class="icon"><use href="#i-close"/></svg></button></div><div class="dialog-content"><p class="dialog-copy">运动模式专属。三种场景保留相同速度和控制位置，切换不影响骑行记录。</p><button class="preset" data-scene="neon" aria-pressed="true"><div class="fx-preview"></div><div class="preset-head"><strong>琥珀扇面</strong><span class="preset-number">01 / AMBER FAN</span></div><small>琥珀色扇形刻度，白色声浪指示线</small></button><button class="preset" data-scene="spectrum" aria-pressed="false"><div class="fx-preview"></div><div class="preset-head"><strong>冰蓝脉冲</strong><span class="preset-number">02 / BLUE PULSE</span></div><small>青紫色扁拱与细条，跟随外界声浪变化</small></button><button class="preset" data-scene="aurora" aria-pressed="false"><div class="fx-preview"></div><div class="preset-head"><strong>紫夜光束</strong><span class="preset-number">03 / VIOLET GLOW</span></div><small>低处升起的紫色光束，随声音强弱起伏</small></button><p class="dialog-copy" style="margin-bottom:0">光效读取麦克风输入。音乐独立播放，不控制频谱。未启用麦克风时保留待机光场；声浪演示需单独选择。</p></div></dialog>
+<dialog id="effects-dialog" aria-labelledby="effects-title"><div class="dialog-head"><div><div class="eyebrow">MOTION WORLDS / 04</div><h2 id="effects-title">选择仪表主题</h2></div><button class="close" data-close aria-label="关闭特效主题"><svg class="icon"><use href="#i-close"/></svg></button></div><div class="dialog-content"><p class="dialog-copy">运动模式专属。四种动效世界保留相同速度和控制位置，切换不影响骑行记录。</p><button class="preset" data-scene="gravity" aria-pressed="true"><div class="fx-preview"></div><div class="preset-head"><strong>霓虹穿梭</strong><span class="preset-number">00 / NEON TRANSIT</span></div><small>透视光廊、青紫尾光，随起步与转向变化</small></button><button class="preset" data-scene="neon" aria-pressed="false"><div class="fx-preview"></div><div class="preset-head"><strong>琥珀扇面</strong><span class="preset-number">01 / AMBER FAN</span></div><small>琥珀色扇形刻度，白色声浪指示线</small></button><button class="preset" data-scene="spectrum" aria-pressed="false"><div class="fx-preview"></div><div class="preset-head"><strong>冰蓝脉冲</strong><span class="preset-number">02 / BLUE PULSE</span></div><small>青紫色扁拱与细条，跟随外界声浪变化</small></button><button class="preset" data-scene="aurora" aria-pressed="false"><div class="fx-preview"></div><div class="preset-head"><strong>紫夜光束</strong><span class="preset-number">03 / VIOLET GLOW</span></div><small>低处升起的紫色光束，随声音强弱起伏</small></button><p class="dialog-copy" style="margin-bottom:0">光效读取麦克风输入。音乐独立播放，不控制频谱。未启用麦克风时继续氛围巡游，声学读数留空；声浪演示需单独选择。</p></div></dialog>
 <dialog id="mic-dialog" aria-labelledby="mic-title"><div class="dialog-head"><div><div class="eyebrow">ENVIRONMENT → LIGHT</div><h2 id="mic-title">听见机器的呼吸。</h2></div><button class="close" data-close aria-label="关闭声音设置"><svg class="icon"><use href="#i-close"/></svg></button></div><div class="dialog-content"><p class="dialog-copy">用麦克风听周围的声音，让流线、扇面和频谱随声浪起伏。音乐播放独立保留。</p><div class="input-monitor"><div class="input-monitor-head"><strong id="input-status" role="status">麦克风关闭</strong><b id="input-level">—</b></div><div class="input-level-track"><i id="input-meter"></i></div><p id="input-description">点击启用后才会请求权限。</p><small id="input-device">系统默认输入 · 启用后确认</small><small id="input-processing">外界混合声音 · 尚未区分发动机、风噪或人声</small></div><p class="input-boundary">仅本机分析，不保存原音、不上传。请确认输入设备是手机麦克风；蓝牙耳机可能改变系统输入。声音不是转速或油门，外放音乐也可能被麦克风拾到。</p><div class="mic-buttons"><button class="primary" id="mic-enable">启用麦克风</button><button class="secondary" id="mic-demo" aria-pressed="false">体验声浪演示</button></div><p class="input-footnote">离开页面、切到其他页面或结束骑行后停止采集。</p></div></dialog>
 <dialog id="finish-dialog" aria-labelledby="finish-title"><div class="dialog-head"><div><div class="eyebrow">END THIS CHAPTER</div><h2 id="finish-title">结束这次骑行？</h2></div><button class="close" data-close aria-label="关闭结束确认"><svg class="icon"><use href="#i-close"/></svg></button></div><div class="dialog-content"><p class="dialog-copy">结束后查看本次演示的里程、时长与事件摘要。关闭页面后，演示记录不会保留。</p><div class="dialog-buttons"><button class="secondary" data-close>暂不结束</button><button class="primary" id="finish-confirm">结束并复盘</button></div></div></dialog>
 <dialog id="destination-dialog" aria-labelledby="destination-title"><div class="dialog-head"><div><div class="eyebrow">NEXT DESTINATION</div><h2 id="destination-title">下一站，去哪？</h2></div><button class="close" data-close aria-label="关闭目的地"><svg class="icon"><use href="#i-close"/></svg></button></div><div class="dialog-content"><p class="dialog-copy">虚构地点，仅用于体验地图和骑行流程。</p><input class="destination-input" id="place-search" aria-label="搜索演示地点" placeholder="搜索演示地点" autocomplete="off"><div id="places"></div><p class="dialog-copy" id="no-places" hidden>没有找到演示地点，可试试“观景台”或“湖畔”。</p></div></dialog>
 <dialog id="info-dialog" aria-labelledby="info-title"><div class="dialog-head"><div><div class="eyebrow">MOTUO PREVIEW</div><h2 id="info-title">关于这次预览</h2></div><button class="close" data-close aria-label="关闭说明"><svg class="icon"><use href="#i-close"/></svg></button></div><div class="dialog-content"><p class="dialog-copy" id="info-copy"></p><button class="primary" data-close style="width:100%">知道了</button></div></dialog>
 <div class="toast" id="toast" role="status"></div>
+<script src="cockpit-fx.js"></script>
 <script>
 (()=>{
  'use strict';
  const $=id=>document.getElementById(id), all=q=>[...document.querySelectorAll(q)];
- const state={phase:'idle',page:'cockpit',mode:'daily',scene:'neon',view:'hud',scenario:'normal',speed:0,distance:0,seconds:0,maxSpeed:0,progress:0,music:false,song:0,reduced:false,motion:'ready',motionKey:'ready',visualSeconds:0,beat:0,rhythmBeat:0,eventVisualStart:0,bannerUntil:0,trace:[],traceSampleAt:-1,scenarioStarted:0,rerouteReady:false,adoptedReroute:false,events:new Set(),timeline:[],lastRide:null,destination:'雾岚观景台',lastFrame:performance.now()};
+ const state={phase:'idle',page:'cockpit',mode:'daily',scene:'gravity',view:'hud',scenario:'normal',speed:0,distance:0,seconds:0,maxSpeed:0,progress:0,music:false,song:0,reduced:false,motion:'ready',motionKey:'ready',visualSeconds:0,themeStarted:0,beat:0,rhythmBeat:0,eventVisualStart:0,bannerUntil:0,trace:[],traceSampleAt:-1,scenarioStarted:0,rerouteReady:false,adoptedReroute:false,events:new Set(),timeline:[],lastRide:null,destination:'雾岚观景台',lastFrame:performance.now()};
  const songs=['Midnight Drive','Neon Horizon','After the Rain'];
  const songBPM=[108,116,96];
  const places=[{name:'雾岚观景台',area:'北岭 · 山间公路',distance:'8.4'},{name:'湖畔咖啡站',area:'青湾 · 环湖路',distance:'5.2'},{name:'松林营地',area:'北岭 · 松林路',distance:'12.6'}];
@@ -266,9 +268,9 @@ dialog{background:#101a24;border:1px solid #354958;color:var(--ink);border-radiu
  function showDialog(id){$(id).showModal();}
  function info(text){$('info-copy').textContent=text;showDialog('info-dialog');}
  function setPage(page){if(state.phase!=='idle' && page!=='cockpit')return;if(page!=='cockpit')stopInput();state.page=page;all('.content-page').forEach(el=>el.classList.toggle('active',el.id==='page-'+page));$('cockpit').hidden=page!=='cockpit';$('bottom').hidden=page!=='cockpit';$('view-switch').hidden=page!=='cockpit';$('trip-info').hidden=page!=='cockpit';all('[data-page]').forEach(b=>{b.classList.toggle('active',b.dataset.page===page);if(b.dataset.page===page)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});const titles={cockpit:state.phase==='idle'?'准备出发':'路上见',garage:'我的车库',history:'骑行档案',settings:'控制中心',recap:'骑后复盘'};$('page-title').textContent=titles[page];$('page-subtitle').textContent=page==='cockpit'?(state.phase==='idle'?'YOUR NEXT CHAPTER':'RIDE THE FREQUENCY'):'MOTUO / DEMO';const panel=$('page-'+page);if(panel)panel.scrollTop=0;$('page-title').focus({preventScroll:true});}
- function setView(view){state.view=state.mode==='sport'?'hud':view;$('cockpit').classList.toggle('map-focus',state.view==='map');$('map-toggle').setAttribute('aria-pressed',String(state.view==='map'));}
+ function setView(view){state.view=state.mode==='sport'?'hud':view;$('cockpit').classList.toggle('map-focus',state.view==='map');queueMicrotask(resizeFX);$('map-toggle').setAttribute('aria-pressed',String(state.view==='map'));}
  function setMode(mode){state.mode=mode;$('app').classList.toggle('sport-mode',mode==='sport');$('map-toggle').hidden=mode==='sport';all('[data-mode]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===mode)));setView('hud');render();pulseEvent();sceneIntro();}
- function sceneIntro(){const el=$('cockpit');el.classList.remove('assembling');void el.offsetWidth;el.classList.add('assembling');}
+ function sceneIntro(){state.themeStarted=state.visualSeconds;queueMicrotask(resizeFX);const el=$('cockpit');el.classList.remove('assembling');void el.offsetWidth;el.classList.add('assembling');}
  function pulseEvent(){state.eventVisualStart=state.visualSeconds;state.bannerUntil=state.visualSeconds+2.4;if(state.reduced)return;const el=$('event-flash');el.classList.remove('pulse');void el.offsetWidth;el.classList.add('pulse');}
  async function requestFullscreen(){if(document.fullscreenElement)return;try{if(document.documentElement.requestFullscreen)await document.documentElement.requestFullscreen();else toast('已使用页面内沉浸布局；此浏览器不支持完整全屏。');}catch{toast('已使用页面内沉浸布局；可继续操作全部功能。');}}
  function start(){state.phase='riding';state.distance=0;state.seconds=0;state.maxSpeed=0;state.progress=0;state.events=new Set();state.timeline=[];state.trace=[];state.traceSampleAt=-1;state.motion='ready';state.scenarioStarted=0;state.rerouteReady=false;state.adoptedReroute=false;state.speed=0;state.motionKey='';state.lastFrame=performance.now();if(state.scenario!=='normal')state.events.add(state.scenario);$('app').classList.add('immersive');$('app').classList.remove('paused');$('ride-stop').hidden=false;setPage('cockpit');updateControls();render();pulseEvent();sceneIntro();}
@@ -314,7 +316,7 @@ dialog{background:#101a24;border:1px solid #354958;color:var(--ink);border-radiu
  function changeSong(step){state.song=(state.song+step+songs.length)%songs.length;$('song-title').textContent=songs[state.song];if(state.music&&audioContext){stopVoices();nextNote=audioContext.currentTime+.14;audioBeatZero=nextNote;noteIndex=0;}updateMusic();}
  function renderPlaces(){const q=$('place-search').value.trim();const matching=places.filter(p=>(p.name+p.area).includes(q));$('places').replaceChildren();matching.forEach(p=>{const b=document.createElement('button');b.className='place';b.innerHTML=icon('pin')+`<div><strong>${p.name}</strong><small>${p.area} · 虚构地点</small></div><span class="distance">${p.distance} km</span>`;b.addEventListener('click',()=>{state.destination=p.name;$('route-estimate').textContent=`模拟 ${p.distance} km · ${Math.round(Number(p.distance)*2.15)} min`;$('destination-dialog').close();render();toast('已选择演示目的地：'+p.name);});$('places').append(b);});$('no-places').hidden=matching.length!==0;}
  all('[data-page]').forEach(b=>b.addEventListener('click',()=>setPage(b.dataset.page)));all('[data-mode]').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.mode)));$('map-toggle').addEventListener('click',()=>setView(state.view==='map'?'hud':'map'));all('[data-scenario]').forEach(b=>b.addEventListener('click',()=>setScenario(b.dataset.scenario)));all('[data-close]').forEach(b=>b.addEventListener('click',()=>b.closest('dialog').close()));all('[data-info]').forEach(b=>b.addEventListener('click',()=>info(b.dataset.info)));all('dialog').forEach(d=>d.addEventListener('click',e=>{if(e.target===d){const r=d.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)d.close();}}));
- $('scenarios-quick').addEventListener('click',()=>showDialog('scenarios-dialog'));$('effects-open').addEventListener('click',()=>showDialog('effects-dialog'));all('.preset').forEach(b=>b.addEventListener('click',()=>setScene(b.dataset.scene)));$('scenarios-open').addEventListener('click',()=>showDialog('scenarios-dialog'));$('request-fullscreen').addEventListener('click',()=>{$('scenarios-dialog').close();void requestFullscreen();});$('ride-primary').addEventListener('click',primary);$('ride-stop').addEventListener('click',()=>showDialog('finish-dialog'));$('finish-confirm').addEventListener('click',finish);$('music-toggle').addEventListener('click',music);$('music-prev').addEventListener('click',()=>changeSong(-1));$('music-next').addEventListener('click',()=>changeSong(1));$('destination-open').addEventListener('click',()=>{if(state.phase==='riding'){toast('请先暂停演示，再选择目的地。');return;}if(state.scenario==='nas'&&state.phase!=='idle'){toast('NAS 断连演示：暂不能重新规划。');return;}$('place-search').value='';renderPlaces();showDialog('destination-dialog');});$('place-search').addEventListener('input',renderPlaces);$('history-start').addEventListener('click',()=>setPage('cockpit'));$('history-view').addEventListener('click',showRecap);$('recap-done').addEventListener('click',()=>{state.speed=0;state.distance=0;state.seconds=0;state.progress=0;state.rerouteReady=false;state.adoptedReroute=false;state.trace=[];state.timeline=[];state.motion='ready';$('speed-trace').setAttribute('d','M0 48L200 48');setPage('cockpit');render();});$('reduce-motion').addEventListener('click',()=>{state.reduced=!state.reduced;$('reduce-motion').setAttribute('aria-pressed',String(state.reduced));$('app').classList.toggle('reduced-effects',state.reduced);});$('map-info').addEventListener('click',()=>info('计划采用 MapLibre 地图、OSM 区域数据、Martin 瓦片服务、Valhalla 摩托算路与 Ferrostar 实时导航。国内也不接高德。真实摩托禁限行覆盖尚未校验；当前页面只展示虚构道路和模拟指引。'));
+ $('scenarios-quick').addEventListener('click',()=>showDialog('scenarios-dialog'));$('effects-open').addEventListener('click',()=>showDialog('effects-dialog'));all('.preset').forEach(b=>b.addEventListener('click',()=>setScene(b.dataset.scene)));$('scenarios-open').addEventListener('click',()=>showDialog('scenarios-dialog'));$('request-fullscreen').addEventListener('click',()=>{$('scenarios-dialog').close();void requestFullscreen();});$('ride-primary').addEventListener('click',primary);$('ride-stop').addEventListener('click',()=>showDialog('finish-dialog'));$('finish-confirm').addEventListener('click',finish);$('music-toggle').addEventListener('click',music);$('music-prev').addEventListener('click',()=>changeSong(-1));$('music-next').addEventListener('click',()=>changeSong(1));$('destination-open').addEventListener('click',()=>{if(state.phase==='riding'){toast('请先暂停演示，再选择目的地。');return;}if(state.scenario==='nas'&&state.phase!=='idle'){toast('NAS 断连演示：暂不能重新规划。');return;}$('place-search').value='';renderPlaces();showDialog('destination-dialog');});$('place-search').addEventListener('input',renderPlaces);$('history-start').addEventListener('click',()=>setPage('cockpit'));$('history-view').addEventListener('click',showRecap);$('recap-done').addEventListener('click',()=>{state.speed=0;state.distance=0;state.seconds=0;state.progress=0;state.rerouteReady=false;state.adoptedReroute=false;state.trace=[];state.timeline=[];state.motion='ready';$('speed-trace').setAttribute('d','M0 48L200 48');setPage('cockpit');render();});$('reduce-motion').addEventListener('click',()=>{if(state.reduced&&reducedMedia.matches){toast('系统已启用减少动态，请在系统设置中关闭后再开启完整动效。');return;}state.reduced=!state.reduced;$('reduce-motion').setAttribute('aria-pressed',String(state.reduced));$('app').classList.toggle('reduced-effects',state.reduced);});$('map-info').addEventListener('click',()=>info('计划采用 MapLibre 地图、OSM 区域数据、Martin 瓦片服务、Valhalla 摩托算路与 Ferrostar 实时导航。国内也不接高德。真实摩托禁限行覆盖尚未校验；当前页面只展示虚构道路和模拟指引。'));
 
  const motionLabels={ready:['READY|TO FLOW.','准备出发'],launch:['ROLL|OUT.','起步'],accelerate:['BUILD|THE FLOW.','加速'],cruise:['IN THE|FLOW.','匀速巡航'],load:['HOLD|THE FLOW.','匀速 · 全油门设定'],turn:['LEAN|& FLOW.','右转趋势'],brake:['EASE|OUT.','减速'],stop:['STILL|IN TUNE.','停稳等候'],gps:['SIGNAL|PAUSED.','定位缺失']};
  function simulation(t){
@@ -336,6 +338,7 @@ dialog{background:#101a24;border:1px solid #354958;color:var(--ink);border-radiu
  function renderMotion(active,paused,lost){
   const current=!active?'ready':lost?'gps':state.motion;
   const label=motionLabels[current]||motionLabels.ready;
+  $('app').dataset.motion=paused?'paused':current;all('[data-chapter]').forEach(el=>el.classList.toggle('current',el.dataset.chapter===((current==='load')?'cruise':current)));
   if(state.motionKey!==current){state.motionKey=current;$('event-word').replaceChildren(...label[0].split('|').map(t=>{const e=document.createElement('span');e.textContent=t;return e;}));pulseEvent();}
   $('event-caption').textContent=paused?'已暂停 · 保留当前章节':label[1];renderModules(active,paused,lost,current,label);
   $('throttle-value').textContent=active&&state.scenario==='load'?'100%':'—';
@@ -405,7 +408,7 @@ dialog{background:#101a24;border:1px solid #354958;color:var(--ink);border-radiu
  }
  // END MICROPHONE CONTROLLER
 
- const scenes={neon:['01 / AMBER FAN','琥珀扇面'],spectrum:['02 / BLUE PULSE','冰蓝脉冲'],aurora:['03 / VIOLET GLOW','紫夜光束']};
+ const scenes={gravity:['00 / NEON TRANSIT','霓虹穿梭'],neon:['01 / AMBER FAN','琥珀扇面'],spectrum:['02 / BLUE PULSE','冰蓝脉冲'],aurora:['03 / VIOLET GLOW','紫夜光束']};
  let spectrum=Array(24).fill(0), wave=Array(80).fill(0),audioLive=false,bandLevels=[0,0,0],energy=0;
  let soundDemo=false,inputDb=null,inputClipped=false,inputQuality='等待输入',introTimer,inputSampleTime=performance.now();
  const microphone=new MicrophoneInput({mediaDevices:navigator.mediaDevices,Audio:window.AudioContext||window.webkitAudioContext,secure:()=>window.isSecureContext,hidden:()=>document.hidden},()=>{clearSoundFeatures();renderInput();});
@@ -451,14 +454,14 @@ dialog{background:#101a24;border:1px solid #354958;color:var(--ink);border-radiu
  }
 
  function renderModules(active,paused,lost,current,label){
-  $('yu7-mode-label').textContent=state.mode==='sport'?'运动模式':'日常模式';$('yu7-sound-source').textContent=audioLive?'麦克风声浪':soundDemo?'声浪演示':inputLabels[microphone.status]||'声浪待命';
+  $('yu7-mode-label').textContent=state.mode==='sport'?'运动模式':'日常模式';document.querySelector('.mode-description').textContent=state.mode==='sport'?scenes[state.scene][1]:'蓝色流域';$('yu7-sound-source').textContent=audioLive?'麦克风声浪':soundDemo?'声浪演示':inputLabels[microphone.status]||'声浪待命';
   $('chapter-count').textContent=String(state.timeline.length).padStart(2,'0');
   $('trace-quality').textContent=lost?'缺测 · 留空':paused?'已暂停':active?'模拟 km/h':'等待出发';
   $('trend-label').textContent=lost?'未知':label[1];
   if(state.trace.length){let path='',pen=false;state.trace.forEach((v,i)=>{if(v===null){pen=false;return;}const x=2+i/(Math.max(2,state.trace.length)-1)*196,y=47-Math.min(v,50)/50*43;path+=(pen?'L':'M')+x.toFixed(1)+' '+y.toFixed(1);pen=true;});$('speed-trace').setAttribute('d',path);}else{$('speed-trace').setAttribute('d','M0 48L200 48');}
   const last=state.timeline.slice(-3);if(last.length){$('mini-history').replaceChildren(...last.map(e=>{const row=document.createElement('div'),dot=document.createElement('i'),stamp=document.createElement('b'),text=document.createElement('span');stamp.textContent=time(e.at);text.textContent=motionLabels[e.kind][1];row.append(dot,stamp,text);return row;}));}else{$('mini-history').innerHTML='<div><i></i><b>READY</b><span>等待第一段旅程</span></div>';}
   $('banner-title').textContent=current==='ready'?'SYSTEM READY':label[0].replace('|',' ');$('banner-copy').textContent=label[1]+' · 状态演示';const visible=!paused&&state.visualSeconds<state.bannerUntil;$('event-banner').classList.toggle('show',visible);
-  const frozen=state.reduced;
+  const frozen=state.reduced||paused;
   all('#fft-bars i').forEach((e,i)=>e.style.height=(3+(frozen?0:spectrum[i])*40)+'px');
   const visibleWave=frozen?wave.map(()=>0):wave;$('audio-wave').setAttribute('d',visibleWave.map((v,i)=>(i?'L':'M')+(i/79*200).toFixed(1)+' '+(15-v*12).toFixed(1)).join(' '));
   ['low','mid','high'].forEach((name,i)=>$(name+'-level').textContent=(audioLive||soundDemo)?(bandLevels[i]*100).toFixed(0)+'%':'—');
@@ -466,77 +469,17 @@ dialog{background:#101a24;border:1px solid #354958;color:var(--ink);border-radiu
   $('energy-source').textContent=audioLive?'LIVE MIC':soundDemo?'DEMO INPUT':'NO INPUT';$('rim-source').textContent=audioLive?'MIC LIVE':soundDemo?'DEMO':'OFF';$('scene-input').textContent=audioLive?'MIC LIVE':soundDemo?'SOUND DEMO':'MIC OFF';$('fft-level').textContent=audioLive?inputDb.toFixed(0)+' dBFS':soundDemo?'DEMO':'— dBFS';$('input-level').textContent=audioLive?inputDb.toFixed(0)+' dBFS':soundDemo?'模拟输入':'—';$('input-meter').style.width=(state.reduced?0:energy*100)+'%';
   all('.reactor-cells i').forEach((e,i)=>e.classList.toggle('lit',i<(frozen?0:energy)*32));
  }
- const canvas=$('fx-canvas'),ctx=canvas.getContext('2d');let cw=0,ch=0,drawnAt=0;
- const resizeFX=()=>{const box=$('cockpit').getBoundingClientRect();cw=box.width;ch=box.height;const dpr=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(cw*dpr);canvas.height=Math.round(ch*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);};
- new ResizeObserver(resizeFX).observe($('cockpit'));
-
+ const canvas=$('fx-canvas'),ctx=canvas.getContext('2d');let cw=0,ch=0,drawnAt=0,fxLayout=null;
+ const resizeFX=()=>{
+  const box=$('cockpit').getBoundingClientRect();cw=box.width;ch=box.height;
+  const dpr=Math.min(devicePixelRatio||1,2);canvas.width=Math.round(cw*dpr);canvas.height=Math.round(ch*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);
+  const f=$('yu7-field').getBoundingClientRect(),v=document.querySelector('.speed-content').getBoundingClientRect();
+  fxLayout={field:{x:f.left-box.left,y:f.top-box.top,width:f.width,height:f.height},protectedRects:[{x:v.left-box.left-8,y:v.top-box.top-5,width:v.width+16,height:v.height+10}]};
+ };
+ const fxResizeObserver=new ResizeObserver(resizeFX);fxResizeObserver.observe($('cockpit'));fxResizeObserver.observe(document.querySelector('.speed-content'));
  function drawFX(){
-  if(!cw||!ch||state.page!=='cockpit'||state.view==='map')return;
-  ctx.clearRect(0,0,cw,ch);
-  const field=$('yu7-field').getBoundingClientRect(),base=$('cockpit').getBoundingClientRect();
-  const x=field.left-base.left,y=field.top-base.top,w=field.width,h=field.height;
-  if(w<=0||h<=0)return;
-  const frozen=state.reduced,e=frozen?0:energy,t=frozen?0:state.visualSeconds;
-  const valid=audioLive||soundDemo,portrait=cw<ch;
-  ctx.save();ctx.lineCap='round';ctx.lineJoin='round';
-  // The reference's blue comfort wave becomes an acoustic field, not a speed or RPM scale.
-  if(state.mode==='daily'){
-   const low=y+h*.94,peak=h*(portrait?.78:.74),sigma=w*.18;
-   for(let layer=7;layer>=0;layer--){
-    const shift=(layer-3.5)*w*.026+(frozen?0:Math.sin(t*.35+layer*.4)*e*w*.018);
-    ctx.beginPath();
-    for(let i=0;i<=130;i++){
-     const px=x+i/130*w,offset=px-(x+w*.5+shift),hill=Math.exp(-offset*offset/(2*sigma*sigma));
-     const sample=frozen?0:wave[Math.min(79,Math.floor(i/130*79))];
-     const py=low-hill*peak*(1-layer*.045)+sample*e*6;
-     i?ctx.lineTo(px,py):ctx.moveTo(px,py);
-    }
-    ctx.strokeStyle=layer===0?`rgba(159,214,255,${.58+e*.4})`:`rgba(60,135,228,${.12+(7-layer)*.034+e*.08})`;
-    ctx.lineWidth=layer===0?2.6:1.2;
-    ctx.shadowBlur=layer===0?8+e*12:0;ctx.shadowColor='#559ee5';ctx.stroke();
-   }
-   ctx.shadowBlur=0;
-  }else{
-   const colors=state.scene==='spectrum'?['#83dafa','#7860d5']:state.scene==='aurora'?['#b883f4','#64349f']:['#f8d98e','#806031'];
-   const rx=w*.48,ry=Math.min(h*(portrait?.66:.93),w*.34);
-   const cx=x+w/2,cy=portrait?y+h*.7:y+h*.5+ry*.62;
-   const start=Math.PI*1.11,end=Math.PI*1.89;
-   // Broad, flattened fan. An unlabelled vehicle needle would imply RPM, so the
-   // acoustic needle is drawn only for an explicitly valid microphone/demo source.
-   if(state.scene==='aurora'){
-    for(let i=0;i<42;i++){
-     const a=start+(end-start)*i/41,bin=frozen?0:spectrum[Math.floor(i/42*24)],strength=.13+bin*.7;
-     const g=ctx.createLinearGradient(cx,cy,cx+Math.cos(a)*rx,cy+Math.sin(a)*ry);
-     g.addColorStop(0,'#a24ddd00');g.addColorStop(.45,`rgba(124,64,190,${strength*.65})`);g.addColorStop(.85,`rgba(191,127,248,${strength*.55})`);g.addColorStop(1,'#c585f900');
-     ctx.strokeStyle=g;ctx.lineWidth=3+e*5;ctx.beginPath();ctx.moveTo(cx+Math.cos(a)*rx*.12,cy+Math.sin(a)*ry*.12);ctx.lineTo(cx+Math.cos(a)*rx,cy+Math.sin(a)*ry);ctx.stroke();
-    }
-   }else{
-    const n=88;
-    for(let i=0;i<n;i++){
-     const a=start+(end-start)*i/(n-1),c=Math.cos(a),s=Math.sin(a),bin=frozen?0:spectrum[Math.min(23,Math.floor(i/n*24))];
-     ctx.lineWidth=Math.max(1.4,w/160);ctx.strokeStyle=colors[1];ctx.globalAlpha=.38;
-     ctx.beginPath();ctx.moveTo(cx+c*rx*.79,cy+s*ry*.79);ctx.lineTo(cx+c*rx,cy+s*ry);ctx.stroke();
-     if(valid&&!frozen){const length=.03+bin*.19;ctx.globalAlpha=.6+bin*.4;ctx.strokeStyle=colors[0];ctx.beginPath();ctx.moveTo(cx+c*rx*.79,cy+s*ry*.79);ctx.lineTo(cx+c*rx*(.79+length),cy+s*ry*(.79+length));ctx.stroke();}
-    }
-    ctx.globalAlpha=1;ctx.strokeStyle='#c4c7cf4d';ctx.lineWidth=1;
-    ctx.beginPath();ctx.ellipse(cx,cy,rx*.72,ry*.72,0,start,end);ctx.stroke();
-   }
-   if(valid&&!frozen){
-    const a=start+(end-start)*e,px=cx+Math.cos(a)*rx*1.03,py=cy+Math.sin(a)*ry*1.03;
-    const needleStart=portrait?.86:.41;
-    ctx.strokeStyle='#fcfcff';ctx.lineWidth=2.2;ctx.beginPath();ctx.moveTo(cx+Math.cos(a)*rx*needleStart,cy+Math.sin(a)*ry*needleStart);ctx.lineTo(cx+Math.cos(a)*rx*.98,cy+Math.sin(a)*ry*.98);ctx.stroke();
-    ctx.fillStyle='#fcfcff';ctx.beginPath();ctx.arc(px,py,2.2,0,Math.PI*2);ctx.fill();
-   }
-   // Brief rising points on a simulated launch, with no speed rewards or score.
-   const age=t-state.eventVisualStart;
-   if(!frozen&&state.phase==='riding'&&state.motion==='launch'&&age<1.8){
-    for(let i=0;i<18;i++){
-     const a=start+(end-start)*i/17,p=age/1.8;
-     ctx.fillStyle=`rgba(191,168,240,${(1-p)*.7})`;ctx.beginPath();ctx.arc(cx+Math.cos(a)*rx*(.8+p*.2),cy+Math.sin(a)*ry*(.75+p*.2),1.1,0,Math.PI*2);ctx.fill();
-    }
-   }
-  }
-  ctx.restore();
+  if(!cw||!ch||!fxLayout||state.page!=='cockpit'||state.view==='map')return;
+  window.MotuoCockpitFX.draw(ctx,{width:cw,height:ch,...fxLayout,mode:state.mode,scene:state.scene,time:state.visualSeconds,reduced:state.reduced,paused:state.phase==='paused',active:state.phase==='riding',motion:state.motion,signalLost:state.scenario==='gps'&&state.phase!=='idle',energy,spectrum,wave,inputValid:audioLive||soundDemo,eventAge:state.visualSeconds-state.eventVisualStart,themeAge:state.visualSeconds-state.themeStarted});
  }
 
  let renderedAt=0;
@@ -546,12 +489,21 @@ dialog{background:#101a24;border:1px solid #354958;color:var(--ink);border-radiu
    if(state.phase!=='paused')state.rhythmBeat+=dt*(.3+energy*2.4);
    if(state.phase==='riding'){state.seconds+=dt;const sample=simulation(state.seconds-state.scenarioStarted);state.speed=sample.speed;if(state.motion!==sample.motion){state.timeline.push({at:state.seconds,kind:sample.motion});if(state.timeline.length>200)state.timeline.shift();}state.motion=sample.motion;if(state.scenario!=='gps'){state.distance+=state.speed/3.6*dt;state.progress=Math.min(.94,state.distance/1000);state.maxSpeed=Math.max(state.maxSpeed,state.speed);}if(state.scenario==='reroute'&&state.seconds-state.scenarioStarted>3){state.rerouteReady=true;state.adoptedReroute=true;}}
    if(state.phase==='riding'&&state.seconds-state.traceSampleAt>=.5){state.trace.push(state.scenario==='gps'?null:state.speed);if(state.trace.length>40)state.trace.shift();state.traceSampleAt=state.seconds;}if(now-renderedAt>100){sampleAudio();render();renderedAt=now;}
-   if(now-drawnAt>(state.reduced?250:1000/30)){drawFX();drawnAt=now;}
+   if(now-drawnAt>(state.reduced?250:1000/60)){drawFX();drawnAt=now;}
   }requestAnimationFrame(frame);
  }
  document.addEventListener('visibilitychange',()=>{state.lastFrame=performance.now();if(document.hidden&&(soundDemo||['live','muted','requesting'].includes(microphone.status)))stopInput('background');if(audioContext)synchronizeAudio();});
  window.addEventListener('pagehide',()=>{stopInput('background');state.music=false;synchronizeAudio();});
 
+ // A deliberate preview uses only simulated vehicle and sound features.
+ function startShowcase(){
+  if(state.phase!=='idle')return;
+  stopInput();setScene('gravity');setScenario('normal');soundDemo=true;renderInput();start();
+  soundIntro('霓虹穿梭，即刻出发。','车辆与声浪均为演示 · 不调用麦克风');
+ }
+ $('preview-launch').addEventListener('click',startShowcase);
+ reducedMedia.addEventListener?.('change',e=>{state.reduced=e.matches;$('reduce-motion').setAttribute('aria-pressed',String(state.reduced));$('app').classList.toggle('reduced-effects',state.reduced);});
+ document.addEventListener('visibilitychange',()=>{$('app').classList.toggle('motion-background',document.hidden);});
  updateMusic();renderInput();resizeFX();render();soundIntro();requestAnimationFrame(frame);
 
 })();

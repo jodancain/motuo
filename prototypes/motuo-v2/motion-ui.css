@@ -1,0 +1,137 @@
+/* Motuo motion layer: decorative movement never represents vehicle telemetry. */
+.dynamic-cockpit{--motion-a:#6ce4ff;--motion-b:#ba78ff;--motion-rgb:98,209,255;--motion-glass:#0d182ac2}
+.dynamic-cockpit.sport-mode[data-scene=neon]{--motion-a:#ffd187;--motion-b:#ff8764;--motion-rgb:255,191,108}
+.dynamic-cockpit.sport-mode[data-scene=aurora]{--motion-a:#c292ff;--motion-b:#f076d8;--motion-rgb:191,141,255}
+.dynamic-cockpit.sport-mode[data-scene=gravity]{--fx-a:#75e8ff;--fx-b:#c473ff;--fx-c:#424798;--motion-a:#75e8ff;--motion-b:#da77ff}
+.dynamic-cockpit .topbar{background:linear-gradient(90deg,#0c111b,#06080e 60%);border-bottom-color:#9bb9df15}
+.dynamic-cockpit .brand-mark{background:linear-gradient(120deg,#9becff,#d6aaff)}
+.dynamic-cockpit .rail{background:linear-gradient(180deg,#080b12,#05070b)}
+.dynamic-cockpit .rail button.active{color:#aeeaff;text-shadow:0 0 18px #73d6fc55}
+.dynamic-cockpit .rail button.active:before{background:#b0eaff;box-shadow:0 0 15px #60daff}
+.dynamic-cockpit button{transition:background-color .2s,border-color .2s,box-shadow .2s,scale .18s;touch-action:manipulation}
+.dynamic-cockpit button:active{scale:.97}
+.dynamic-cockpit button:focus-visible{outline:2px solid #a0e5ff;outline-offset:3px}
+.preview-launch{min-height:36px;display:flex;align-items:center;gap:7px;padding:0 14px;border:1px solid #93cafe55;border-radius:22px;color:#bee8ff;background:linear-gradient(110deg,#13384885,#2d1d4785);font-size:11px;white-space:nowrap;box-shadow:inset 0 0 18px #79bdff12}
+.preview-launch svg{height:13px;width:13px;fill:currentColor}
+.preview-launch:hover{box-shadow:0 0 28px #9a7fff30;border-color:#abe0ff}
+.dynamic-cockpit.immersive .preview-launch{display:none}
+.dynamic-cockpit .cockpit:not(.map-focus){background:radial-gradient(ellipse at 55% 40%,#0c1425,#06090f 50%,#040609)!important}
+.world-atmosphere{position:absolute;inset:0;overflow:hidden;z-index:0;pointer-events:none;opacity:.65}
+.world-atmosphere i{position:absolute;width:65%;height:60%;left:7%;top:4%;border-radius:50%;background:radial-gradient(ellipse,rgba(var(--motion-rgb),.12),transparent 65%);animation:world-drift 16s ease-in-out infinite alternate;will-change:transform}
+.world-atmosphere i+i{left:auto;right:-5%;top:20%;background:radial-gradient(ellipse,#ad4afd12,transparent 68%);animation-delay:-8s;animation-duration:19s}
+.perimeter-flow{position:absolute;inset:0;pointer-events:none;z-index:1;border-radius:inherit;background:linear-gradient(90deg,transparent,#85dfff22,transparent) 50% 0/60% 1px no-repeat,linear-gradient(0deg,transparent,#8aa9dd20,transparent) 0 50%/1px 60% no-repeat,linear-gradient(0deg,transparent,#ba92e820,transparent) 100% 50%/1px 60% no-repeat}
+.perimeter-flow:before,.perimeter-flow:after{content:"";position:absolute;left:0;top:0;width:18%;height:1px;background:linear-gradient(90deg,transparent,var(--motion-a),transparent);opacity:.55;box-shadow:0 0 14px var(--motion-a);animation:perimeter-travel 9s linear infinite}
+.perimeter-flow:after{top:auto;bottom:0;background:linear-gradient(90deg,transparent,var(--motion-b),transparent);animation-delay:-4.5s;animation-direction:reverse}
+.dynamic-cockpit .ambient-caption{color:#8199b4;font-size:8px;letter-spacing:1.5px}
+.dynamic-cockpit .ambient-caption b{color:#9cacc2}
+.dynamic-cockpit .speed-value{color:#fff;text-shadow:0 0 38px rgba(var(--motion-rgb),.16);animation:readout-breathe 5.6s ease-in-out infinite}
+.dynamic-cockpit .speed-unit{color:#c0d3e5;letter-spacing:1px}
+.dynamic-cockpit .speed-caption{color:#96a7bc}
+.dynamic-cockpit .speed-content:after{content:"";position:absolute;left:18%;right:18%;height:1px;bottom:-12px;background:linear-gradient(90deg,transparent,var(--motion-a),transparent);opacity:.35;animation:readout-line 4s ease-in-out infinite}
+.dynamic-cockpit .ride-state,.dynamic-cockpit.sport-mode .ride-state{color:#b2c7dc}
+.dynamic-cockpit .ride-state .dot{background:var(--motion-a);box-shadow:0 0 8px var(--motion-a);animation:status-breathe 2.8s ease-in-out infinite}
+.dynamic-cockpit .yu7-trip{padding:15px 18px 13px;border:1px solid #8ab5e11d;border-radius:15px;background:linear-gradient(135deg,#14243870,#0b101800);overflow:hidden;isolation:isolate;min-width:150px;left:2%;top:40%}
+.dynamic-cockpit .yu7-trip:before{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 34%,#a4ddff0c 49%,transparent 64%);translate:-100% 0;animation:surface-glide 8s ease-in-out infinite;z-index:-1}
+.dynamic-cockpit .yu7-trip .trip-line{position:relative;width:90px;overflow:hidden;background:#5368796a}
+.dynamic-cockpit .trip-line:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,var(--motion-a),transparent);animation:surface-glide 3s linear infinite}
+.dynamic-cockpit .yu7-mode-panel{padding:12px 15px;border:1px solid #9ab4ec18;border-radius:17px;background:linear-gradient(125deg,#10192880,#17122538);right:2%;top:40%;gap:8px 15px;isolation:isolate}
+.dynamic-cockpit .yu7-mode-name{color:#e7f5ff;font-weight:500}
+.dynamic-cockpit .yu7-mode-bars{gap:4px}
+.dynamic-cockpit .yu7-mode-bars i{height:3px;background:#67799355;animation:mode-runner 3.6s ease-in-out infinite}
+.dynamic-cockpit .yu7-mode-bars i:nth-child(2){animation-delay:.3s}.dynamic-cockpit .yu7-mode-bars i:nth-child(3){animation-delay:.6s}
+.dynamic-cockpit .yu7-mode-panel small{color:#8aadc5}
+.dynamic-cockpit .yu7-gear{position:relative;border-color:#8bb1c93b;color:#d6eaff;background:#05101b80}
+.dynamic-cockpit .yu7-gear:before{content:"";position:absolute;inset:-4px;border:1px solid transparent;border-top-color:var(--motion-a);border-left-color:#ade3fc11;border-radius:50%;animation:orbit-sweep 8s linear infinite;opacity:.6}
+.dynamic-cockpit .yu7-mode-panel .gear-note{color:#7e94ac}
+.dynamic-cockpit .yu7-sound-caption{bottom:0;display:flex;align-items:center;justify-content:center;gap:5px;letter-spacing:.3px;font-size:8px;color:#758da8}
+.dynamic-cockpit .yu7-sound-caption b{color:#adc6db}
+.world-dot{width:4px;height:4px;border-radius:50%;background:#7badc9;animation:status-breathe 3s ease-in-out infinite}
+.motion-chapters{display:none;position:absolute;left:26%;right:21%;bottom:8%;align-items:center;justify-content:space-between;gap:6px;pointer-events:none}
+.dynamic-cockpit.sport-mode .motion-chapters{display:flex}
+.motion-chapters span{position:relative;text-align:center;flex:1;max-width:92px;font-size:9px;color:#68839f;padding:7px 6px;border-top:1px solid #79a6c223;transition:color .45s,background .45s;overflow:hidden}
+.motion-chapters span:before{content:"";position:absolute;left:0;top:0;width:30%;height:1px;background:linear-gradient(90deg,transparent,var(--motion-a),transparent);opacity:.5;animation:chapter-trace 4s linear infinite}
+.motion-chapters span:nth-child(2):before{animation-delay:-.8s}.motion-chapters span:nth-child(3):before{animation-delay:-1.6s}.motion-chapters span:nth-child(4):before{animation-delay:-2.4s}.motion-chapters span:nth-child(5):before{animation-delay:-3.2s}
+.motion-chapters span.current{color:#d6f3ff;border-top-color:var(--motion-a);background:linear-gradient(180deg,rgba(var(--motion-rgb),.13),transparent)}
+.dynamic-cockpit.sport-mode .sport-wing,.dynamic-cockpit.sport-mode .sport-stats{border-color:#97b9d226}
+.dynamic-cockpit.sport-mode .motion-module{border-color:#97b9d226}
+.dynamic-cockpit .speed-trace .trace-line{stroke:var(--motion-a);filter:drop-shadow(0 0 4px rgba(var(--motion-rgb),.5))}
+.dynamic-cockpit .motion-module .module-heading,.dynamic-cockpit .audio-module .module-heading{color:#9cb9cc;letter-spacing:1px}
+.dynamic-cockpit .fft-bars i{background:linear-gradient(var(--motion-a),var(--motion-b));box-shadow:0 0 7px rgba(var(--motion-rgb),.2);transition:height .1s linear}
+.dynamic-cockpit .device-port{border-top:1px solid #a6bad81c;padding-top:8px}
+.dynamic-cockpit .device-port svg{color:#7f98b3;opacity:.7}
+.dynamic-cockpit .device-port b{color:#98acc2}.dynamic-cockpit .device-port small{color:#6d839d}
+.dynamic-cockpit .cockpit:not(.map-focus) .music{border:1px solid #91b5d124;background:linear-gradient(120deg,#112435b3,#16142894);box-shadow:0 8px 25px #0002;border-radius:15px}
+.dynamic-cockpit .music .album{background:linear-gradient(135deg,#234a5c,#403557);color:#bfe9ff}
+.dynamic-cockpit .music button{color:#c1dcec}.dynamic-cockpit .music button:hover{background:#83d9ff19;box-shadow:0 0 16px #73c8ff20}
+.dynamic-cockpit .music .song small{color:#8da0b8}
+.dynamic-cockpit .primary{position:relative;overflow:hidden;background:linear-gradient(110deg,#a9eaff,#c9d6ff 50%,#d0b7ff);box-shadow:0 0 25px #82a6ff18;border:1px solid #c6eaff}
+.dynamic-cockpit .primary:after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(110deg,transparent 35%,#ffffff55 50%,transparent 65%);translate:-100% 0;animation:surface-glide 7s ease-in-out infinite}
+.dynamic-cockpit .primary:hover{background:linear-gradient(110deg,#ccf4ff,#e2d3ff);box-shadow:0 0 30px #aaabff30}
+.dynamic-cockpit .secondary{background:#111c2a;border-color:#65849f44}
+.dynamic-cockpit .mode-switch{border-color:#82adce2a;background:#0b1423;box-shadow:inset 0 0 15px #73b9ff09}
+.dynamic-cockpit .mode-switch button[aria-pressed=true]{background:linear-gradient(130deg,#284b63aa,#50385c88);color:#e3f6ff;box-shadow:inset 0 0 12px #9be9ff0a}
+.dynamic-cockpit .effects-open,.dynamic-cockpit .map-toggle,.dynamic-cockpit .mic-open{background:#0d182480;border-color:#93b6d02d}
+.dynamic-cockpit .mic-open[data-state=demo],.dynamic-cockpit .mic-open[data-state=live]{box-shadow:0 0 15px #7ec9fe12}
+.dynamic-cockpit .event-banner,.dynamic-cockpit.sport-mode .event-banner{top:16px;padding:8px 19px;background:linear-gradient(100deg,#10343deb,#251c3eee);border-color:#a5def94d;box-shadow:0 0 28px rgba(var(--motion-rgb),.08);backdrop-filter:blur(12px)}
+.dynamic-cockpit .event-banner strong{font-size:11px;letter-spacing:3px;color:#d4f0ff}
+.dynamic-cockpit .event-banner.show{animation:chapter-arrival .65s cubic-bezier(.16,1,.3,1) both}
+.dynamic-cockpit .event-banner svg{color:var(--motion-a)}
+.dynamic-cockpit .sound-intro{background:linear-gradient(120deg,#0a2139ed,#251c39ed);border-color:#aacdff44}
+.dynamic-cockpit .assembling .speed-content{animation:readout-arrival .85s ease both}
+.dynamic-cockpit .assembling .yu7-trip,.dynamic-cockpit .assembling .yu7-mode-panel{animation:readout-arrival .7s .1s ease both}
+.dynamic-cockpit .assembling .motion-chapters{animation:readout-arrival 1s .15s ease both}
+.dynamic-cockpit .cockpit.map-focus .world-atmosphere,.dynamic-cockpit .cockpit.map-focus .perimeter-flow{display:none}
+.dynamic-cockpit.paused .world-atmosphere,.dynamic-cockpit.paused .perimeter-flow{opacity:.22}
+.dynamic-cockpit.paused .world-atmosphere *, .dynamic-cockpit.paused .perimeter-flow:before,.dynamic-cockpit.paused .perimeter-flow:after,.dynamic-cockpit.paused .speed-value,.dynamic-cockpit.paused .speed-content:after,.dynamic-cockpit.paused .yu7-mode-bars i,.dynamic-cockpit.paused .yu7-gear:before,.dynamic-cockpit.paused .world-dot,.dynamic-cockpit.paused .motion-chapters span:before,.dynamic-cockpit.paused .ride-state .dot{animation-play-state:paused}
+.dynamic-cockpit.motion-background *, .dynamic-cockpit.motion-background *:before,.dynamic-cockpit.motion-background *:after{animation-play-state:paused!important}
+.dynamic-cockpit.reduced-effects *, .dynamic-cockpit.reduced-effects *:before,.dynamic-cockpit.reduced-effects *:after{animation:none!important;transition:none!important}
+.dynamic-cockpit.reduced-effects .event-banner.show{opacity:1}
+#effects-dialog .preset[data-scene=gravity] .fx-preview{background:radial-gradient(ellipse at 50% 40%,#8947c366,transparent 40%),linear-gradient(120deg,#101f2c,#221429)}
+#effects-dialog .fx-preview:before{animation:preview-world 5s ease-in-out infinite alternate}
+#effects-dialog .preset[data-scene=gravity] .fx-preview:before{background:repeating-linear-gradient(90deg,transparent 0 21px,#61dffe44 22px 23px,transparent 24px 44px);transform:perspective(60px) rotateX(40deg) scale(1.8)}
+#effects-dialog .preset[aria-pressed=true]{border-color:#acdfffa1;box-shadow:0 0 22px #80c9ff15}
+@keyframes world-drift{from{transform:translate(-6%,0) scale(.9)}to{transform:translate(13%,8%) scale(1.15)}}
+@keyframes perimeter-travel{from{left:-18%}to{left:100%}}
+@keyframes surface-glide{0%,20%{translate:-100% 0}70%,100%{translate:100% 0}}
+@keyframes orbit-sweep{to{rotate:360deg}}
+@keyframes readout-breathe{0%,100%{text-shadow:0 0 26px rgba(var(--motion-rgb),.1)}50%{text-shadow:0 0 44px rgba(var(--motion-rgb),.29)}}
+@keyframes readout-line{0%,100%{scale:.6 1;opacity:.2}50%{scale:1 1;opacity:.65}}
+@keyframes status-breathe{0%,100%{opacity:.4}50%{opacity:1}}
+@keyframes mode-runner{0%,70%,100%{background:#60708855;box-shadow:none}28%{background:var(--motion-a);box-shadow:0 0 10px rgba(var(--motion-rgb),.45)}}
+@keyframes chapter-trace{from{left:-30%}to{left:100%}}
+@keyframes chapter-arrival{from{opacity:0;filter:blur(4px);translate:0 8px;scale:.94}to{opacity:1;filter:blur(0);translate:0 0;scale:1}}
+@keyframes readout-arrival{from{opacity:.15;filter:blur(7px)}to{opacity:1;filter:blur(0)}}
+@keyframes preview-world{from{opacity:.4;background-position:0 0}to{opacity:1;background-position:44px 0}}
+@media(max-width:1100px){.dynamic-cockpit .yu7-trip{padding:10px 12px;min-width:120px}.dynamic-cockpit .yu7-mode-panel{padding:10px 11px;min-width:145px;gap:6px 11px}}
+@media(max-height:570px) and (orientation:landscape){
+ .dynamic-cockpit .yu7-trip{top:28%;padding:8px 11px;min-width:108px}.dynamic-cockpit .yu7-mode-panel{top:30%;padding:9px;min-width:128px}
+ .dynamic-cockpit .speed-value{font-size:80px}.dynamic-cockpit .speed-content:after{bottom:-9px}
+ .dynamic-cockpit .ambient-caption{font-size:6px}.dynamic-cockpit .event-banner,.dynamic-cockpit.sport-mode .event-banner{top:4px;padding:5px 13px}.dynamic-cockpit .event-banner strong{font-size:8px;letter-spacing:2px}
+ .motion-chapters{bottom:8%;gap:4px}.motion-chapters span{font-size:6px;padding:4px}.dynamic-cockpit .yu7-sound-caption{font-size:6px;bottom:-6px;gap:3px}
+ .dynamic-cockpit .device-port{padding-top:5px}.dynamic-cockpit .device-port small{font-size:6px}
+ .dynamic-cockpit .motion-module .module-heading,.dynamic-cockpit .audio-module .module-heading{letter-spacing:.3px}
+ .dynamic-cockpit .cockpit:not(.map-focus) .music{border-radius:11px}
+}
+@media(orientation:portrait),(max-width:600px){
+ .dynamic-cockpit .top-actions{gap:7px}.dynamic-cockpit .top-actions>.tag{font-size:7px}.preview-launch{padding:0 10px;min-height:32px;font-size:9px;gap:5px}
+ .dynamic-cockpit .yu7-trip{left:1%;top:auto;bottom:0;padding:8px 11px;min-width:110px;border-radius:12px}
+ .dynamic-cockpit .yu7-mode-panel{right:1%;top:auto;bottom:0;min-width:140px;padding:8px 11px;gap:4px 9px;border-radius:12px}
+ .dynamic-cockpit.sport-mode .yu7-mode-panel{padding:7px 10px;left:3%;right:3%;bottom:0;background:linear-gradient(90deg,transparent,#18283c80);border:0;border-top:1px solid #a6c3e723;min-width:0;gap:9px}
+ .dynamic-cockpit .yu7-field{bottom:25%}.dynamic-cockpit.sport-mode .yu7-field{bottom:34%}
+ .dynamic-cockpit.sport-mode .speed-content{top:36%}
+ .dynamic-cockpit .speed-value{font-size:94px}.dynamic-cockpit .speed-content:after{bottom:-10px}
+ .dynamic-cockpit .yu7-sound-caption{bottom:28%;font-size:6px;gap:3px;white-space:nowrap}
+ .dynamic-cockpit.sport-mode .yu7-sound-caption{left:3%;right:auto;max-width:none;bottom:45px;font-size:6px}
+ .dynamic-cockpit.sport-mode .motion-chapters{left:3%;right:3%;bottom:71px;gap:5px}.motion-chapters span{font-size:7px;padding:6px 4px}
+ .dynamic-cockpit .world-label{display:none}.dynamic-cockpit .yu7-mode-bars i{width:19px}
+ .dynamic-cockpit .ambient-caption{font-size:6px;letter-spacing:.8px}.dynamic-cockpit .ambient-caption b{font-size:7px}
+ .dynamic-cockpit .event-banner,.dynamic-cockpit.sport-mode .event-banner{top:6px;padding:6px 12px}.dynamic-cockpit .event-banner strong{font-size:8px;letter-spacing:1.5px}
+ .dynamic-cockpit .module-heading,.dynamic-cockpit .motion-module .module-heading,.dynamic-cockpit .audio-module .module-heading{font-size:6px;letter-spacing:0}
+ .dynamic-cockpit .music button{min-width:44px;min-height:44px;flex-shrink:0}.dynamic-cockpit .yu7-mode-panel .mode-description{font-size:6px}
+}
+@media(prefers-reduced-motion:reduce){.dynamic-cockpit *,.dynamic-cockpit *:before,.dynamic-cockpit *:after{animation:none!important;transition:none!important}.dynamic-cockpit .event-banner.show{opacity:1}}
+
+/* Manual reduced motion also covers dialogs, which are siblings of the app. */
+.dynamic-cockpit.reduced-effects~dialog *, .dynamic-cockpit.reduced-effects~dialog *:before,.dynamic-cockpit.reduced-effects~dialog *:after{animation:none!important;transition:none!important}
+.dynamic-cockpit.paused .cockpit *, .dynamic-cockpit.paused .cockpit *:before,.dynamic-cockpit.paused .cockpit *:after,.dynamic-cockpit.paused .primary:after{animation-play-state:paused!important}
+@media(prefers-reduced-motion:reduce){#effects-dialog *,#effects-dialog *:before,#effects-dialog *:after{animation:none!important;transition:none!important}}

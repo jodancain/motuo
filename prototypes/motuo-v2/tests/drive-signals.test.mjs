@@ -7,7 +7,7 @@ const source = readFileSync(new URL('../drive-signals.js', import.meta.url), 'ut
 const sandbox = { window: {} };
 vm.runInNewContext(source, sandbox);
 const signals = sandbox.window.MotuoDriveSignals;
-const base = { seconds: 0, speedKmh: 0, phase: 'riding', scenario: 'normal', scenarioStarted: 0, motion: 'launch', rpmDemo: false };
+const base = { seconds: 0, speedKmh: 0, phase: 'riding', scenario: 'normal', scenarioStarted: 0, motion: 'launch' };
 const sample = (tracker, values = {}) => tracker.sample({ ...base, ...values });
 const closeTo = (actual, expected, tolerance = 1e-9) => assert.ok(Math.abs(actual - expected) < tolerance, `${actual} should equal ${expected}`);
 
@@ -40,7 +40,7 @@ test('re-reading one timestamp retains acceleration and its original speed basel
   sample(tracker);
   sample(tracker, { seconds: 1, speedKmh: 3.6 });
   for (let count = 0; count < 4; count += 1) {
-    const repeated = sample(tracker, { seconds: 1, speedKmh: 90, rpmDemo: count % 2 === 0 });
+    const repeated = sample(tracker, { seconds: 1, speedKmh: 90 });
     closeTo(repeated.accelMs2, 1);
     assert.equal(repeated.status, 'valid');
   }
@@ -54,11 +54,9 @@ test('pause, idle and explicit reset require a fresh baseline before resuming', 
     sample(tracker, { seconds: 1, speedKmh: 3.6 });
     if (interruption === 'reset') tracker.reset();
     else {
-      const stopped = sample(tracker, { seconds: 1, phase: interruption, speedKmh: 80, rpmDemo: true });
+      const stopped = sample(tracker, { seconds: 1, phase: interruption, speedKmh: 80 });
       assert.equal(stopped.status, interruption);
       assert.equal(stopped.accelMs2, null);
-      assert.equal(stopped.rpm, null);
-      assert.equal(stopped.rpmSource, 'unknown');
     }
     const resumed = sample(tracker, { seconds: 1.1, speedKmh: 40 });
     assert.equal(resumed.status, 'warming');
@@ -118,41 +116,42 @@ test('invalid numeric samples are gaps and do not poison the next baseline', () 
   }
 });
 
-test('RPM needs a strict explicit demonstration opt-in and stops immediately when disabled', () => {
+test('inertial speed remains usable during a GPS gap when explicitly identified', () => {
   const tracker = signals.create();
-  for (const rpmDemo of [false, undefined, 'true', 1]) {
-    const unknown = sample(tracker, { seconds: 8, rpmDemo });
-    assert.equal(unknown.rpm, null);
-    assert.equal(unknown.rpmSource, 'unknown');
-  }
-  const enabled = sample(tracker, { seconds: 8, rpmDemo: true });
-  assert.equal(enabled.rpmSource, 'demo');
-  assert.equal(enabled.rpm, 6600);
-  assert.equal(sample(tracker, { seconds: 8, rpmDemo: false }).rpm, null);
+  const input = { scenario: 'gps', motion: 'gps', source: 'inertial' };
+  assert.equal(sample(tracker, input).status, 'warming');
+  const reading = sample(tracker, { ...input, seconds: 1, speedKmh: 3.6 });
+  assert.equal(reading.status, 'valid');
+  closeTo(reading.accelMs2, 1);
+  assert.equal(sample(tracker, { ...input, seconds: 1.5, speedKmh: null }).status, 'gap');
+  assert.equal(sample(tracker, { ...input, seconds: 2, speedKmh: 10 }).status, 'warming');
 });
 
-test('RPM fixture is bounded, rises and falls, and never returns a gear', () => {
-  const tracker = signals.create();
-  const samples = [];
-  for (const scenario of ['normal', 'launch', 'load', 'cruise', 'turn', 'brake', 'gps']) {
-    for (let seconds = 0; seconds < 120; seconds += .1) {
-      const value = sample(tracker, { seconds, scenario, rpmDemo: true });
-      assert.ok(Number.isFinite(value.rpm) && value.rpm >= 1400 && value.rpm <= 8200);
-      assert.equal('gear' in value, false);
-      if (scenario === 'normal') samples.push(value.rpm);
-    }
+test('source switches never turn correction jumps into acceleration', () => {
+  for (const [before, after] of [['gps', 'inertial'], ['inertial', 'gps'], [undefined, 'inertial'], ['inertial', undefined]]) {
+    const tracker = signals.create();
+    sample(tracker, { source: before, speedKmh: 40 });
+    sample(tracker, { source: before, seconds: 1, speedKmh: 40 });
+    const switched = sample(tracker, { source: after, seconds: 1, speedKmh: 70 });
+    assert.equal(switched.status, 'warming');
+    assert.equal(switched.accelMs2, null);
+    closeTo(sample(tracker, { source: after, seconds: 2, speedKmh: 70 }).accelMs2, 0);
   }
-  assert.ok(samples.some((value, index) => index > 0 && value > samples[index - 1]));
-  assert.ok(samples.some((value, index) => index > 0 && value < samples[index - 1]));
-  assert.ok(Math.max(...samples) > 8000);
 });
 
-test('RPM does not depend on speed, acceleration, sound input or inferred motion labels', () => {
-  const slow = signals.create();
-  const fast = signals.create();
-  for (let seconds = 0; seconds < 60; seconds += .5) {
-    const left = sample(slow, { seconds, speedKmh: 0, rpmDemo: true, energy: 0, audioLive: false, motion: 'stop' });
-    const right = sample(fast, { seconds, speedKmh: 50 + Math.sin(seconds) * 45, rpmDemo: true, energy: 1, audioLive: true, motion: 'accelerate' });
-    assert.equal(left.rpm, right.rpm);
+test('only supported signal sources can provide acceleration', () => {
+  for (const inputSource of [null, 'sound', 'unknown', true]) {
+    const tracker = signals.create();
+    const reading = sample(tracker, { source: inputSource });
+    assert.equal(reading.status, 'gap');
+    assert.equal(reading.accelMs2, null);
   }
+});
+
+test('omitted and explicit GPS source are equivalent and output contains no engine metrics', () => {
+  const tracker = signals.create();
+  sample(tracker);
+  const reading = sample(tracker, { source: 'gps', seconds: 1, speedKmh: 3.6 });
+  closeTo(reading.accelMs2, 1);
+  assert.deepEqual(Object.keys(reading).sort(), ['accelG', 'accelMs2', 'status']);
 });

@@ -1,4 +1,4 @@
-/* Prominent driving signals; simulated RPM is always explicitly labeled. */
+/* Prominent sound trend and longitudinal acceleration; all sources are labeled. */
 .drive-cockpit .trip-info{display:flex}
 .drive-cockpit .event-banner{position:absolute;left:50%;top:8px;transform:translate(-50%,0);width:max-content;max-width:70%;pointer-events:none}
 .drive-cockpit .yu7-trip,.drive-cockpit .yu7-mode-panel,.drive-cockpit .sport-wing,.drive-cockpit .yu7-sound-caption{display:none!important}

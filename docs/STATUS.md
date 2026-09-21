@@ -1,6 +1,14 @@
 # Motuo 实施状态
 
-更新：2026-09-20。源码、模拟器、本机真实 HTTP、NAS、公网、Apple 分发和实车是独立验收层。已形成完整本机工程与主要交互；**0.1.0 (1) 已分发至TestFlight内部组，本人可接受邀请安装；实际iPhone/Watch安装和实车内测尚未验收。**
+更新：2026-09-21。源码、模拟器、本机真实 HTTP、NAS、公网、Apple 分发和实车是独立验收层。已形成完整本机工程与主要交互；**0.2.0 (2) 已分发至TestFlight内部组，本人可接受邀请安装；实际iPhone/Watch安装和实车内测尚未验收。**
+
+## 9/21 更新：原生座舱迁移、分发证书重签、`0.2.0 (2)` 发布
+
+审阅过的 HTML 座舱已迁移进原生 `NativeCockpitView`/`CockpitWebView`：沙箱 `motuo://` 资源方案渲染 HUD，录制/凭据/音频不进入 WebKit；新增 `InertialVelocityBridge`（GPS 锚定、15 秒上限的短时 IMU 估速，带显式误差，不进入记录或学习真值）与 `EngineSoundService`（本机 RMS/FFT 声浪分析，不上传不回放）。修复两个真实 UI bug：demo 预演按钮与主按钮的可访问性标签冲突导致 UI 测试定位失败；`RootView` 沉浸模式条件写反，空闲态在驾驶舱 tab 也误隐藏了导航栏。35 项单测＋2 项 UI 测试（iPhone 17 模拟器）全部通过，`server` 36/36 集成测试无回归。
+
+发布过程中发现原分发证书私钥所在的独立钥匙串密码遗忘，`codesign` 报 `errSecInternalComponent`；已通过 App Store Connect API 用新 CSR 撤销旧证书、签发新证书并导入默认 `login.keychain-db`，同时重建两个因证书失效变 `INVALID` 的描述文件（`Motuo App Store`/`Motuo Watch App Store`，均已 `ACTIVE`）。详情见 `docs/APPLE_RELEASE.md`。`0.2.0 (2)` IPA 已上传，Apple 处理 `VALID`，已加入 `Motuo Internal` 测试组回读 `IN_BETA_TESTING`；真机安装仍需本人在物理设备上通过 TestFlight 完成，本轮本机无连接设备，未做。
+
+开源地图栈（MapLibre/OSM/Martin/Valhalla/Ferrostar）本轮**未开工**：`NavigationService.swift` 仍是纯高德+MapKit搜索；服务端未新增 `/v1/maps/*` 接口；Martin 本机已确认可通过 Homebrew 安装运行，Valhalla 无 Homebrew formula、需 Docker 或源码编译，本机未装 Docker。这是独立的新功能开发任务，不在本轮范围。详见 `docs/OPEN_MAPS.md`。
 
 ## 最新接入：C5913 Suzuki 近似模型
 

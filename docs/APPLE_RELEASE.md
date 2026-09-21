@@ -40,3 +40,13 @@ Apple Music 授权、订阅和实际播放，以及真实手机与 Watch 的安�
 `--keychain-env` 只解锁既有签名钥匙串，不改变访问 ACL；支持 `MOTUO_SIGNING_KEYCHAIN` / `MOTUO_SIGNING_KEYCHAIN_PASSWORD`（本机沿用原已授权媒体项目变量）。签名私钥、密码、配对码均不在包或版本库中。
 
 状态脚本分别输出 Apple `processingState` 和 `internalBuildState`。仅 `VALID` 不足以证明已分发；需内部构建可测状态、群组关联和本人测试者可见共同核验。参考 [Apple 内部测试状态](https://developer.apple.com/documentation/appstoreconnectapi/internalbetastate)。本轮内测说明见 `docs/TESTFLIGHT_NOTES.zh-Hans.txt`。
+
+## 9 月 21 日：分发证书钥匙串密码丢失、重新签发、`0.2.0 (2)` 发布
+
+原分发证书私钥保存在独立的 `aipodcast-signing.keychain-db`；密码遗忘导致 `codesign` 持续返回 `errSecInternalComponent`（钥匙串无法解锁，不是签名身份错误）。已通过 App Store Connect API 用新生成的 CSR 撤销旧证书（序列号 `68FB7E83D7869DF8FD3E9BFA594FCBB8`）并签发新证书（序列号 `A98QZV5PK3`，SHA-1 指纹 `A7D26436BC208B93EE6D43001E088A56386C77FF`），私钥/证书对已导入默认 `login.keychain-db`（不再依赖独立钥匙串或密码）。旧证书失效后两个描述文件自动 `INVALID`；已重新生成同名 `Motuo App Store`（UUID `ccc21920-ca3a-4827-98ee-172b142552b5`）和 `Motuo Watch App Store`（UUID `223a3169-5a02-4801-965f-c6b309cb3568`），均 `ACTIVE`，已安装到本机 Provisioning Profiles。
+
+本轮同时把审阅过的 HTML 座舱迁移进原生 `NativeCockpitView`/`CockpitWebView`（沙箱 `motuo://` 资源方案，录制/凭据/音频不进入 WebKit），加入 `InertialVelocityBridge`（15 秒上限、GPS 锚定 IMU 短时估速，带显式误差，不进入记录或学习真值）与 `EngineSoundService`（本机 RMS/FFT，不上传不回放）；修复了 demo 预演按钮与主按钮 aria-label 冲突、以及 `RootView` 沉浸模式条件误判（空闲态误隐藏 tab bar）两个真实 UI bug。35 项单测＋2 项 UI 测试在 iPhone 17 模拟器全部通过；`server` 36/36 集成测试无回归。
+
+签名脚本沿用 WorkChat 项目的 App Store Connect API key（`ASC_KEY_ID`/`ASC_ISSUER_ID`，账户级而非 app 级，已确认对 motuo 有效）；私钥路径 `~/.appstoreconnect/private_keys/AuthKey_X38ZKQVMJV.p8` 不变。`0.2.0 (2)` iPhone+Watch 签名 IPA：8,772,952 字节，SHA-256 `ab343d91e01f9e3fa53ce3d753beb861a2a59a9f9a02d63c56057fede16dd2ce`。Apple 处理 `VALID`；已手动加入 `Motuo Internal` 测试组，内部状态回读 `IN_BETA_TESTING`。真机安装仍需你本人在 iPhone/Watch 上通过 TestFlight 接受并安装，本轮未做（无物理设备连接本机）。
+
+开源地图（MapLibre/OSM/Martin/Valhalla/Ferrostar）与真机/硬件验收仍是独立未完成项，见 `docs/OPEN_MAPS.md` 与 `docs/PHYSICAL_ACCEPTANCE.md`。

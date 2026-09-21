@@ -47,6 +47,6 @@ Apple Music 授权、订阅和实际播放，以及真实手机与 Watch 的安�
 
 本轮同时把审阅过的 HTML 座舱迁移进原生 `NativeCockpitView`/`CockpitWebView`（沙箱 `motuo://` 资源方案，录制/凭据/音频不进入 WebKit），加入 `InertialVelocityBridge`（15 秒上限、GPS 锚定 IMU 短时估速，带显式误差，不进入记录或学习真值）与 `EngineSoundService`（本机 RMS/FFT，不上传不回放）；修复了 demo 预演按钮与主按钮 aria-label 冲突、以及 `RootView` 沉浸模式条件误判（空闲态误隐藏 tab bar）两个真实 UI bug。35 项单测＋2 项 UI 测试在 iPhone 17 模拟器全部通过；`server` 36/36 集成测试无回归。
 
-签名脚本沿用 WorkChat 项目的 App Store Connect API key（`ASC_KEY_ID`/`ASC_ISSUER_ID`，账户级而非 app 级，已确认对 motuo 有效）；私钥路径 `~/.appstoreconnect/private_keys/AuthKey_X38ZKQVMJV.p8` 不变。`0.2.0 (2)` iPhone+Watch 签名 IPA：8,772,952 字节，SHA-256 `ab343d91e01f9e3fa53ce3d753beb861a2a59a9f9a02d63c56057fede16dd2ce`。Apple 处理 `VALID`；已手动加入 `Motuo Internal` 测试组，内部状态回读 `IN_BETA_TESTING`。真机安装仍需你本人在 iPhone/Watch 上通过 TestFlight 接受并安装，本轮未做（无物理设备连接本机）。
+签名脚本沿用 WorkChat 项目的 App Store Connect API key（`ASC_KEY_ID`/`ASC_ISSUER_ID`，账户级而非 app 级，已确认对 motuo 有效）；私钥路径为本机 `~/.appstoreconnect/private_keys/` 下的 `.p8` 文件（不进仓库，具体 Key ID 不在此记录）。`0.2.0 (2)` iPhone+Watch 签名 IPA：8,772,952 字节，SHA-256 `ab343d91e01f9e3fa53ce3d753beb861a2a59a9f9a02d63c56057fede16dd2ce`。Apple 处理 `VALID`；已手动加入 `Motuo Internal` 测试组，内部状态回读 `IN_BETA_TESTING`。真机安装仍需你本人在 iPhone/Watch 上通过 TestFlight 接受并安装，本轮未做（无物理设备连接本机）。
 
 开源地图（MapLibre/OSM/Martin/Valhalla/Ferrostar）与真机/硬件验收仍是独立未完成项，见 `docs/OPEN_MAPS.md` 与 `docs/PHYSICAL_ACCEPTANCE.md`。

@@ -81,7 +81,7 @@ struct PairingView:View {
     var body:some View {
         NavigationStack {
             Form {
-                Section("你的私人车库") { TextField("HTTPS 服务地址",text:$baseURL).textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL);Text("默认 motuo.yundongyl.cn。设备凭据按服务地址隔离，安全保存在系统钥匙串。").font(.footnote).foregroundStyle(Cyber.muted) }
+                Section("你的私人车库") { TextField("HTTPS 服务地址",text:$baseURL).textInputAutocapitalization(.never).autocorrectionDisabled().keyboardType(.URL);Text("填写你自己部署的服务地址。设备凭据按服务地址隔离，安全保存在系统钥匙串。").font(.footnote).foregroundStyle(Cyber.muted) }
                 Section("设备配对") { SecureField("一次性配对码",text:$code).textInputAutocapitalization(.never).autocorrectionDisabled();Button { Task { await pair() } } label:{ if busy { ProgressView() } else { Text("验证并配对") } }.disabled(busy || code.isEmpty) }
                 if !message.isEmpty { Section { Text(message).foregroundStyle(Cyber.cyan) } }
                 if APIClient.shared.isPaired { Section { Button("解除本机配对",role:.destructive) { showUnpair=true };Text("解除配对会移除本机凭据，保留手机和 NAS 上已有记录。").font(.footnote).foregroundStyle(Cyber.muted) } }

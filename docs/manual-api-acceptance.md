@@ -106,17 +106,17 @@
 
 ## 首轮与复测边界
 
-首轮真实 HTTP 结果保留在 `/Users/qiuxuanmai/Documents/motuo/.private/manual-e2e-20260914T160920-bf22d7/api-acceptance-01.json`：固定 fixture 严格通过 36/41，数值召回 39/41。缺少参数的题号为 GSX-012, GSX-014；另三题经原句复核可由替代页回答。上表为当前报告的实际请求结果，没有改写首轮返回。后续复测复用本轮已实际上传、处理并入库的原件，只重启此测试自己的 API 载入当前源码。
+首轮真实 HTTP 结果保留在 `<repo>/.private/manual-e2e-20260914T160920-bf22d7/api-acceptance-01.json`：固定 fixture 严格通过 36/41，数值召回 39/41。缺少参数的题号为 GSX-012, GSX-014；另三题经原句复核可由替代页回答。上表为当前报告的实际请求结果，没有改写首轮返回。后续复测复用本轮已实际上传、处理并入库的原件，只重启此测试自己的 API 载入当前源码。
 
 ## 证据与复跑
 
-本轮完整返回、缺失词与参数：`/Users/qiuxuanmai/Documents/motuo/.private/manual-e2e-20260914T160920-bf22d7/api-acceptance-06.json`。连接状态与 bearer token：`/Users/qiuxuanmai/Documents/motuo/.private/manual-e2e-20260914T160920-bf22d7/state.json`；凭证文件权限 600、目录 700，不在文档或终端显示其值。短期 iOS 模拟器可用同目录的 `ui-pairing.json`，配对码 15 分钟有效。
+本轮完整返回、缺失词与参数：`<repo>/.private/manual-e2e-20260914T160920-bf22d7/api-acceptance-06.json`。连接状态与 bearer token：`<repo>/.private/manual-e2e-20260914T160920-bf22d7/state.json`；凭证文件权限 600、目录 700，不在文档或终端显示其值。短期 iOS 模拟器可用同目录的 `ui-pairing.json`，配对码 15 分钟有效。
 
 ```bash
 python scripts/manual-e2e.py --worker-python /path/to/python
-python scripts/manual-e2e.py --recheck-state '/Users/qiuxuanmai/Documents/motuo/.private/manual-e2e-20260914T160920-bf22d7/state.json'
-python scripts/manual-e2e.py --refresh-pairing-state '/Users/qiuxuanmai/Documents/motuo/.private/manual-e2e-20260914T160920-bf22d7/state.json'
-python scripts/manual-e2e.py --stop-state '/Users/qiuxuanmai/Documents/motuo/.private/manual-e2e-20260914T160920-bf22d7/state.json'
+python scripts/manual-e2e.py --recheck-state '<repo>/.private/manual-e2e-20260914T160920-bf22d7/state.json'
+python scripts/manual-e2e.py --refresh-pairing-state '<repo>/.private/manual-e2e-20260914T160920-bf22d7/state.json'
+python scripts/manual-e2e.py --stop-state '<repo>/.private/manual-e2e-20260914T160920-bf22d7/state.json'
 ```
 
 API/PG 默认保留供短期模拟器联调；stop-state 只停止这次测试自己的进程，保留私有证据文件。脚本不碰已有数据库或服务。

@@ -103,7 +103,7 @@ YU7本轮另外完成29/29输入模拟回归与三尺寸浏览器布局/三主�
 
 1. **NAS 离线与手册失败。** 9/20初次读取 a4 API/PG 健康、a5镜像已构建；原手册记录失败，已提交175页，错误 `PDF_EXTRACTION_FAILED:PdfminerException`。此后 Mac/上海到 NAS 连接超时，Tailscale peer `Online=false`。本轮没有切换镜像、删 owner 或替换原件。本机已保留被解析器包装的超时原因，并为真正解析失败提供逐页 OCR/需复核降级；NAS根因尚未复现，不能把本机通过写成 NAS ready。修复必须使用新release部署。14:26–14:29 CST 再次只读核验：Tailscale LastSeen 为 `2026-09-20T03:00:00.1Z`；直连、上海跳板与已知 LAN 22/5001 均超时。现有项目资料及 Synology Drive 连接元数据未找到 QuickConnect/DDNS 替代入口；等待用户提供另一个远程网址或恢复联网，不能据此判断 NAS 关机。
 
-2. **公网 DNS/TLS。** 14:27 CST 从上海查询公共 DNS `119.29.29.29`，`motuo.yundongyl.cn` 仍为 NXDOMAIN；现有 DNS 凭据无该域操作权限。上海 HTTP Host 返回 `503 https_pending`，TLS还未签发和验收；NAS离线也会阻断后续源站核验。
+2. **公网 DNS/TLS。** 14:27 CST 从上海查询公共 DNS `119.29.29.29`，`motuo.example.com` 仍为 NXDOMAIN；现有 DNS 凭据无该域操作权限。上海 HTTP Host 返回 `503 https_pending`，TLS还未签发和验收；NAS离线也会阻断后续源站核验。
 3. **Apple 分发已完成，真机安装待验。** 用户9/20完成网页登录，已创建 App Store Connect App `6814048230`；独立 App ID/描述文件存在，MusicKit已启用，iPhone profile重建为ACTIVE，签名Keychain已解锁。`0.1.0 (1)` iPhone＋Watch签名IPA已生成并严格校验，2026-09-20 11:37:33 Apple `UPLOAD SUCCEEDED`、无错误；Delivery UUID `4dac7de5-ebd3-4398-bb4c-84394ccf9187`。Apple回读 `processingState=VALID`、`internalBuildState=IN_BETA_TESTING`；内部 `Motuo Internal` 组1构建、1名本人测试员，简体中文WhatToTest已保存并回读，网页显示2026年9月20日已邀请。本人可接受邀请安装；实际手机/手表安装仍待验收。最新详细状态由 [APPLE_RELEASE](APPLE_RELEASE.md) 维护。
 4. **原型反馈、地图与硬件。** HTML 原型确认后才修改 SwiftUI 和发新版 TestFlight；全开源地图真实服务及地区数据尚未接入。MusicKit真机授权播放、真实Watch触觉、实际配件、实车60分钟和独立倾角参考均未通过；倾角数值继续关闭。
 

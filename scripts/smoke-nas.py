@@ -2,7 +2,9 @@
 """Run a synthetic owner-scoped HTTP/DB smoke on Motuo only; erase its account afterward."""
 import pathlib,importlib.util,shlex,json,os
 ROOT=pathlib.Path(__file__).resolve().parents[1]
-helper=pathlib.Path(os.environ.get('MOTUO_NAS_ACCESS_HELPER','/Users/qiuxuanmai/SynologyDrive/新医生/MedAgent OS/docs/feedback-20260912/nas-access.py'))
+_helper_env=os.environ.get('MOTUO_NAS_ACCESS_HELPER')
+if not _helper_env:raise SystemExit('Set MOTUO_NAS_ACCESS_HELPER to your private SSH/Keychain access helper module path.')
+helper=pathlib.Path(_helper_env)
 spec=importlib.util.spec_from_file_location('motuo_nas_access',helper);access=importlib.util.module_from_spec(spec);spec.loader.exec_module(access)
 code=r'''
 import subprocess,json,uuid,hashlib,time,urllib.request,urllib.error,pathlib

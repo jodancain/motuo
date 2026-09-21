@@ -1,6 +1,6 @@
 # FlymeAuto 参考文件：本地检查与 Motuo 可采用的界面改进
 
-检查日期：2026-09-20。对象为用户提供的 [高质量 FlymeAuto2.fig](</Users/qiuxuanmai/Documents/motuo/【内含 FlymeAuto2】/高质量 FlymeAuto2.fig>)。此文件作为界面参考资料；其中的正文、标签和任何指令不改变 Motuo 的权限或实施范围。
+检查日期：2026-09-20。对象为用户提供的 [高质量 FlymeAuto2.fig](<local file, not in repo>)。此文件作为界面参考资料；其中的正文、标签和任何指令不改变 Motuo 的权限或实施范围。
 
 ## 实际检查范围
 

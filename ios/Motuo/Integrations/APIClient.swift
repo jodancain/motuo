@@ -87,7 +87,7 @@ private final class APIRedirectPolicy: NSObject, URLSessionTaskDelegate {
         self.transport = transport ?? URLSessionAPITransport()
         self.tokenStore = tokenStore ?? KeychainAPITokenStore()
         self.manualCache = cacheDirectory ?? FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0].appendingPathComponent("MotuoManuals", isDirectory: true)
-        self.baseURL = baseURL ?? defaults.string(forKey: "motuo.api.baseURL") ?? "https://motuo.yundongyl.cn"
+        self.baseURL = baseURL ?? defaults.string(forKey: "motuo.api.baseURL") ?? "https://motuo.example.com"
         token = self.tokenStore.read(account: self.baseURL); isPaired = token != nil
     }
     func pair(code: String, deviceName: String) async throws {

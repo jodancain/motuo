@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "https://motuo.yundongyl.cn"
+      "url": "https://motuo.example.com"
     }
   ],
   "security": [

@@ -79,7 +79,7 @@ npm run build
 - [Apple / TestFlight 接续](docs/APPLE_RELEASE.md) · [实车验收清单](docs/PHYSICAL_ACCEPTANCE.md)
 - [配件协议与模拟器](docs/ACCESSORY_PROTOCOL.md)
 
-部署目标为 `motuo.yundongyl.cn → 上海 Nginx/TLS → Tailscale → NAS /volume1/docker/motuo`，API 端口3020，独立数据库、容器、网络和密钥。脚本只用于已授权的 Motuo 资源；共享 Nginx 必须保留原配置、备份、检查并 reload，不能替换其他项目部署。
+部署目标为 `motuo.example.com → 反向代理/TLS → 私网 → 你自己的 NAS 或服务器`，API 端口3020，独立数据库、容器、网络和密钥。脚本只用于已授权的 Motuo 资源；若与其他项目共享入口 Nginx，必须保留原配置、备份、检查并 reload，不能替换其他项目部署。
 
 ## 数据与功能边界
 

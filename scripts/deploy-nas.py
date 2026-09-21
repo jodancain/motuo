@@ -5,11 +5,12 @@ Only /volume1/docker/motuo and motuo-* Docker resources may be mutated.
 import argparse, importlib.util, json, os, pathlib, shlex, subprocess, tarfile, tempfile, hashlib, datetime
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 REMOTE='/volume1/docker/motuo'
-DEFAULT_HELPER=pathlib.Path('/Users/qiuxuanmai/SynologyDrive/新医生/MedAgent OS/docs/feedback-20260912/nas-access.py')
 PRIVATE=ROOT/'.private'
 
 def access():
-    p=pathlib.Path(os.environ.get('MOTUO_NAS_ACCESS_HELPER',str(DEFAULT_HELPER)))
+    value=os.environ.get('MOTUO_NAS_ACCESS_HELPER')
+    if not value:raise SystemExit('Set MOTUO_NAS_ACCESS_HELPER to your private SSH/Keychain access helper module path.')
+    p=pathlib.Path(value)
     spec=importlib.util.spec_from_file_location('motuo_nas_access',p)
     mod=importlib.util.module_from_spec(spec);spec.loader.exec_module(mod);return mod
 

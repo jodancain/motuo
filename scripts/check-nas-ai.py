@@ -2,7 +2,9 @@
 """One synthetic provider request from the actual Motuo image, without printing credentials."""
 import importlib.util,pathlib,shlex,json,os
 ROOT=pathlib.Path(__file__).resolve().parents[1]
-p=pathlib.Path(os.environ.get('MOTUO_NAS_ACCESS_HELPER','/Users/qiuxuanmai/SynologyDrive/新医生/MedAgent OS/docs/feedback-20260912/nas-access.py'))
+_helper=os.environ.get('MOTUO_NAS_ACCESS_HELPER')
+if not _helper:raise SystemExit('Set MOTUO_NAS_ACCESS_HELPER to your private SSH/Keychain access helper module path.')
+p=pathlib.Path(_helper)
 s=importlib.util.spec_from_file_location('access',p);m=importlib.util.module_from_spec(s);s.loader.exec_module(m)
 code=r'''
 import pathlib,json,subprocess

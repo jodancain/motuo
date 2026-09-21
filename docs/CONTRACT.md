@@ -2,7 +2,7 @@
 
 ## Transport
 
-API root https://motuo.yundongyl.cn/v1. JSON camelCase, ISO8601 UTC timestamps, UUID strings. Authorization Bearer device token. API success is the object itself (no extra data envelope); errors `{error:{code,message}}`. All user resources scoped by authenticated owner. Pairing establishes first owner's device; no public registration.
+API root https://motuo.example.com/v1 (replace with your own deployed domain). JSON camelCase, ISO8601 UTC timestamps, UUID strings. Authorization Bearer device token. API success is the object itself (no extra data envelope); errors `{error:{code,message}}`. All user resources scoped by authenticated owner. Pairing establishes first owner's device; no public registration.
 
 - POST /v1/pair `{code,deviceName}` -> `{token,deviceId,ownerId}`
 - GET /v1/capabilities -> `{ai:{configured},navigation:{provider:"amap",embeddedEnabled:false},version}`

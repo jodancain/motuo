@@ -43,6 +43,11 @@ def verify_archive(archive, expected_build):
         results.append({'bundleId':identifier,'version':info['CFBundleShortVersionString'],'build':info['CFBundleVersion'],'profile':profile['Name'],'signedIdentifier':appIdentifier,'codeSignatureVerified':True})
     if results[0]['version'] != results[1]['version']: raise SystemExit('Phone/watch version mismatch')
     if not (app/'ThirdPartyNotices.txt').exists(): raise SystemExit('Third-party license notice missing')
+    cockpit=app/'Cockpit'
+    if not (cockpit/'index.html').exists(): raise SystemExit('Native cockpit missing')
+    model=cockpit/'assets/models/suzuki-gsx-r1000/model.glb'
+    manifest=json.loads((ROOT/'prototypes/motuo-v2/assets/models/suzuki-gsx-r1000/manifest.json').read_text())
+    if hashlib.sha256(model.read_bytes()).hexdigest()!=manifest['sha256']: raise SystemExit('Bundled model checksum mismatch')
     receipt = {'targets':results,'physicalInstallVerified':False}
     (archive.parent/'archive-verification.json').write_text(json.dumps(receipt,indent=2))
     print(json.dumps(receipt))
@@ -102,6 +107,7 @@ def main():
     build = args.build_dir.expanduser().resolve(); build.mkdir(parents=True, exist_ok=True)
     archive = build/'Motuo.xcarchive'; exported = build/'export'
     if args.archive:
+        subprocess.run(['python3',str(ROOT/'scripts/prepare-native-cockpit.py')],check=True)
         run(['xcodegen','generate'], build/'generate.log')
         run(['xcodebuild','-project','Motuo.xcodeproj','-scheme','Motuo','-configuration','Release','-destination','generic/platform=iOS','-derivedDataPath',str(build/'ReleaseDerivedData'),'-archivePath',str(archive),'CURRENT_PROJECT_VERSION='+args.build_number,'archive'], build/'archive.log')
         print('Signed archive: '+str(archive))

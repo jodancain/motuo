@@ -1,0 +1,6 @@
+/* Native owns permissions, recording, navigation and music. The web layer renders. */
+html.native-host #app{padding-top:env(safe-area-inset-top);padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right);padding-bottom:env(safe-area-inset-bottom)}
+html.native-host .demo-badge{color:#97dae3}
+html.native-host .native-profile{margin:18px 0;min-height:48px;width:100%;background:#132235;border:1px solid #92bfff44;border-radius:14px;color:#d9ebff;font:14px sans-serif}
+html.native-host .song{cursor:pointer}
+html.native-host #map-surface,html.native-host #page-history,html.native-host #page-settings,html.native-host #scenarios-open,html.native-host #scenarios-quick{display:none!important}

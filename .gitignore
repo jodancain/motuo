@@ -20,3 +20,5 @@ data/
 coverage/
 C5913/
 prototypes/motuo-v2/assets/models/suzuki-gsx-r1000/*.glb
+
+ios/Motuo/Resources/Cockpit/

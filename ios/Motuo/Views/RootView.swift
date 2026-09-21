@@ -11,18 +11,19 @@ struct RootView: View {
     var body: some View {
         GeometryReader { geometry in
             let landscape = geometry.size.width > geometry.size.height
+            let immersive = tab == .cockpit && engine.currentRide != nil
             HStack(spacing: 0) {
-                if landscape { tabBar(vertical: true).frame(width: 66) }
+                if landscape && !immersive { tabBar(vertical: true).frame(width: 66) }
                 VStack(spacing: 0) {
                     Group {
                         switch tab {
-                        case .cockpit: DashboardView(landscape: landscape)
+                        case .cockpit: NativeCockpitView()
                         case .garage: GarageView()
                         case .rides: RideHistoryView()
                         case .settings: SettingsView()
                         }
                     }.frame(maxWidth: .infinity, maxHeight: .infinity)
-                    if !landscape { tabBar(vertical: false) }
+                    if !landscape && !immersive { tabBar(vertical: false) }
                 }
             }.background(Cyber.ink)
         }

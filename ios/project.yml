@@ -9,14 +9,20 @@ settings:
   base:
     SWIFT_VERSION: "5.0"
     DEVELOPMENT_TEAM: 7NUGZ3A48C
-    MARKETING_VERSION: "0.1.0"
-    CURRENT_PROJECT_VERSION: "1"
+    MARKETING_VERSION: "0.2.0"
+    CURRENT_PROJECT_VERSION: "2"
     SWIFT_STRICT_CONCURRENCY: minimal
 targets:
   Motuo:
     type: application
     platform: iOS
-    sources: [Motuo, Shared]
+    sources:
+      - path: Motuo
+        excludes: [Resources/Cockpit, Cockpit/native-runtime.js, Cockpit/native-runtime.css]
+      - path: Shared
+      - path: Motuo/Resources/Cockpit
+        type: folder
+        buildPhase: resources
     info:
       path: Motuo/Info.plist
       properties:
@@ -28,6 +34,7 @@ targets:
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
         NSLocationWhenInUseUsageDescription: 记录骑行路线、速度并提供导航；仅在你开始骑行后采集。
         NSLocationAlwaysAndWhenInUseUsageDescription: 在锁屏或切换应用后继续记录你开启的骑行。
+        NSMicrophoneUsageDescription: 在你开启后用手机麦克风感受外界声浪，驱动仪表动效；仅本机分析，不保存或上传原音。
         NSMotionUsageDescription: 感知手机支架上的加速度与转动，生成骑行动态与复盘。
         NSAppleMusicUsageDescription: 访问你授权的 Apple Music 音乐，在骑行时播放。
         NSBluetoothAlwaysUsageDescription: 连接你选择的胎压、HUD 与动态传感器配件。

@@ -57,7 +57,7 @@ struct SettingsView:View {
                             Eyebrow(text:"DATA WITH CONTEXT",color:Cyber.accent)
                             Text("实测、估计、确认、演示，分别保存").font(.system(size:15,weight:.semibold))
                             Text("真实挡位、发动机转速和数值倾角未接入时显示未知。只有明确确认或传感器真值可进入个人模型；手册原文仅作为证据。").font(.system(size:12)).foregroundStyle(Cyber.muted).lineSpacing(5)
-                            Text("MOTUO 0.1 · iOS 真机内测").font(Cyber.mono(10)).foregroundStyle(Cyber.muted).padding(.top,8)
+                            Text("MOTUO 0.2 · iOS 真机内测").font(Cyber.mono(10)).foregroundStyle(Cyber.muted).padding(.top,8)
                         }
                     }
                 }.padding(24).frame(maxWidth:850)

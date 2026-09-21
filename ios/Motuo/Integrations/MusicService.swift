@@ -87,7 +87,7 @@ import Observation
     func skipNext() async { do { try await ApplicationMusicPlayer.shared.skipToNextEntry(); refreshPlayback() } catch { statusMessage = "已经是最后一首" } }
     func skipPrevious() async { do { try await ApplicationMusicPlayer.shared.skipToPreviousEntry(); refreshPlayback() } catch { statusMessage = "已经是第一首" } }
     private func configureAudio() throws {
-        try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [])
+        if !EngineSoundService.shared.isCapturing { try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: []) }
         try AVAudioSession.sharedInstance().setActive(true)
     }
     private func refreshPlayback() {

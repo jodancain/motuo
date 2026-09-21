@@ -4,8 +4,14 @@ import CoreMotion
 import Observation
 import SwiftData
 import UIKit
+import simd
 
 @MainActor @Observable final class RideEngine: NSObject, @preconcurrency CLLocationManagerDelegate {
+    @ObservationIgnored private var velocityBridge = InertialVelocityBridge()
+    var inertialPresentation: (speed:Double,uncertainty:Double)? {
+        guard isRecording,!isSimulated,speedMPS == nil else{return nil}
+        return velocityBridge.estimate(at:ProcessInfo.processInfo.systemUptime)
+    }
     var currentRide: Ride?
     var lastFinishedRide: Ride?
     var speedMPS: Double?
@@ -235,6 +241,7 @@ import UIKit
         } else { motionStatus = "设备无动态传感器" }
     }
     private func stopSensors() {
+        velocityBridge.reset()
         locationManager.stopUpdatingLocation(); locationManager.allowsBackgroundLocationUpdates = false
         motionManager.stopDeviceMotionUpdates(); UIApplication.shared.isIdleTimerDisabled = false
         motionStatus = "已暂停"
@@ -245,6 +252,10 @@ import UIKit
               lastMotionElapsed == nil || point.elapsed > lastMotionElapsed! else { return }
         lastMotionElapsed = point.elapsed
         let timestamp = point.timestamp
+        if let id=currentRide?.vehicleId,let profile=SensorCalibrationService.shared.profile(for:id),profile.id==calibrationId {
+            let corrected=SIMD3(value.ax,value.ay,value.az)-profile.accelerationBias.vector
+            velocityBridge.motion(acceleration:profile.projected(corrected).y,time:value.timestamp)
+        } else { velocityBridge.motion(acceleration:nil,time:value.timestamp) }
         let acceleration = sqrt(value.ax * value.ax + value.ay * value.ay + value.az * value.az)
         let rotation = sqrt(value.rx * value.rx + value.ry * value.ry + value.rz * value.rz)
         if value.timestamp - lastMotionUI >= 1 / 10 {
@@ -330,6 +341,9 @@ import UIKit
                   lastLocation == nil || location.timestamp > lastLocation!.timestamp else { continue }
             lastLocation = location; locationAccuracy = location.horizontalAccuracy
             speedMPS = SpeedQuality.accepted(speed: location.speed, accuracy: location.speedAccuracy, timestamp: location.timestamp, now: now)
+            if let speedMPS,location.horizontalAccuracy<=25,abs(now.timeIntervalSince(location.timestamp))<=1.5 {
+                velocityBridge.gps(speed:speedMPS,accuracy:location.speedAccuracy,time:ProcessInfo.processInfo.systemUptime)
+            }
             longitudinalTrend = gpsTrend.update(speed: location.horizontalAccuracy <= 25 ? speedMPS : nil, accuracy: location.speedAccuracy, timestamp: location.timestamp, now: now)
             locationStatus = location.horizontalAccuracy <= 25 ? "定位稳定" : "定位精度较低"
             if let speed = speedMPS {

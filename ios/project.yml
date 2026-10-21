@@ -18,7 +18,7 @@ targets:
     platform: iOS
     sources:
       - path: Motuo
-        excludes: [Resources/Cockpit, Cockpit/native-runtime.js, Cockpit/native-runtime.css]
+        excludes: [Resources/Cockpit, Cockpit/native-runtime.js, Cockpit/native-runtime.css, Cockpit/v3]
       - path: Shared
       - path: Motuo/Resources/Cockpit
         type: folder

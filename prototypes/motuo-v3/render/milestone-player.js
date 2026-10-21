@@ -97,20 +97,31 @@ export function createMilestonePlayer({canvas, reduced = () => false, requestFla
   const ctx = canvas.getContext('2d');
   const idle = {sceneScale: 1, panX: 0, timeScale: 1, desat: 0, bike: IDLE_BIKE};
   function clear() { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, canvas.width, canvas.height); }
+  let hooks = null;
+  function drawStatic() { clear(); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); drawPlan(ctx, plan, .66, env, {camera: false}); }
   return {
     play(next, envArgs, nowMs) {
       plan = next; flashed = new Set();
-      env = buildEnv(next, {...envArgs, hooks: {
+      hooks = {
         flash: kind => { if (flashed.has(kind) || flashed.size >= 2 || reduced()) return false; flashed.add(kind); return requestFlash(nowMs, 'milestone-' + kind); },
         shake: v => { if (!reduced()) shake(v); },
-      }});
+      };
+      env = buildEnv(next, {...envArgs, hooks});
       dpr = envArgs.dpr || 1; canvas.hidden = false;
       if (reduced()) {
         // 静态卡片：主剧目在爆点之后的定格 + 标签，不动画
-        clear(); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        drawPlan(ctx, next, .66, env, {camera: false});
+        drawStatic();
         staticUntil = nowMs + 1600;
       }
+    },
+    /* 旋转 / 改尺寸：剧目每帧按进度 P 从环境重画、没有逐帧内部状态，所以换成新尺寸的环境即可按新版式继续；
+     * 已用过的冲击帧不会重放（flashed 保留）。 */
+    relayout(envArgs) {
+      if (!plan) return false;
+      env = buildEnv(plan, {...envArgs, hooks});
+      dpr = envArgs.dpr || 1;
+      if (reduced()) drawStatic();
+      return true;
     },
     // 每帧调用；返回镜头参数与车姿态增量。
     frame(nowMs) {

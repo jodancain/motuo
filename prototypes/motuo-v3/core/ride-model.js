@@ -122,6 +122,7 @@ export function createRideModel({signals, game, gameHz = 10}) {
     begin, ingest, tick, pause, resume, finish, reset, setWorld,
     setPaint(p) { paint = p; },
     setModal(v) { modal = !!v; },
+    get modal() { return modal; },
     onEvent(fn) { listeners.add(fn); return () => listeners.delete(fn); },
     get phase() { return phase; }, get reading() { return reading; },
     get accel() { return accelStatus === 'valid' ? accel : null; }, get accelStatus() { return accelStatus; },

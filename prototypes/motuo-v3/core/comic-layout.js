@@ -70,9 +70,11 @@ export function selectMoments(record, {max = 6} = {}) {
   const finishReading = valid(last) ? last : readings[readings.length - 1];
   const keep = ['launch', 'milestone', 'top', 'brake', 'corner', 'accel'];
   const body = [...out].sort((a, b) => keep.indexOf(a.kind) - keep.indexOf(b.kind)).slice(0, max - 1);
-  if (body.length < 3) {
-    const mid = readings[Math.floor(readings.length / 2)];
-    if (!used.has(mid.t)) { used.add(mid.t); body.push({kind: 'cruise', t: mid.t, speedKmh: mid.speedKmh, shown: mid.shown, accelMs2: mid.accelMs2 ?? null, world: mid.world, simulated: !!mid.simulated, source: mid.source, distanceM: mid.distanceM, score: mid.score}); }
+  // 不足 3 格（短骑行时各时刻撞在同一条读数上）：按中段、三分点补巡航格，仍只用不同的已记录读数。
+  for (const f of [.5, .33, .67, .2, .8]) {
+    if (body.length >= 3) break;
+    const mid = readings[Math.min(readings.length - 1, Math.floor(readings.length * f))];
+    if (!used.has(mid.t) && mid !== readings[readings.length - 1]) { used.add(mid.t); body.push({kind: 'cruise', t: mid.t, speedKmh: mid.speedKmh, shown: mid.shown, accelMs2: mid.accelMs2 ?? null, world: mid.world, simulated: !!mid.simulated, source: mid.source, distanceM: mid.distanceM, score: mid.score}); }
   }
   body.sort((a, b) => a.t - b.t);
   const s = record.summary || {};
@@ -115,7 +117,8 @@ export function pageSummary(record) {
     values,
     line: `时长 ${values[0]} · 里程 ${values[1]} km · 最高 ${values[2]} km/h`,
     score: `游戏分 ${values[3]}（游戏分 · 非驾驶评价）`,
-    source: s.simulated ? '数据：DEMO 模拟读数（1Hz），里程由读数积分' : '数据：本机记录',
+    // 原生：里程、时长、最高速来自原生保存的汇总，读数来自保存的遥测时间线。
+    source: s.simulated ? (s.origin === 'native' ? '数据：DEMO · 原生演示骑行（模拟读数）' : '数据：DEMO 模拟读数（1Hz），里程由读数积分') : s.origin === 'native' ? '数据：本机记录 · GPS 实测' : '数据：本机记录',
   };
 }
 

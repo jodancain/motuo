@@ -39,7 +39,7 @@ export function createBike({glCanvas, vecCanvas, modelURL, onStatus = () => {}})
 
   function layout(nextL, w, h, pixelRatio) {
     L = nextL; cssW = w; cssH = h; dpr = pixelRatio;
-    for (const c of [glCanvas, vecCanvas]) { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); c.style.width = w + 'px'; c.style.height = h + 'px'; }
+    for (const c of [glCanvas, vecCanvas]) { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); c.style.width = '100%'; c.style.height = '100%'; } // 旋转第一拍按 CSS 拉伸旧缓冲，稳定后才按新尺寸重建
     if (renderer) { renderer.setPixelRatio(dpr); renderer.setSize(w, h, false); fitCamera(camera, L, w, h); }
   }
   function fitCamera(cam, lay, w, h) {

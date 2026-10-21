@@ -1,0 +1,19 @@
+/* v3 原生座舱（只在打包进 App 时注入，html.native-host）。
+ * 导航只有一套：原生 TabBar（驾驶舱 / 车库 / 骑行档案 / 控制中心）。场景里的“关卡 / 配色 / 声浪 / 设置”是左上角的小贴纸，
+ * 不再排成第二条底部导航；底部只留出发动作（开始骑行 / 演示骑行）。安全区由 .page 的 env(safe-area-inset-*) 内边距负责。 */
+html.native-host .stickers.idle-only{left:0;right:0;top:0;bottom:0;max-width:none;padding:0 0 30px;pointer-events:none;align-items:flex-end;flex-wrap:nowrap;gap:10px}
+html.native-host .portrait .stickers.idle-only{justify-content:center}
+html.native-host .landscape .stickers.idle-only{justify-content:flex-end;padding-right:14px}
+html.native-host .stickers.idle-only>.sticker{pointer-events:auto}
+html.native-host .stickers.idle-only #btn-native-demo{font-size:14px;padding:7px 12px 6px;align-self:flex-end}
+html.native-host .stickers.idle-only #btn-native-demo small{display:block;font-size:10px;margin-top:2px;letter-spacing:.04em}
+html.native-host .portrait .sticker.primary{flex-basis:auto;max-width:none}
+/* 场景小控件：左上角竖排，避开页角标题 */
+html.native-host #btn-world,html.native-host #btn-garage,html.native-host #btn-sound,html.native-host #btn-settings{position:absolute;left:6px;font-size:12px;padding:4px 9px 3px;box-shadow:3px 3px 0 var(--ink);min-width:56px;min-height:30px;transform:rotate(-1.5deg)}
+html.native-host #btn-world{top:34px}
+html.native-host #btn-garage{top:72px}
+html.native-host #btn-sound{top:110px}
+html.native-host #btn-settings{top:148px}
+html.native-host .portrait .hint{top:auto;bottom:88px;left:50%;transform:translateX(-50%)}
+html.native-host #btn-vehicle{align-self:flex-start}
+html.native-host .comic-actions .sticker{min-height:44px}

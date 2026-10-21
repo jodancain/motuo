@@ -110,8 +110,8 @@ button{font:inherit;color:inherit;cursor:pointer}
 
 /* 面板 */
 .sheet{position:absolute;z-index:60;background:var(--paper);border:3px solid var(--ink);box-shadow:-8px 8px 0 var(--ink);padding:14px 16px 16px;display:flex;flex-direction:column;gap:12px;overflow:auto}
-.landscape .sheet{right:10px;top:10px;bottom:10px;width:min(46%,420px)}
-.portrait .sheet{left:10px;right:10px;top:10px;max-height:56%}
+.landscape .sheet{right:max(10px,env(safe-area-inset-right));top:max(10px,env(safe-area-inset-top));bottom:max(10px,env(safe-area-inset-bottom));width:min(46%,420px)}
+.portrait .sheet{left:max(10px,env(safe-area-inset-left));right:max(10px,env(safe-area-inset-right));top:max(10px,env(safe-area-inset-top));max-height:56%}
 .sheet header{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
 .sheet header b{font-size:22px;font-weight:400}
 .sheet header span{font-size:12px;opacity:.7;flex:1}
@@ -134,11 +134,11 @@ button{font:inherit;color:inherit;cursor:pointer}
 .swatch[aria-pressed=true] i{outline:3px solid var(--m);outline-offset:2px}
 
 /* 今日骑行漫画 */
-.comic{position:absolute;inset:0;z-index:80;background:var(--ink) radial-gradient(circle,rgba(255,61,166,.22) 28%,transparent 31%) 0 0/12px 12px;display:flex;align-items:center;justify-content:center;gap:18px;padding:12px}
+.comic{position:absolute;inset:0;z-index:80;background:var(--ink) radial-gradient(circle,rgba(255,61,166,.22) 28%,transparent 31%) 0 0/12px 12px;display:flex;align-items:center;justify-content:center;gap:18px;padding:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))}
 .comic-canvas{background:var(--paper);box-shadow:10px 10px 0 rgba(0,0,0,.6);border:3px solid var(--paper)}
-.landscape .comic-canvas{height:calc(100vh - 24px);width:auto;aspect-ratio:1080/1528}
+.landscape .comic-canvas{height:calc(100vh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));width:auto;aspect-ratio:1080/1528}
 .portrait .comic{flex-direction:column}
-.portrait .comic-canvas{width:calc(100vw - 24px);height:auto;aspect-ratio:1080/1528;max-height:calc(100vh - 120px)}
+.portrait .comic-canvas{width:auto;height:auto;aspect-ratio:1080/1528;max-width:calc(100vw - 24px - env(safe-area-inset-left) - env(safe-area-inset-right));max-height:calc(100vh - 130px - env(safe-area-inset-top) - env(safe-area-inset-bottom))}
 .comic-actions{display:flex;flex-direction:column;gap:14px;align-items:flex-start;max-width:220px}
 .portrait .comic-actions{flex-direction:row;flex-wrap:wrap;max-width:none;justify-content:center}
 .comic-actions .note{color:var(--paper)}
@@ -148,7 +148,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 
 /* 速度突破剧场：在分镜之下、翻页之上；速度巨字仍在所有层之上 */
 .milestone{z-index:22;pointer-events:none}
-.gallery{position:absolute;z-index:55;left:50%;bottom:6px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;max-width:calc(100% - 16px)}
+.gallery{position:absolute;z-index:55;left:50%;bottom:max(6px,env(safe-area-inset-bottom));transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;max-width:calc(100% - 16px)}
 .gallery>*{pointer-events:auto}
 .g-bar{display:flex;align-items:center;gap:2px;background:var(--ink);border:2px solid var(--paper);padding:2px 4px;height:28px}
 .g-bar button{background:none;border:none;color:var(--paper);font-size:13px;padding:0 8px;height:22px}
@@ -169,3 +169,13 @@ button{font:inherit;color:inherit;cursor:pointer}
 @keyframes load-bob{to{transform:translateY(-4px) rotate(2deg)}}
 @media(prefers-reduced-motion:reduce){.loading b{animation:none}}
 .app[data-phase=gallery] .ride-only,.app[data-phase=gallery] .idle-only{display:none!important}
+
+/* 原生专属 / 浏览器专属控件（原生座舱由 html.native-host 切换，见 ios/Motuo/Cockpit/v3/native-runtime.css） */
+.native-only{display:none!important}
+.native-host .native-only{display:revert!important}
+.native-host .browser-only{display:none!important}
+.native-host .native-only[hidden]{display:none!important}
+/* 视觉隐藏、屏幕阅读器可读 */
+.ax{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
+.ax span{display:block}
+.ride-title{color:var(--yellow);margin-left:4px}

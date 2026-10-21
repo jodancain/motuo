@@ -40,8 +40,13 @@ export function createPerfGovernor({slowMs = 22, fastMs = 17.5, downAfterMs = 15
       slowFor = fastFor = 0;
       if (mode !== 'auto') set(mode, 'manual');
     },
-    // 原生热压力等外部提示：自动模式下不高于给定档位。
-    setCap(next) { cap = TIERS.includes(next) ? next : null; if (cap && mode === 'auto') set(tier, 'cap'); },
+    // 发热 serious/critical、低电量模式是安全约束：手动固定的档位也会被压到封顶档；解除后手动档恢复。
+    setCap(next) {
+      const prev = cap; cap = TIERS.includes(next) ? next : null;
+      if (cap === prev) return;
+      if (cap) set(tier, 'cap'); else if (mode !== 'auto') set(mode, 'manual');
+    },
+    get cap() { return cap; },
     onChange(fn) { listeners.add(fn); return () => listeners.delete(fn); },
     get tier() { return tier; }, get mode() { return mode; }, get ema() { return ema; },
     get config() { return TIER_CONFIG[tier]; },

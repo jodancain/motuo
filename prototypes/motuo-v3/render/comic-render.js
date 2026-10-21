@@ -171,6 +171,18 @@ export function renderComicPage(canvas, {record, moments, painter, bike, date = 
     tracePath(ctx, panel.poly); ctx.lineWidth = 7; ctx.strokeStyle = ink; ctx.stroke();
     panels.push({poly: panel.poly, kind: m.kind, caption: cap});
   });
+  // 读数太少、格数不足 4 时：空出的格画成“下回待续”，不留白框、不写任何数字。
+  for (const panel of layout.panels.slice(moments.length)) {
+    const b = bounds(panel.poly);
+    ctx.save(); tracePath(ctx, panel.poly); ctx.clip();
+    ctx.fillStyle = '#e8dcc0'; ctx.fillRect(b.x, b.y, b.w, b.h);
+    ctx.strokeStyle = 'rgba(11,10,18,.18)'; ctx.lineWidth = 3;
+    for (let x = b.x - b.h; x < b.x + b.w; x += 22) { ctx.beginPath(); ctx.moveTo(x, b.y + b.h); ctx.lineTo(x + b.h, b.y); ctx.stroke(); }
+    ctx.fillStyle = ink; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = `${Math.round(Math.min(b.h * .22, 56))}px MotuoHan, sans-serif`; ctx.fillText('下回待续…', b.x + b.w / 2, b.y + b.h / 2);
+    ctx.restore();
+    tracePath(ctx, panel.poly); ctx.lineWidth = 7; ctx.strokeStyle = ink; ctx.stroke();
+  }
   // 页脚
   const sum = pageSummary(record);
   const fy = PAGE.H - PAGE.footer + 30;

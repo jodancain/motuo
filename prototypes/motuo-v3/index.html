@@ -49,14 +49,15 @@
         <span id="speed-frozen" class="speed-frozen" hidden>定格 · 最后读数</span>
       </div>
 
-      <div class="corner tl"><b id="chapter">第1话</b><span id="world-name">霓虹都市夜</span><i id="world-en">NEON NIGHT</i></div>
+      <div class="corner tl"><b id="chapter">第1话</b><span id="world-name">霓虹都市夜</span><i id="world-en">NEON NIGHT</i><span id="ride-title" class="ride-title native-only">准备出发</span></div>
       <div class="corner tr"><span id="clock">00:00</span><span class="dot">·</span><span id="dist">0.00</span><small>km</small><span id="tier-badge" class="tier-badge">高</span></div>
       <div class="corner bl"><span id="source">待机</span><span class="dot">·</span><span id="sound-status">声浪关闭</span></div>
       <div class="corner br"><span id="score">游戏分 0</span><span id="combo" class="combo"></span></div>
       <div id="caption" class="caption" aria-live="polite"></div>
 
       <nav class="stickers idle-only" aria-label="待机操作">
-        <button id="btn-demo" class="sticker primary">演示驾驶<small>DEMO · 约 60 秒</small></button>
+        <button id="btn-demo" class="sticker primary"><span id="btn-demo-label">演示驾驶</span><small id="btn-demo-sub">DEMO · 约 60 秒</small></button>
+        <button id="btn-native-demo" class="sticker native-only" aria-label="演示骑行">演示骑行<small>DEMO · 模拟数据</small></button>
         <button id="btn-world" class="sticker">关卡</button>
         <button id="btn-garage" class="sticker">车库</button>
         <button id="btn-sound" class="sticker">声浪</button>
@@ -81,6 +82,7 @@
     <div class="swatches" id="swatches"></div>
     <div class="row"><span>漆面</span><button class="chip" data-finish="gloss">亮面</button><button class="chip" data-finish="satin">缎面</button></div>
     <p class="note" id="bike-mode">正在装载漫画摩托…</p>
+    <button id="btn-vehicle" class="chip native-only">车辆档案 · 手册 · 保养 →</button>
   </section>
   <section id="sheet-sound" class="sheet" hidden aria-label="声浪">
     <header><b>声浪</b><span>驱动天际线均衡器与车身震动</span><button class="close" data-close>关闭</button></header>
@@ -110,12 +112,15 @@
     <canvas id="comic-canvas" class="comic-canvas" role="img" aria-label="今日骑行漫画"></canvas>
     <div class="comic-actions">
       <button id="btn-save" class="sticker primary">保存图片</button>
-      <button id="btn-again" class="sticker">再来一话</button>
+      <button id="btn-again" class="sticker browser-only">再来一话</button>
+      <button id="btn-detail" class="sticker native-only">查看详细复盘</button>
       <button id="btn-close" class="sticker">返回</button>
       <p class="note" id="comic-note"></p>
     </div>
   </section>
 </div>
+<!-- 无障碍与测试读数：屏幕阅读器可读，视觉上隐藏 -->
+<div class="ax" aria-live="off"><span id="font-status">座舱字体加载中</span><span id="ax-theatre">突破剧场空闲</span><span id="ax-clock">骑行计时 0 秒</span><span id="ax-layout">布局</span><span id="ax-error">座舱脚本正常</span></div>
 <script type="module" src="app.js"></script>
 </body>
 </html>

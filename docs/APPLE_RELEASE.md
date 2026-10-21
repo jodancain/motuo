@@ -50,3 +50,9 @@ Apple Music 授权、订阅和实际播放，以及真实手机与 Watch 的安�
 签名脚本沿用 WorkChat 项目的 App Store Connect API key（`ASC_KEY_ID`/`ASC_ISSUER_ID`，账户级而非 app 级，已确认对 motuo 有效）；私钥路径为本机 `~/.appstoreconnect/private_keys/` 下的 `.p8` 文件（不进仓库，具体 Key ID 不在此记录）。`0.2.0 (2)` iPhone+Watch 签名 IPA：8,772,952 字节，SHA-256 `ab343d91e01f9e3fa53ce3d753beb861a2a59a9f9a02d63c56057fede16dd2ce`。Apple 处理 `VALID`；已手动加入 `Motuo Internal` 测试组，内部状态回读 `IN_BETA_TESTING`。真机安装仍需你本人在 iPhone/Watch 上通过 TestFlight 接受并安装，本轮未做（无物理设备连接本机）。
 
 开源地图（MapLibre/OSM/Martin/Valhalla/Ferrostar）与真机/硬件验收仍是独立未完成项，见 `docs/OPEN_MAPS.md` 与 `docs/PHYSICAL_ACCEPTANCE.md`。
+
+## 10 月 21 日：`0.3.0 (3)` v3 漫画座舱发布
+
+分支 `feature/v3-comic-cockpit`（未合并 main）。签名 IPA 来自独立构建目录 `~/Library/Developer/MotuoBuilds/0.3.0-3-fix1/`（不覆盖 0.2.0 (2) 归档）：9,459,363 字节，SHA-256 `f871796cdf48b275a45b65120168b1bf453a80fcbf2c62a7d95b7fd8c8c28d44`。2026-10-21 07:50（北京时间）Apple 返回 `UPLOAD SUCCEEDED`，Delivery/Build ID `d395e002-a87b-4ff4-936a-695d36f2f965`；约 4 分钟后处理为 `VALID`，`usesNonExemptEncryption=false`，已写入简体中文测试说明，手动加入 `Motuo Internal` 后回读 `IN_BETA_TESTING`，组内构建 3/2/1。未创建外部测试或公开链接。
+
+包内含 C5913 GSX-R1000 近似 GLB（0.2.0 (2) 亦含），其再分发授权未核验，仅限本人内部测试；外部测试或公开发布前须取得授权或替换模型。真机安装、旋转手感、帧率、发热未验收。

@@ -148,10 +148,13 @@ final class TelemetryJournal: @unchecked Sendable {
         guard let files = try? FileManager.default.contentsOfDirectory(at: dir, includingPropertiesForKeys: nil) else { return [] }
         let decoder = MotuoJSON.decoder()
         var result: [TelemetrySample] = []; var lastTime = -Double.infinity
+        let latitudeKey = Data("\"latitude\"".utf8)
         for url in files.filter({ $0.pathExtension == "jsonl" }).sorted(by: { (Int($0.deletingPathExtension().lastPathComponent) ?? 0) < (Int($1.deletingPathExtension().lastPathComponent) ?? 0) }) {
             guard let data = try? Data(contentsOf: url) else { continue }
             for line in data.split(separator: 10) {
-                guard let sample = try? decoder.decode(TelemetrySample.self, from: Data(line)),
+                // Motion rows (~50 Hz) carry no coordinates; skip them before the comparatively slow JSON decode.
+                guard line.range(of: latitudeKey) != nil,
+                      let sample = try? decoder.decode(TelemetrySample.self, from: Data(line)),
                       sample.latitude != nil, sample.longitude != nil else { continue }
                 if sample.monotonicS < lastTime { lastTime = -.infinity }
                 guard sample.monotonicS - lastTime >= 0.9 else { continue }

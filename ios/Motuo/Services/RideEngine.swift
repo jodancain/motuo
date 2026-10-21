@@ -17,7 +17,12 @@ import simd
     // The cockpit web layer plays its full-screen recap first; the native detail sheet waits.
     var wrappedPending = false
     var wrappedAcknowledged = false
+    /// The web cockpit plays its departure countdown before recording starts; the tab bar hides meanwhile.
+    var cockpitCountdown = false
     var speedMPS: Double?
+    /// Identity of the current speed reading: monotonic uptime and ride-elapsed seconds when it was taken (GPS fix or 1 Hz demo step).
+    var speedSampleTime: Double?
+    var speedSampleElapsed: Double?
     var accelerationIntensity: Double = 0
     var rotationIntensity: Double = 0
     var turnDirection: Double = 0
@@ -29,6 +34,8 @@ import simd
     var motionStatus = "待机"
     var calibrationStatus = "尚未校准"
     var thermalLimited = false
+    var thermalState = "nominal"
+    var lowPowerMode = false
     var recentEvents: [RideEvent] = []
     var isRecording: Bool { currentRide?.status == "recording" }
     var isPaused: Bool { currentRide?.status == "paused" || currentRide?.status == "interrupted" }
@@ -62,6 +69,7 @@ import simd
     @ObservationIgnored private var lastMotionElapsed: Double?
     @ObservationIgnored private var tickNumber = 0
     @ObservationIgnored private var demoProgress: Double = 0
+    @ObservationIgnored private var demoSecond = -1
     @ObservationIgnored private var lastSavedAt = Date()
     @ObservationIgnored private var lastMotionUI: TimeInterval = 0
     @ObservationIgnored private var lastMilestoneKM = 0
@@ -105,10 +113,11 @@ import simd
         UserDefaults.standard.removeObject(forKey: "motuo.watch.lastSummary")
         NavigationService.shared.clear(); WatchBridge.shared.clear()
     }
-    func start(vehicle: Vehicle) {
+    /// `simulated` overrides the demo setting for one ride (the cockpit's “演示骑行” sticker) without changing it.
+    func start(vehicle: Vehicle, simulated: Bool? = nil) {
         guard currentRide == nil, let context, let settings else { return }
-        errorMessage = nil
-        let ride = Ride(vehicle: vehicle, simulated: settings.demoMode)
+        errorMessage = nil; cockpitCountdown = false
+        let ride = Ride(vehicle: vehicle, simulated: simulated ?? settings.demoMode)
         let profile = SensorCalibrationService.shared.profile(for: vehicle.id)
         calibrationId = profile?.id; ride.calibrationId = profile?.id
         ride.learningVersionId = ride.isSimulated ? nil : VehicleLearningService.shared.active(vehicleId: ride.vehicleId, calibrationId: profile?.id)?.id
@@ -117,7 +126,7 @@ import simd
             journal = try TelemetryJournal(rideId: ride.id)
             context.insert(ride); try saveChanges(context); currentRide = ride
             UserDefaults.standard.set(ride.id.uuidString, forKey: "activeRideID")
-            elapsedSeconds = 0; recentEvents = []; demoProgress = 0; lastMilestoneKM = 0
+            elapsedSeconds = 0; recentEvents = []; demoProgress = 0; demoSecond = -1; lastMilestoneKM = 0
             watchSummary = nil; UserDefaults.standard.removeObject(forKey: "motuo.watch.lastSummary")
             resetSegment(); startSensors()
             if settings.watchHaptics { WatchBridge.shared.sendHaptic(.start) }
@@ -281,7 +290,12 @@ import simd
     }
     private func tick() {
         tickNumber += 1
-        if tickNumber % 30 == 0 { thermalLimited = ProcessInfo.processInfo.thermalState == .serious || ProcessInfo.processInfo.thermalState == .critical }
+        if tickNumber % 30 == 0 {
+            let info = ProcessInfo.processInfo
+            switch info.thermalState { case .fair: thermalState = "fair"; case .serious: thermalState = "serious"; case .critical: thermalState = "critical"; default: thermalState = "nominal" }
+            thermalLimited = info.thermalState == .serious || info.thermalState == .critical
+            lowPowerMode = info.isLowPowerModeEnabled
+        }
         guard let ride = currentRide else { return }
         if isRecording {
             elapsedSeconds = ride.durationS + max(0,ProcessInfo.processInfo.systemUptime-segmentMonotonicStart)
@@ -304,28 +318,44 @@ import simd
         ride.durationS += max(0,now-segmentMonotonicStart);segmentMonotonicStart=now;ride.segmentStartedAt=Date()
         elapsedSeconds = ride.durationS
     }
+    /// Demo speed profile (km/h, explicitly simulated): launch, climb through 20…100, brake to a stop, roll again. 76 s loop.
+    nonisolated static let demoProfile: [(t: Double, kmh: Double)] = [(0,0),(1,6),(3,15),(5,24),(7,32),(9,40),(11,47),(13,53),(15,58),(17,62),(19,66),(22,74),(25,82),(28,90),(31,97),(33,101),(35,104),(38,99),(41,84),(44,62),(47,40),(50,20),(52,8),(53,0),(56,0),(58,9),(61,24),(64,33),(68,38),(72,30),(76,0)]
+    nonisolated static func demoSpeedKmh(at t: Double) -> Double {
+        let profile = demoProfile, cycle = profile[profile.count - 1].t
+        let x = max(0, t).truncatingRemainder(dividingBy: cycle)
+        for i in 1..<profile.count where x <= profile[i].t {
+            let a = profile[i - 1], b = profile[i]
+            return a.kmh + (b.kmh - a.kmh) * (x - a.t) / max(0.001, b.t - a.t)
+        }
+        return 0
+    }
     private func demoTick() {
         guard let ride = currentRide else { return }
         demoProgress += 1 / 30
-        let t = demoProgress
-        let kph = max(0, 34 + 12 * sin(t / 7) + 6 * sin(t / 2.9))
-        speedMPS = kph / 3.6; turnDirection = sin(t / 5) * 0.7
-        accelerationIntensity = 0.14 + abs(sin(t / 2.9)) * 0.35
-        rotationIntensity = abs(turnDirection) * 0.6
-        ride.distanceM += kph / 3.6 / 30; ride.maxSpeedMPS = max(ride.maxSpeedMPS, kph / 3.6)
-        if tickNumber % 30 == 0 {
-            ride.validSpeedSamples += 1
+        let t = demoProgress, second = Int(t)
+        // Like GPS, the demo produces one discrete reading per second; the cockpit shows it unchanged until the next one.
+        if second != demoSecond {
+            demoSecond = second
+            let kph = Self.demoSpeedKmh(at: Double(second))
+            speedMPS = kph / 3.6; speedSampleTime = ProcessInfo.processInfo.systemUptime; speedSampleElapsed = elapsedSeconds
+            ride.maxSpeedMPS = max(ride.maxSpeedMPS, kph / 3.6); ride.validSpeedSamples += 1
             longitudinalTrend = gpsTrend.update(speed: speedMPS, accuracy: 0.1, timestamp: Date(), now: Date())
             let a = t / 200
-            guard let point = telemetryClock.motion(uptime: ProcessInfo.processInfo.systemUptime) else { return }
-            journal?.append(.init(timestamp: point.timestamp, monotonicS: point.elapsed,
-                source: "simulated", stream: "simulation", segmentId: telemetryClock.id.uuidString, speedMPS: kph / 3.6, latitude: 31.2304 + sin(a) * 0.016,
-                longitude: 121.4737 + (1 - cos(a)) * 0.021, horizontalAccuracyM: 5, speedAccuracyMPS: 0.5,
-                accelerationX: accelerationIntensity * 5, rotationZ: turnDirection * 0.3, quality: "valid"))
+            if let point = telemetryClock.motion(uptime: ProcessInfo.processInfo.systemUptime) {
+                journal?.append(.init(timestamp: point.timestamp, monotonicS: point.elapsed,
+                    source: "simulated", stream: "simulation", segmentId: telemetryClock.id.uuidString, speedMPS: kph / 3.6, latitude: 31.2304 + sin(a) * 0.016,
+                    longitude: 121.4737 + (1 - cos(a)) * 0.021, horizontalAccuracyM: 5, speedAccuracyMPS: 0.5,
+                    accelerationX: accelerationIntensity * 5, rotationZ: turnDirection * 0.3, quality: "valid"))
+            }
+            if second > 0, second % 22 == 0 {
+                addEvent(.init(kind: "turn", timestamp: Date(), windowStart: Date().addingTimeInterval(-2), windowEnd: Date().addingTimeInterval(2), confidence: 0.45, source: "simulated"))
+            }
         }
-        if Int(t) > 0, Int(t) % 22 == 0, tickNumber % 30 == 0 {
-            addEvent(.init(kind: "turn", timestamp: Date(), windowStart: Date().addingTimeInterval(-2), windowEnd: Date().addingTimeInterval(2), confidence: 0.45, source: "simulated"))
-        }
+        let speed = speedMPS ?? 0
+        turnDirection = sin(t / 5) * 0.7
+        accelerationIntensity = 0.14 + min(0.5, abs(Double(longitudinalTrend)) * 0.3)
+        rotationIntensity = abs(turnDirection) * 0.6
+        ride.distanceM += speed / 30
     }
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         switch manager.authorizationStatus {
@@ -344,6 +374,10 @@ import simd
                   lastLocation == nil || location.timestamp > lastLocation!.timestamp else { continue }
             lastLocation = location; locationAccuracy = location.horizontalAccuracy
             speedMPS = SpeedQuality.accepted(speed: location.speed, accuracy: location.speedAccuracy, timestamp: location.timestamp, now: now)
+            if speedMPS != nil {
+                let uptime = ProcessInfo.processInfo.systemUptime
+                speedSampleTime = uptime; speedSampleElapsed = ride.durationS + max(0, uptime - segmentMonotonicStart)
+            }
             if let speedMPS,location.horizontalAccuracy<=25,abs(now.timeIntervalSince(location.timestamp))<=1.5 {
                 velocityBridge.gps(speed:speedMPS,accuracy:location.speedAccuracy,time:ProcessInfo.processInfo.systemUptime)
             }

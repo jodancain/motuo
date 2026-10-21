@@ -2,6 +2,8 @@ import SwiftUI
 import SwiftData
 
 struct GarageView: View {
+    /// v3: the native garage holds the vehicle profile; the comic bike's paint lives in the cockpit scene (shared, persisted natively).
+    var onAppearance: (() -> Void)? = nil
     @Environment(\.modelContext) private var context
     @Environment(AppSettings.self) private var settings
     @Query(sort: \Vehicle.createdAt) private var vehicles:[Vehicle]
@@ -27,6 +29,12 @@ struct GarageView: View {
                                 VStack(alignment:.leading,spacing:8) { Eyebrow(text:"CONFIG"); Text(vehicle.abs.map { $0 ? "ABS" : "无 ABS" } ?? "待核对").font(Cyber.mono(19)) }.frame(maxWidth:.infinity,alignment:.leading)
                             }
                             Divider().overlay(Cyber.stroke)
+                            if let onAppearance {
+                                Button(action: onAppearance) {
+                                    HStack { Label("外观与配色", systemImage:"paintpalette"); Spacer(); Text(appearanceName).font(.system(size:12)).foregroundStyle(Cyber.muted); Image(systemName:"chevron.right").font(.system(size:12)) }
+                                }.accessibilityIdentifier("garage.appearance")
+                                Text("驾驶舱漫画车（GSX-R1000 近似外观，非准确 GSX250R）的车漆与关卡；与车辆档案分开保存。").font(.system(size:11)).foregroundStyle(Cyber.muted)
+                            }
                             Button { learningVehicle = vehicle } label: { Label("车辆学习与版本", systemImage:"waveform.path.ecg").frame(maxWidth:.infinity, alignment:.leading) }.accessibilityIdentifier("garage.learning")
                             HStack { Text(vehicle.name).font(.system(size:15,weight:.semibold)); Spacer(); Button("编辑档案") { editingVehicle = vehicle }.font(.system(size:12)) }
                             HStack(spacing:10) {
@@ -46,6 +54,12 @@ struct GarageView: View {
         .sheet(item:$manualVehicle) { ManualAssistantView(vehicle:$0) }
         .sheet(item:$maintenanceVehicle) { MaintenanceView(vehicle:$0) }
         .sheet(item:$learningVehicle) { VehicleLearningView(vehicle:$0) }
+    }
+}
+
+private extension GarageView {
+    var appearanceName: String {
+        ["panda":"熊猫白","stealth":"曜石黑","glacier":"冰川蓝","ember":"熔岩红","violet":"电光紫"][settings.cockpitPaint ?? "ember"] ?? "熔岩红"
     }
 }
 

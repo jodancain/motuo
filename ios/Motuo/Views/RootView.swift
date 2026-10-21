@@ -8,25 +8,37 @@ struct RootView: View {
     @Query(sort: \Vehicle.createdAt) private var vehicles: [Vehicle]
     @State private var tab: AppTab = .cockpit
     @State private var didConfigure = false
+    /// Riding, the departure countdown and the cockpit's recap comic are full-screen: no tab bar, no status bar.
+    private var immersive: Bool {
+        tab == .cockpit && (engine.currentRide != nil || engine.cockpitCountdown || (engine.wrappedPending && engine.wrappedAcknowledged))
+    }
     var body: some View {
         GeometryReader { geometry in
             let landscape = geometry.size.width > geometry.size.height
-            let immersive = tab == .cockpit && engine.currentRide != nil
             HStack(spacing: 0) {
                 if landscape && !immersive { tabBar(vertical: true).frame(width: 66) }
                 VStack(spacing: 0) {
-                    Group {
-                        switch tab {
-                        case .cockpit: NativeCockpitView()
-                        case .garage: GarageView()
-                        case .rides: RideHistoryView()
-                        case .settings: SettingsView()
+                    ZStack {
+                        // The cockpit stays alive behind the other tabs (no reload or GLB re-parse); it stops rendering while hidden.
+                        NativeCockpitView(isActive: tab == .cockpit, onNavigate: { tab = $0 })
+                            .opacity(tab == .cockpit ? 1 : 0).allowsHitTesting(tab == .cockpit).accessibilityHidden(tab != .cockpit)
+                        if tab != .cockpit {
+                            Group {
+                                switch tab {
+                                case .cockpit: EmptyView()
+                                case .garage: GarageView(onAppearance: CockpitBundle.isV3 ? { tab = .cockpit; settings.requestCockpitPanel("garage") } : nil)
+                                case .rides: RideHistoryView()
+                                case .settings: SettingsView()
+                                }
+                            }.background(Cyber.ink)
                         }
                     }.frame(maxWidth: .infinity, maxHeight: .infinity)
                     if !landscape && !immersive { tabBar(vertical: false) }
                 }
             }.background(Cyber.ink)
         }
+        .statusBarHidden(immersive)
+        .persistentSystemOverlays(immersive ? .hidden : .automatic)
         .task {
             guard !didConfigure else { return }; didConfigure = true
             if vehicles.isEmpty { let vehicle = Vehicle(); context.insert(vehicle); settings.selectedVehicleID = vehicle.id.uuidString; UserDefaults.standard.set(vehicle.id.uuidString,forKey:"autoSeedVehicleID"); try? context.save() }

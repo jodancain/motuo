@@ -40,8 +40,12 @@ final class MotuoUITests:XCTestCase {
         save.tap()
         XCTAssertTrue(waitForShareSheet(app), "保存图片 opens the system share sheet"); hold(2); addScreenshot("share-sheet")
         dismissShareSheet(app)
-        let detail=app.buttons["查看详细复盘"];XCTAssertTrue(detail.waitForExistence(timeout:5));detail.tap()
-        XCTAssertTrue(app.staticTexts["好好收尾，下次见"].waitForExistence(timeout:10), app.debugDescription)
+        // A tap during the share sheet's dismissal animation is swallowed: wait until it is gone, retry once if needed
+        // (after a successful tap the comic closes and the button disappears, so a retry cannot fire twice).
+        let detail=app.buttons["查看详细复盘"];XCTAssertTrue(detail.waitForExistence(timeout:5))
+        let gone=Date().addingTimeInterval(5); while Date()<gone && (app.otherElements["ActivityListView"].exists || app.buttons["header.closeButton"].exists) { usleep(200_000) }
+        for _ in 0..<2 where !app.staticTexts["好好收尾，下次见"].exists { if waitHittable(detail) { detail.tap() }; _ = app.staticTexts["好好收尾，下次见"].waitForExistence(timeout:4) }
+        XCTAssertTrue(app.staticTexts["好好收尾，下次见"].waitForExistence(timeout:6), app.debugDescription)
         hold(2); addScreenshot("native-detail")
         app.buttons["完成"].firstMatch.tap()
         XCTAssertTrue(app.buttons["tab.garage"].waitForExistence(timeout:5), "tab bar returns after the recap")
@@ -213,12 +217,17 @@ final class MotuoUITests:XCTestCase {
     }
     @MainActor private func waitForShareSheet(_ app: XCUIApplication)->Bool{
         let end=Date().addingTimeInterval(8)
-        while Date()<end { if app.otherElements["ActivityListView"].exists || app.buttons["关闭"].exists || app.buttons["Close"].exists || app.navigationBars["UIActivityContentView"].exists { return true }; usleep(250_000) }
+        while Date()<end { if app.buttons["header.closeButton"].exists || app.otherElements["ActivityListView"].exists { return true }; usleep(250_000) }
         return false
     }
+    /// Close the share sheet with its own X (identifier header.closeButton). Wait for it: right after presenting, the
+    /// sheet is still animating. Never swipe from mid-screen — that lands on an activity (Print) and opens it.
     @MainActor private func dismissShareSheet(_ app: XCUIApplication){
+        let close = app.buttons["header.closeButton"].firstMatch
+        if close.waitForExistence(timeout:5), waitHittable(close) { close.tap(); return }
         for label in ["关闭","Close"] where app.buttons[label].exists { app.buttons[label].firstMatch.tap(); return }
-        app.swipeDown(velocity:.fast)
+        let grabber = app.buttons["Sheet Grabber"].firstMatch
+        if grabber.exists { grabber.swipeDown(velocity:.fast) }
     }
     /// Full-bleed scene: the screenshot's corners must not be the beige paper margin (#f3ead6).
     private enum Corner { case topLeft, topRight, bottomLeft, bottomRight }

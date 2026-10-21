@@ -1,0 +1,171 @@
+/* Motuo v3 · 骑行即漫画。字体复制自 v2（OFL 子集，见 assets/fonts/OFL-*.txt）。 */
+@font-face{font-family:"MotuoNum";src:url("assets/fonts/motuo-num.woff2") format("woff2");font-weight:100 900;font-display:block}
+@font-face{font-family:"MotuoDisplay";src:url("assets/fonts/motuo-display.woff2") format("woff2");font-weight:100 900;font-display:block}
+@font-face{font-family:"MotuoHan";src:url("assets/fonts/motuo-han.woff2") format("woff2");font-weight:100 900;font-display:block}
+
+:root{
+  --ink:#0b0a12;--paper:#f3ead6;--yellow:#ffe45c;--c:#38f0ff;--m:#ff3da6;--accent:#ff3da6;
+  --font-num:"MotuoNum","MotuoHan",ui-monospace,monospace;--font-display:"MotuoDisplay","MotuoHan",sans-serif;--font-han:"MotuoHan","MotuoDisplay","PingFang SC",sans-serif;
+  --speed-size:180px;--speed-sx:1;--speed-right:24px;--speed-top:20px;--heat:#8de8ff;--tilt:0deg;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--ink);overflow:hidden;overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+body{font-family:var(--font-han);color:var(--ink)}
+button{font:inherit;color:inherit;cursor:pointer}
+[hidden]{display:none!important}
+
+.app{position:fixed;inset:0}
+/* 纸边 + 墨线框 = 一格分镜 */
+.page{position:absolute;inset:0;padding:max(6px,env(safe-area-inset-top)) max(6px,env(safe-area-inset-right)) max(6px,env(safe-area-inset-bottom)) max(6px,env(safe-area-inset-left));background:var(--paper)}
+.panel{position:relative;width:100%;height:100%;overflow:hidden;border:3px solid var(--ink);background:var(--paper);isolation:isolate}
+.camera{position:absolute;inset:0;transform:rotate(var(--tilt)) scale(1.06);transform-origin:40% 70%;will-change:transform}
+.layer{position:absolute;left:0;top:0;width:100%;height:100%;display:block}
+.bike-layer{pointer-events:none}
+.tier-high .bike-layer,.tier-mid .bike-layer{filter:drop-shadow(-3px 0 0 rgba(56,240,255,.55)) drop-shadow(3px 1px 0 rgba(255,61,166,.5))}
+.grain{position:absolute;inset:0;pointer-events:none;mix-blend-mode:multiply;opacity:.2;z-index:5;background-size:256px 256px}
+.app:not(.tier-high) .grain{display:none}
+.bike-hit{position:absolute;z-index:8;touch-action:none;cursor:grab;border-radius:40%;outline:none}
+.bike-hit:focus-visible{outline:3px dashed var(--yellow)}
+.app:not([data-phase=idle]) .bike-hit{pointer-events:none}
+
+/* 层次：特效 < 分镜 < 翻页 < 闪光 < 倒计时 < 速度 < 页角 < 按钮 */
+.sfx-layer{position:absolute;inset:0;z-index:12;pointer-events:none}
+.cutin{z-index:20}
+.flip{z-index:24;transform-origin:0 50%;backface-visibility:hidden}
+.flash{position:absolute;inset:0;z-index:26;background:#fffdf4;opacity:0;pointer-events:none}
+.countdown{position:absolute;z-index:28;inset:0;pointer-events:none}
+/* 倒计时：巨大、套印错位、墨线描边；位置与尺寸由 core/layout.js countdownFit() 计算 */
+.countdown b{position:absolute;font-family:var(--font-display);font-weight:400;line-height:.86;text-align:center;color:var(--yellow);-webkit-text-stroke:.07em var(--ink);paint-order:stroke fill;text-shadow:-.045em .02em 0 var(--c),.05em .06em 0 var(--m),.09em .1em 0 var(--ink);white-space:nowrap;transform:translate(-50%,-50%) rotate(-7deg) scale(var(--sx,1),var(--sy,1));letter-spacing:-.02em}
+.countdown b.ready{color:#fff}
+.countdown b.go{color:#ff4a3d;text-shadow:-.05em .02em 0 var(--c),.06em .07em 0 var(--yellow),.1em .12em 0 var(--ink)}
+.impact{position:absolute;inset:0;z-index:27;pointer-events:none;opacity:0;background:repeating-conic-gradient(from 0deg at var(--ix,50%) var(--iy,50%),var(--ink) 0deg 3.2deg,var(--paper) 3.2deg 7deg)}
+.speed{position:absolute;z-index:40;right:var(--speed-right);top:var(--speed-top);font-family:var(--font-num);font-weight:800;font-size:var(--speed-size);line-height:.82;letter-spacing:-.04em;font-variant-numeric:tabular-nums;transform:skewX(-8deg) scaleX(var(--speed-sx));transform-origin:100% 0;pointer-events:none;white-space:nowrap;text-align:right}
+.speed-value{position:relative;display:block;color:var(--heat);-webkit-text-stroke:.07em var(--ink);paint-order:stroke fill;text-shadow:.035em .045em 0 var(--ink)}
+.speed-value::after{content:attr(data-v);position:absolute;inset:0;color:transparent;-webkit-text-stroke:0;text-shadow:none;background:radial-gradient(circle,rgba(11,10,18,.32) 30%,transparent 33%) 0 0/.055em .055em;-webkit-background-clip:text;background-clip:text;pointer-events:none}
+.speed-ghost{position:absolute;right:0;top:0;line-height:.82;color:var(--c);opacity:.75;transform:translate(-.03em,.01em)}
+.speed-ghost.m{color:var(--m);opacity:.65;transform:translate(.03em,.025em)}
+.app:not(.tier-high):not(.tier-mid) .speed-ghost{display:none}
+.speed-unit{position:absolute;right:.04em;top:calc(100% + 4px);font-family:var(--font-display);font-size:max(13px,calc(var(--speed-size) * .09));letter-spacing:.12em;color:var(--paper);background:var(--ink);padding:2px 8px 1px;line-height:1.1;transform:skewX(8deg)}
+.speed-est{position:absolute;right:100%;top:.06em;font-size:.36em;color:var(--yellow);-webkit-text-stroke:.05em var(--ink);paint-order:stroke fill;margin-right:.05em}
+.speed-stamp{position:absolute;left:auto;right:calc(max(13px,var(--speed-size) * .09) * 5.4);top:calc(100% + 4px);font-family:var(--font-display);font-size:max(12px,calc(var(--speed-size) * .075));color:#fff;background:#e2342f;border:2px solid var(--ink);padding:1px 6px;transform:rotate(-6deg) skewX(8deg);letter-spacing:.08em}
+.app[data-phase=idle] .speed-value,.app[data-phase=countdown] .speed-value{color:#c9c3b6}
+.app[data-phase=countdown] .speed{opacity:0}
+/* 待机/倒计时没有读数：速度字缩小让位给车与场景 */
+.app[data-phase=idle] .speed,.app[data-phase=countdown] .speed{transform:skewX(-8deg) scaleX(calc(var(--speed-sx) * .5)) scaleY(.5)}
+.app[data-phase=finishing] .speed{opacity:.35}
+.speed.unknown .speed-value{color:var(--yellow)}
+.speed[data-frozen] .speed-value{color:#f1d9a6}
+.speed-frozen{letter-spacing:.04em;line-height:1.2;position:absolute;left:auto;right:0;top:calc(100% + 12px + max(13px,var(--speed-size) * .09) * 1.3);font-family:var(--font-han);font-size:max(12px,calc(var(--speed-size) * .075));color:#fff3d0;background:#7a5c2e;border:2px solid var(--ink);padding:1px 6px;transform:skewX(8deg);white-space:nowrap}
+.app[data-phase=comic] .speed{display:none}
+.speed.framed .speed-unit{background:var(--m)}
+
+.corner{position:absolute;z-index:44;display:flex;align-items:center;gap:6px;font-size:11px;line-height:1;color:var(--paper);background:var(--ink);padding:5px 8px 4px;pointer-events:none;max-width:48%;white-space:nowrap;overflow:hidden}
+.corner b{font-weight:400;color:var(--yellow)}
+.corner i{font-style:normal;font-family:var(--font-display);letter-spacing:.06em;opacity:.8}
+.corner .dot{opacity:.5}
+.corner.tl{left:0;top:0;border-bottom-right-radius:2px}
+.corner.tr{right:0;top:0;font-family:var(--font-num)}
+.corner.bl{left:0;bottom:0}
+.corner.br{right:0;bottom:0}
+.tier-badge{font-family:var(--font-han);background:var(--yellow);color:var(--ink);padding:1px 4px;margin-left:4px}
+.combo{color:var(--yellow);font-family:var(--font-display)}
+.caption{position:absolute;z-index:38;left:12px;top:34px;display:flex;flex-direction:column;gap:6px;pointer-events:none}
+.caption span{background:var(--yellow);border:2px solid var(--ink);padding:4px 8px;font-size:14px;box-shadow:3px 3px 0 var(--ink)}
+
+.stickers{position:absolute;z-index:46;display:flex;gap:10px;align-items:flex-end}
+.sticker{position:relative;background:var(--paper);border:3px solid var(--ink);box-shadow:4px 4px 0 var(--ink);padding:7px 12px 6px;font-size:15px;line-height:1.1;transform:rotate(-2deg);transition:transform .08s steps(2)}
+.sticker:nth-child(2n){transform:rotate(1.6deg)}
+.sticker:active{transform:translate(2px,2px) rotate(0);box-shadow:2px 2px 0 var(--ink)}
+.sticker.primary{background:var(--yellow);font-size:19px;padding:9px 16px 8px}
+.sticker.primary small{display:block;font-size:10px;margin-top:3px;letter-spacing:.04em}
+.sticker.danger{background:#ff6b5e}
+.sticker:focus-visible{outline:3px dashed var(--m);outline-offset:3px}
+.idle-only{display:none}.ride-only{display:none}
+.app[data-phase=idle] .idle-only{display:flex}
+.app[data-phase=riding] .ride-only,.app[data-phase=paused] .ride-only{display:flex}
+.app[data-phase=paused] #btn-world-ride{display:none}
+.skip{position:absolute;z-index:47;right:14px;bottom:36px}
+.hint{position:absolute;z-index:44;font-size:11px;color:var(--paper);background:rgba(11,10,18,.75);padding:4px 8px;pointer-events:none}
+/* 横屏：按钮在右下路面上，提示在车下 */
+.landscape .stickers{right:14px;bottom:30px;flex-wrap:wrap;justify-content:flex-end;max-width:42%}
+.landscape .hint{left:12px;bottom:30px}
+/* 竖屏：按钮横排在底部 */
+.portrait .stickers{left:10px;right:10px;bottom:30px;justify-content:center;flex-wrap:wrap;gap:8px}
+.portrait .sticker{font-size:14px;padding:6px 10px 5px}
+.portrait .sticker.primary{font-size:17px;flex-basis:100%;max-width:210px}
+.portrait .hint{left:10px;top:34px;white-space:nowrap}
+.portrait .corner.tl i{display:none}
+.portrait .skip{bottom:150px;right:16px}
+
+.sfx-word{position:absolute;font-family:var(--font-display);font-weight:400;color:var(--yellow);-webkit-text-stroke:.09em var(--ink);paint-order:stroke fill;text-shadow:.05em .06em 0 var(--m);white-space:nowrap;line-height:1;transform:translate(-50%,-50%) rotate(var(--r,-10deg))}
+.sfx-word.han{font-family:var(--font-han)}
+
+.tbc{position:absolute;z-index:36;right:16px;bottom:92px;display:flex;align-items:center;gap:10px;background:#7a5c2e;color:#fff3d0;padding:10px 30px 10px 18px;clip-path:polygon(0 0,86% 0,86% -40%,100% 50%,86% 140%,86% 100%,0 100%);border:none;filter:drop-shadow(4px 4px 0 var(--ink));font-family:var(--font-display);font-size:clamp(16px,3.4vmin,26px);letter-spacing:.05em}
+.tbc-arrow{font-family:var(--font-han);font-size:1.4em;line-height:.8}
+.tbc small{font-family:var(--font-han);font-size:.5em;opacity:.85;letter-spacing:0;margin-right:24px}
+.portrait .tbc{bottom:150px;right:10px}
+/* 暂停：漫画定格——画面泛黄、缩进成一页上的一格 */
+.app[data-phase=paused] .camera{filter:sepia(.85) saturate(.6) contrast(1.06) brightness(1.03);transform:scale(.9) rotate(-1.2deg);outline:6px solid var(--ink);box-shadow:12px 12px 0 rgba(11,10,18,.55)}
+.app[data-phase=paused] .panel{background:var(--paper) radial-gradient(circle,rgba(122,92,46,.35) 28%,transparent 31%) 0 0/9px 9px}
+
+/* 面板 */
+.sheet{position:absolute;z-index:60;background:var(--paper);border:3px solid var(--ink);box-shadow:-8px 8px 0 var(--ink);padding:14px 16px 16px;display:flex;flex-direction:column;gap:12px;overflow:auto}
+.landscape .sheet{right:10px;top:10px;bottom:10px;width:min(46%,420px)}
+.portrait .sheet{left:10px;right:10px;top:10px;max-height:56%}
+.sheet header{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.sheet header b{font-size:22px;font-weight:400}
+.sheet header span{font-size:12px;opacity:.7;flex:1}
+.close{background:var(--ink);color:var(--paper);border:none;padding:6px 10px;font-size:13px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+.row>span{min-width:64px}
+.chip{background:#fff;border:2px solid var(--ink);padding:6px 12px;font-size:14px;box-shadow:2px 2px 0 var(--ink)}
+.chip[aria-pressed=true]{background:var(--yellow)}
+.note{font-size:12px;line-height:1.5;opacity:.8}
+.world-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.world-card{position:relative;border:3px solid var(--ink);background:var(--ink);padding:0;text-align:left;box-shadow:3px 3px 0 var(--ink);overflow:hidden;transform:rotate(-.6deg)}
+.world-card:nth-child(2n){transform:rotate(.8deg)}
+.world-card canvas{display:block;width:100%;aspect-ratio:16/9}
+.world-card span{position:absolute;left:0;bottom:0;background:var(--yellow);padding:3px 7px;font-size:13px;border-top:2px solid var(--ink);border-right:2px solid var(--ink)}
+.world-card i{display:block;font-style:normal;font-family:var(--font-display);font-size:10px;letter-spacing:.06em}
+.world-card[aria-pressed=true]{outline:4px solid var(--m)}
+.swatches{display:flex;gap:10px;flex-wrap:wrap}
+.swatch{display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;font-size:12px}
+.swatch i{width:46px;height:46px;border:3px solid var(--ink);border-radius:50%;background:linear-gradient(135deg,var(--a) 0 55%,var(--b) 55%);box-shadow:2px 2px 0 var(--ink)}
+.swatch[aria-pressed=true] i{outline:3px solid var(--m);outline-offset:2px}
+
+/* 今日骑行漫画 */
+.comic{position:absolute;inset:0;z-index:80;background:var(--ink) radial-gradient(circle,rgba(255,61,166,.22) 28%,transparent 31%) 0 0/12px 12px;display:flex;align-items:center;justify-content:center;gap:18px;padding:12px}
+.comic-canvas{background:var(--paper);box-shadow:10px 10px 0 rgba(0,0,0,.6);border:3px solid var(--paper)}
+.landscape .comic-canvas{height:calc(100vh - 24px);width:auto;aspect-ratio:1080/1528}
+.portrait .comic{flex-direction:column}
+.portrait .comic-canvas{width:calc(100vw - 24px);height:auto;aspect-ratio:1080/1528;max-height:calc(100vh - 120px)}
+.comic-actions{display:flex;flex-direction:column;gap:14px;align-items:flex-start;max-width:220px}
+.portrait .comic-actions{flex-direction:row;flex-wrap:wrap;max-width:none;justify-content:center}
+.comic-actions .note{color:var(--paper)}
+
+.reduced .camera{transform:none!important}
+@media (prefers-reduced-motion:reduce){.sticker{transition:none}}
+
+/* 速度突破剧场：在分镜之下、翻页之上；速度巨字仍在所有层之上 */
+.milestone{z-index:22;pointer-events:none}
+.gallery{position:absolute;z-index:55;left:50%;bottom:6px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;max-width:calc(100% - 16px)}
+.gallery>*{pointer-events:auto}
+.g-bar{display:flex;align-items:center;gap:2px;background:var(--ink);border:2px solid var(--paper);padding:2px 4px;height:28px}
+.g-bar button{background:none;border:none;color:var(--paper);font-size:13px;padding:0 8px;height:22px}
+.g-bar #g-prev,.g-bar #g-next{font-size:18px;color:var(--yellow)}
+.g-bar #g-exit{color:#ff8a7a}
+.g-name{color:var(--paper);font-size:12px;white-space:nowrap;max-width:46vw;overflow:hidden;text-overflow:ellipsis}
+.g-more-panel{display:none;flex-direction:column;gap:5px;align-items:center;background:rgba(11,10,18,.88);padding:8px;border:2px solid var(--paper)}
+.gallery[data-open=true] .g-more-panel{display:flex}
+.gallery .row{gap:6px;justify-content:center}
+.gallery .chip{font-size:12px;padding:3px 8px}
+.gallery-tag{background:#d7262b;color:#fff;font-weight:400;font-size:12px;padding:3px 8px;border:2px solid var(--ink)}
+.portrait .g-name{max-width:52vw}
+/* GLB 未就绪：漫画风 LOADING 卡片（不先闪一帧矢量回退车） */
+.loading{position:absolute;z-index:30;left:50%;top:58%;transform:translate(-50%,-50%) rotate(-3deg);display:none;flex-direction:column;align-items:center;gap:4px;background:var(--paper) radial-gradient(circle,rgba(255,61,166,.35) 28%,transparent 31%) 0 0/9px 9px;border:4px solid var(--ink);box-shadow:8px 8px 0 var(--ink);padding:14px 26px 10px;pointer-events:none}
+.loading b{font-family:var(--font-display);font-weight:400;font-size:clamp(26px,7vmin,48px);color:var(--yellow);-webkit-text-stroke:.07em var(--ink);paint-order:stroke fill;text-shadow:.05em .06em 0 var(--m);animation:load-bob .5s steps(2,end) infinite alternate}
+.loading small{font-size:12px}
+.app[data-bike=loading] .loading{display:flex}
+@keyframes load-bob{to{transform:translateY(-4px) rotate(2deg)}}
+@media(prefers-reduced-motion:reduce){.loading b{animation:none}}
+.app[data-phase=gallery] .ride-only,.app[data-phase=gallery] .idle-only{display:none!important}

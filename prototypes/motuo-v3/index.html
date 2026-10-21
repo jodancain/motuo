@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="color-scheme" content="dark">
+<title>MOTUO v3 · 骑行即漫画</title>
+<link rel="preload" href="assets/fonts/motuo-num.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/motuo-display.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="assets/fonts/motuo-han.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="styles.css">
+<script type="importmap">{"imports":{"three":"./vendor/three/three.module.js","three/addons/":"./vendor/three/addons/"}}</script>
+<script src="shared/motion-kit.js"></script>
+<script src="shared/drive-signals.js"></script>
+<script src="shared/sound-trend.js"></script>
+<script src="shared/game-events.js"></script>
+</head>
+<body>
+<div id="app" class="app" data-bike="loading" data-phase="idle" data-world="neon" data-tier="high">
+  <main id="page" class="page">
+    <div id="panel" class="panel" aria-label="骑行漫画场景">
+      <div id="camera" class="camera">
+        <canvas id="scene" class="layer" aria-hidden="true"></canvas>
+        <canvas id="bike-vec" class="layer bike-layer" aria-hidden="true"></canvas>
+        <canvas id="bike-gl" class="layer bike-layer" aria-hidden="true" hidden></canvas>
+        <canvas id="fx" class="layer" aria-hidden="true"></canvas>
+      </div>
+      <div id="grain" class="grain" aria-hidden="true"></div>
+      <div id="loading" class="loading" aria-live="polite"><b>LOADING…</b><small>漫画摩托装载中</small></div>
+      <div id="bike-hit" class="bike-hit" role="button" tabindex="0" aria-label="摩托车：点按轰油门，上滑抬头，长按烧胎蓄力，左右拖动换角度"></div>
+      <div id="sfx-layer" class="sfx-layer" aria-hidden="true"></div>
+      <canvas id="milestone" class="layer milestone" aria-hidden="true" hidden></canvas>
+      <canvas id="cutin" class="layer cutin" aria-hidden="true" hidden></canvas>
+      <canvas id="flip" class="layer flip" aria-hidden="true" hidden></canvas>
+      <div id="flash" class="flash" aria-hidden="true"></div>
+      <div id="impact" class="impact" aria-hidden="true"></div>
+      <div id="countdown" class="countdown" aria-live="assertive"></div>
+      <div id="tbc" class="tbc" hidden><span class="tbc-en">TO BE CONTINUED</span><span class="tbc-arrow">→</span><small>待续 · 记录已暂停</small></div>
+
+      <!-- 速度巨字：骑行中任何时刻都在所有特效层之上 -->
+      <div id="speed" class="speed" role="status" aria-live="off" aria-label="速度">
+        <span class="speed-ghost c" aria-hidden="true"></span>
+        <span class="speed-ghost m" aria-hidden="true"></span>
+        <span id="speed-value" class="speed-value">0</span>
+        <span id="speed-est" class="speed-est" hidden>≈</span>
+        <span class="speed-unit">KM/H</span>
+        <span id="speed-stamp" class="speed-stamp" hidden>DEMO</span>
+        <span id="speed-frozen" class="speed-frozen" hidden>定格 · 最后读数</span>
+      </div>
+
+      <div class="corner tl"><b id="chapter">第1话</b><span id="world-name">霓虹都市夜</span><i id="world-en">NEON NIGHT</i></div>
+      <div class="corner tr"><span id="clock">00:00</span><span class="dot">·</span><span id="dist">0.00</span><small>km</small><span id="tier-badge" class="tier-badge">高</span></div>
+      <div class="corner bl"><span id="source">待机</span><span class="dot">·</span><span id="sound-status">声浪关闭</span></div>
+      <div class="corner br"><span id="score">游戏分 0</span><span id="combo" class="combo"></span></div>
+      <div id="caption" class="caption" aria-live="polite"></div>
+
+      <nav class="stickers idle-only" aria-label="待机操作">
+        <button id="btn-demo" class="sticker primary">演示驾驶<small>DEMO · 约 60 秒</small></button>
+        <button id="btn-world" class="sticker">关卡</button>
+        <button id="btn-garage" class="sticker">车库</button>
+        <button id="btn-sound" class="sticker">声浪</button>
+        <button id="btn-settings" class="sticker">设置</button>
+      </nav>
+      <nav class="stickers ride-only" aria-label="骑行操作">
+        <button id="btn-pause" class="sticker">暂停</button>
+        <button id="btn-world-ride" class="sticker">换关</button>
+        <button id="btn-finish" class="sticker danger">结束</button>
+      </nav>
+      <button id="btn-skip" class="sticker skip" hidden>跳过 ›</button>
+      <p id="hint" class="hint idle-only">点车轰油门 · 上滑抬头 · 长按烧胎 · 左右拖换角度</p>
+    </div>
+  </main>
+
+  <section id="sheet-world" class="sheet" hidden aria-label="关卡选择">
+    <header><b>选择关卡</b><span>每个世界一种配色与天气 · 仅画面</span><button class="close" data-close>关闭</button></header>
+    <div class="world-grid" id="world-grid"></div>
+  </section>
+  <section id="sheet-garage" class="sheet" hidden aria-label="车库">
+    <header><b>车库 · 换色</b><span>GSX-R1000 近似外观 · 非准确 GSX250R</span><button class="close" data-close>关闭</button></header>
+    <div class="swatches" id="swatches"></div>
+    <div class="row"><span>漆面</span><button class="chip" data-finish="gloss">亮面</button><button class="chip" data-finish="satin">缎面</button></div>
+    <p class="note" id="bike-mode">正在装载漫画摩托…</p>
+  </section>
+  <section id="sheet-sound" class="sheet" hidden aria-label="声浪">
+    <header><b>声浪</b><span>驱动天际线均衡器与车身震动</span><button class="close" data-close>关闭</button></header>
+    <div class="row"><button class="chip" data-sound="mic">麦克风</button><button class="chip" data-sound="demo">声浪 DEMO</button><button class="chip" data-sound="off">关闭</button></div>
+    <p class="note">麦克风需点击后授权；只在本机分析音量与频段，不录音、不回放、不上传。它听到的是外界混合声音，不能识别发动机或转速。声浪 DEMO 为合成特征。</p>
+    <p class="note" id="sound-note">声浪关闭</p>
+  </section>
+  <section id="sheet-settings" class="sheet" hidden aria-label="设置">
+    <header><b>设置</b><span id="tier-now">性能：自动 · 高</span><button class="close" data-close>关闭</button></header>
+    <div class="row"><span>性能档位</span><button class="chip" data-tier="auto">自动</button><button class="chip" data-tier="high">高</button><button class="chip" data-tier="mid">中</button><button class="chip" data-tier="low">低</button></div>
+    <div class="row"><span>界面音效</span><button class="chip" data-sfx="on">开</button><button class="chip" data-sfx="off">关</button></div>
+    <div class="row"><span>突破剧场</span><button class="chip" id="btn-gallery">突破画廊</button><small class="note">预览每种剧目 × 世界 · 非骑行数据</small></div>
+    <div class="row"><span>减少动态</span><button class="chip" data-reduce="system">跟随系统</button><button class="chip" data-reduce="on">开启</button></div>
+    <p class="note">低档关闭套印与纸纹、减少粒子并降低画布分辨率。游戏分与连击只是游戏，非驾驶评价。</p>
+  </section>
+
+  <section id="gallery" class="gallery" data-open="false" hidden aria-label="突破画廊">
+    <div class="g-more-panel">
+      <b class="gallery-tag">突破画廊 · 预览 · 非骑行数据 · 不写入任何纪录</b>
+      <div class="row"><button id="g-replay" class="chip">重播</button><button id="g-auto" class="chip">自动轮播</button></div>
+      <div class="row" id="g-worlds"></div>
+      <div class="row" id="g-tiers"></div>
+    </div>
+    <div class="g-bar"><button id="g-prev" aria-label="上一个">‹</button><span id="g-name" class="g-name"></span><button id="g-next" aria-label="下一个">›</button><button id="g-more">更多</button><button id="g-exit">退出</button></div>
+  </section>
+  <section id="comic" class="comic" hidden aria-label="今日骑行漫画">
+    <canvas id="comic-canvas" class="comic-canvas" role="img" aria-label="今日骑行漫画"></canvas>
+    <div class="comic-actions">
+      <button id="btn-save" class="sticker primary">保存图片</button>
+      <button id="btn-again" class="sticker">再来一话</button>
+      <button id="btn-close" class="sticker">返回</button>
+      <p class="note" id="comic-note"></p>
+    </div>
+  </section>
+</div>
+<script type="module" src="app.js"></script>
+</body>
+</html>

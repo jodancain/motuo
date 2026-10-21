@@ -111,6 +111,16 @@ final class CockpitV3Tests: XCTestCase {
         XCTAssertLessThan(values[1...35].enumerated().filter { $0.offset > 0 && $0.element < values[$0.offset] }.count, 1, "monotonic climb to the top speed")
     }
 
+    /// Cold start must not flash white: the launch screen's colour asset exists and matches the cockpit ink.
+    func testLaunchScreenUsesDarkColorAssetMatchingCockpit() throws {
+        let launch = try XCTUnwrap(Bundle.main.infoDictionary?["UILaunchScreen"] as? [String: Any])
+        let name = try XCTUnwrap(launch["UIColorName"] as? String)
+        let color = try XCTUnwrap(UIColor(named: name, in: .main, compatibleWith: UITraitCollection(userInterfaceStyle: .light)), "missing colour asset \(name) falls back to white")
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        XCTAssertTrue(color.getRed(&r, green: &g, blue: &b, alpha: &a))
+        XCTAssertEqual(r * 255, 0x0B, accuracy: 1); XCTAssertEqual(g * 255, 0x0A, accuracy: 1); XCTAssertEqual(b * 255, 0x12, accuracy: 1); XCTAssertEqual(a, 1)
+    }
+
     func testPortraitAndBothLandscapesSupportedNeverUpsideDownAndVersion() {
         let info = Bundle.main.infoDictionary ?? [:]
         let orientations = Set(info["UISupportedInterfaceOrientations"] as? [String] ?? [])

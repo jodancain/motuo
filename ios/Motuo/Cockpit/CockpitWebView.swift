@@ -82,7 +82,9 @@ struct CockpitWebView: UIViewRepresentable {
         configuration.userContentController.add(context.coordinator,name:"motuo")
         configuration.defaultWebpagePreferences.allowsContentJavaScript=true
         let view=WKWebView(frame:.zero,configuration:configuration)
-        view.isOpaque=false;view.backgroundColor = .black;view.scrollView.backgroundColor = .black
+        // Same ink as the launch screen and the page, so cold start → first cockpit frame never flashes white.
+        let ink=UIColor(red:0x0B/255,green:0x0A/255,blue:0x12/255,alpha:1)
+        view.isOpaque=false;view.backgroundColor=ink;view.scrollView.backgroundColor=ink;view.underPageBackgroundColor=ink
         // The page lays itself out with viewport-fit=cover + env(safe-area-inset-*); WebKit passes the view's own safe area
         // (Dynamic Island / notch side, home indicator) through even though the scroll view does not inset its content.
         view.scrollView.isScrollEnabled=false;view.scrollView.contentInsetAdjustmentBehavior = .never

@@ -901,6 +901,7 @@ const native = installNativeAdapter({
     S.nativeSimulated = m.simulated; S.nativeTitle = m.title;
     if (m.demoMode !== S.nativeDemoMode) { S.nativeDemoMode = m.demoMode; updateNativeControls(); }
     if (!m.appearance && !S.appearanceSeeded) { S.appearanceSeeded = true; sendAppearance(); }
+    if (!app.classList.contains('ready')) { updateNativeControls(); app.classList.add('ready'); }
   },
   nativeAppearance(a) {
     S.appearanceSeeded = true;
@@ -947,6 +948,8 @@ if (native.native) {
   setText('btn-close', '完成');
   updateNativeControls();
 }
+// 文案就绪后才显示按钮：浏览器立即；原生等第一份快照（演示开关决定主按钮文案），首帧不闪错误文字。
+if (!native.native) app.classList.add('ready');
 
 /* ---------- 启动 ---------- */
 ride.onEvent(reactTo);

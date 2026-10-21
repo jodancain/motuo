@@ -41,3 +41,5 @@ html.native-host #btn-vehicle{align-self:flex-start}
 html.native-host .comic-actions .sticker{min-height:44px}
 /* 暂停“缩成一页上的一格”：原生里页底用深色网点（浏览器预览仍是米色纸），四周不露米色 */
 html.native-host .app[data-phase=paused] .panel{background:var(--ink) radial-gradient(circle,rgba(255,228,92,.16) 28%,transparent 31%) 0 0/9px 9px}
+/* 模块脚本把按钮文案换成原生版（开始骑行 / 配色 / 完成）之前不显示按钮，首帧不闪浏览器预览的文字 */
+html.native-host .app:not(.ready) .stickers,html.native-host .app:not(.ready) .hint{visibility:hidden}

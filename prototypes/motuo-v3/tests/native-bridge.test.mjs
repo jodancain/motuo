@@ -44,6 +44,11 @@ test('原生打包：视口 cover、原生样式存在且小控件不排成底�
   assert.doesNotMatch(css, /#btn-(world|garage|sound|settings)[^{]*\{[^}]*bottom:/);
   const prep = readFileSync(new URL('scripts/prepare-native-cockpit.py', repo), 'utf8');
   assert.match(prep, /native-runtime\.css/); assert.match(prep, /motuo-v3/);
+  // 首帧前就是原生样式（模块脚本在首次绘制后才运行）：打包时直接给 <html> 加 native-host；原生页底深色、无纸边。
+  assert.match(prep, /<html lang="zh-CN" class="native-host">/);
+  assert.match(css, /html\.native-host \.page\{padding:0;background:var\(--ink\)\}/);
+  assert.match(css, /html\.native-host \.panel\{border:0;background:var\(--ink\)\}/);
+  assert.match(readFileSync(new URL('index.html', v3), 'utf8'), /<style>html,body\{background:#0b0a12\}<\/style>/);
   const styles = readFileSync(new URL('styles.css', v3), 'utf8');
   for (const sel of ['.page{', '.landscape .sheet{', '.comic{']) assert.match(styles.slice(styles.indexOf(sel)), /^[^}]*env\(safe-area-inset/, `${sel} 需要避开安全区`);
 });

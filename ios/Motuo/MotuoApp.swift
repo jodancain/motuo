@@ -12,6 +12,7 @@ import SwiftData
     var body: some Scene {
         WindowGroup {
             RootView().environment(engine).environment(settings)
+                .background(Color(red: 0x0B / 255, green: 0x0A / 255, blue: 0x12 / 255).ignoresSafeArea())
                 .preferredColorScheme(.dark)
                 .tint(Cyber.accent)
         }.modelContainer(container)

@@ -37,7 +37,10 @@ def bundle_v3():
     for folder in ['core','render','audio','data','shared','vendor','assets/fonts']: copy_tree(src/folder,DST/folder)
     target=DST/MODEL; target.parent.mkdir(parents=True,exist_ok=True); shutil.copy2(model,target)
     html=(src/'index.html').read_text()
-    if html.count('</head>')!=1: raise RuntimeError('Native bridge patch boundary changed: </head>')
+    if html.count('</head>')!=1 or html.count('<html lang="zh-CN">')!=1: raise RuntimeError('Native bridge patch boundary changed: <html>/</head>')
+    # The bundle is only ever shown natively: mark it before the first paint (app.js is a module and runs after it),
+    # so the very first frame already uses the dark full-bleed native styles instead of the browser preview's paper.
+    html=html.replace('<html lang="zh-CN">','<html lang="zh-CN" class="native-host">')
     # Native-only layout (single navigation, scene mini-controls, safe areas). The bridge itself is native-adapter.js.
     html=html.replace('</head>','<link rel="stylesheet" href="native-runtime.css">\n</head>')
     (DST/'index.html').write_text(html)

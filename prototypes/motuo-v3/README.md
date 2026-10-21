@@ -123,3 +123,12 @@ python3 -m http.server 8766 --bind 127.0.0.1 --directory prototypes/motuo-v3
 - **无障碍读数**：视觉隐藏的 `#font-status`、`#ax-theatre`、`#ax-clock`、`#ax-layout`、`#ax-error`，供 VoiceOver 与原生 UI 测试读取。
 
 验证：`node --test prototypes/motuo-v3/tests/*.test.mjs` **78/78**；浏览器旋转回归 `tests/browser/native-rotation.pw.mjs`（先 `python3 -m http.server 8767 --bind 127.0.0.1 --directory ios/Motuo/Resources/Cockpit`）Chromium、WebKit 各 57/57；模拟器结果见 `docs/STATUS.md`。
+
+## 审核返工 fix1（2026-10-21）
+
+- **全出血（原生）**：打包进 App 时 `<html class="native-host">`，`ios/Motuo/Cockpit/v3/native-runtime.css` 去掉浏览器预览的纸边与墨线框，世界铺满整屏；页角 HUD、按钮按 `env(safe-area-inset-*)` 内缩；`core/layout.js` 的 `stageLayout(W, H, safe)` 在安全区内排车与速度巨字（安全区由 `#safe-probe` 读出）。浏览器预览保持原来的纸边版式。
+- **剧场给车让位**：`render/milestone-player.js` 在速度区之外再挖空车身核心区；`clampBikeShift` 让剧目位移与镜头平移下车出画 ≤15%；竖屏主文字在车下方路面带、注释在速度与车之间。回归：`tests/theatre-portrait.test.mjs`（结构性，全部剧目 × 三种视口）与 `tests/browser/gallery-portrait.pw.mjs`（390×844 真实像素，爆点前后截图）。
+- **横屏漫画**：`PAGE_LANDSCAPE`（1400×820）横版页 + `render/comic-view.js`（两张页缓存，旋转时整页上屏）；导出 / 分享仍是竖版 PAGE。`#ax-comic` 报告“漫画 横版/竖版 完整/揭示中”。
+- **启动**：页面内联深色背景；原生按钮在首份快照后才显示。
+
+验证：node **91/91**；`native-rotation.pw.mjs` Chromium / WebKit 各 64/64；`gallery-portrait.pw.mjs` 20/20（先 `python3 -m http.server 8766 --bind 127.0.0.1 --directory prototypes/motuo-v3`）。注意：`data/speed-comparisons.js` 被仓库 `.gitignore` 的 `data/` 规则忽略，全新检出缺这个文件，见 docs/STATUS.md。

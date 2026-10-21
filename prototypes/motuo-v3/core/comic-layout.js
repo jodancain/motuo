@@ -8,6 +8,9 @@ import {ACTS} from './milestone-director.js';
 const actLabel = id => ACTS[id]?.name || (id === 'comeback' ? '再次突破' : '速度突破');
 
 export const PAGE = Object.freeze({W: 1080, H: 1528, margin: 44, header: 196, footer: 168, gutter: 18});
+// 横屏屏显用的横版页（导出 / 分享仍是竖版 PAGE）：两行、每行 2–3 个横幅格，旁白字号与竖版相同；
+// 比例约 1.7，留出右侧按钮列后仍能接近满高，屏上字号约为竖版页缩放后的两倍。
+export const PAGE_LANDSCAPE = Object.freeze({W: 1400, H: 820, margin: 28, header: 118, footer: 86, gutter: 16, landscape: true});
 
 export const MOMENT_COPY = Object.freeze({
   launch: {title: '起步', sfx: 'VROOM!', tone: 'cyan'},
@@ -123,11 +126,12 @@ export function pageSummary(record) {
 }
 
 const ROWS = Object.freeze({4: [1, 2, 1], 5: [1, 2, 2], 6: [1, 2, 2, 1]});
+const ROWS_LANDSCAPE = Object.freeze({4: [2, 2], 5: [3, 2], 6: [3, 3]});
 
 /* 斜切格页面：行分隔线交替倾斜，行内分隔线也带斜度；格间距 = gutter。 */
 export function pageLayout(count, page = PAGE) {
   const n = Math.max(4, Math.min(6, count | 0));
-  const rows = ROWS[n];
+  const rows = (page.landscape ? ROWS_LANDSCAPE : ROWS)[n];
   const x0 = page.margin, x1 = page.W - page.margin, y0 = page.header, y1 = page.H - page.footer;
   const area = rectPoly(x0, y0, x1 - x0, y1 - y0);
   const weights = rows.map(c => (c === 1 ? .92 : 1));
@@ -147,10 +151,19 @@ export function pageLayout(count, page = PAGE) {
     const row = clipAll(area, planes);
     if (rows[r] === 1) { panels.push({row: r, poly: row}); continue; }
     const ys = row.map(p => p[1]), top = Math.min(...ys), bottom = Math.max(...ys);
-    const split = .5 + (r % 2 ? .08 : -.08), s = 34;
-    const xm = x0 + (x1 - x0) * split;
-    const [left, right] = cut([xm - s, bottom], [xm + s, top], page.gutter);
-    panels.push({row: r, poly: clipAll(row, [left])}, {row: r, poly: clipAll(row, [right])});
+    // 一行 k 格：k-1 条斜切线（交替偏移），相邻格之间留 gutter。
+    const k = rows[r], s = 34, cuts = [];
+    for (let j = 1; j < k; j++) {
+      const split = j / k + (k === 2 ? (r % 2 ? .08 : -.08) : ((j + r) % 2 ? .025 : -.025));
+      const xm = x0 + (x1 - x0) * split;
+      cuts.push(cut([xm - s, bottom], [xm + s, top], page.gutter));
+    }
+    for (let j = 0; j < k; j++) {
+      const planes = [];
+      if (j > 0) planes.push(cuts[j - 1][1]);
+      if (j < k - 1) planes.push(cuts[j][0]);
+      panels.push({row: r, poly: clipAll(row, planes)});
+    }
   }
   return {page, count: n, panels: panels.slice(0, n)};
 }

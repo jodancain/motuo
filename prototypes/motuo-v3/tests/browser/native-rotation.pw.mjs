@@ -88,6 +88,24 @@ async function checkBleed(label) {
   const paper = px.filter(([r, g, b]) => Math.abs(r - 243) < 10 && Math.abs(g - 234) < 10 && Math.abs(b - 214) < 10);
   check(`${label}: 场景全出血（面板=视口，边缘无米色纸边）`, Math.abs(r.x) < 1 && Math.abs(r.y) < 1 && Math.abs(r.w - r.W) < 1 && Math.abs(r.h - r.H) < 1 && paper.length === 0, {rect: r, edgePixels: px, paper: paper.length});
 }
+// 漫画：每一格在屏上画布里都有内容（格中心 64×64 区域颜色有变化、不是纯纸色）。
+async function checkComicPanels(label, wantOrientation) {
+  const res = await page.evaluate(() => {
+    const v = window.__motuoV3.comicView, c = document.getElementById('comic-canvas'), g = c.getContext('2d');
+    if (!v) return null;
+    const panels = v.panels.map(poly => {
+      const cx = poly.reduce((a, p) => a + p[0], 0) / poly.length, cy = poly.reduce((a, p) => a + p[1], 0) / poly.length;
+      const d = g.getImageData(Math.round(cx - 32), Math.round(cy - 32), 64, 64).data; let sum = 0, sum2 = 0, n = 0, paper = 0;
+      for (let i = 0; i < d.length; i += 4) { const l = (d[i] + d[i + 1] + d[i + 2]) / 3; sum += l; sum2 += l * l; n++; if (Math.abs(d[i] - 243) < 6 && Math.abs(d[i + 1] - 234) < 6 && Math.abs(d[i + 2] - 214) < 6) paper++; }
+      const mean = sum / n; return {std: Math.sqrt(Math.max(0, sum2 / n - mean * mean)), paper: paper / n};
+    });
+    const r = c.getBoundingClientRect();
+    return {current: v.current, revealing: v.revealing, w: c.width, h: c.height, css: {w: r.width, h: r.height, right: r.right, bottom: r.bottom}, W: innerWidth, H: innerHeight, panels};
+  });
+  const ok = res && res.current === wantOrientation && !res.revealing && res.panels.length >= 4 && res.panels.every(p => p.std > 8 && p.paper < .6);
+  check(`${label}: 漫画 ${wantOrientation} 版每一格非空（旋转后 2 帧内）`, ok, res && {current: res.current, revealing: res.revealing, size: [res.w, res.h], panels: res.panels.map(p => [+p.std.toFixed(1), +p.paper.toFixed(2)])});
+  return res;
+}
 async function rotate(size, label) {
   await page.setViewportSize(size); await sleep(320);
   const s = await st(), lay = s.layout;
@@ -137,14 +155,23 @@ check('暂停按钮文案', (await page.textContent('#btn-pause')) === '继续�
 await page.click('#btn-pause'); await page.waitForFunction(() => window.__motuoV3.state.phase === 'riding', null, {timeout: 3000});
 await sleep(2500);
 // 结束 → 漫画 → 漫画中旋转 → 分享 → 详细复盘
+await sleep(400);
 await page.click('#btn-finish');
 await page.waitForFunction(() => window.__motuoV3.state.phase === 'comic' && window.__motuoV3.comic?.revealedAt, null, {timeout: 12000});
 s = await st(); check('结束后先回传 wrappedShown，再进入漫画', s.sent.includes('wrappedShown'), s.sent);
 const comic = await page.evaluate(() => window.__motuoV3.comic);
 check('漫画来自原生时间线与汇总', comic && comic.summary.source.includes('原生演示骑行') && comic.moments.length >= 4, comic && {source: comic.summary.source, n: comic.moments.length});
+// 揭示还在进行时就旋转：两帧内横版页必须整页上屏
+await page.setViewportSize(L); await frames(2);
+await checkComicPanels('漫画揭示中 竖→横', 'landscape');
 await rotate(L, '漫画 竖→横');
 const comicBox = await page.evaluate(() => { const c = document.getElementById('comic-canvas').getBoundingClientRect(), b = [...document.querySelectorAll('.comic-actions .sticker')].filter(x => x.offsetParent).map(x => { const r = x.getBoundingClientRect(); return {t: x.textContent, r: r.right, b: r.bottom}; }); return {c: {w: c.width, h: c.height, b: c.bottom, r: c.right}, b, W: innerWidth, H: innerHeight}; });
 check('横屏漫画页与按钮都在画面内', comicBox.c.b <= comicBox.H && comicBox.c.r <= comicBox.W && comicBox.b.every(x => x.r <= comicBox.W && x.b <= comicBox.H) && comicBox.b.map(x => x.t).join() === '保存图片,查看详细复盘,完成', comicBox);
+check('横屏漫画是横版页且接近满高', comicBox.c.w > comicBox.c.h && comicBox.c.h >= comicBox.H * .8, comicBox.c);
+await page.setViewportSize(P); await frames(2);
+await checkComicPanels('漫画 横→竖', 'portrait');
+await page.setViewportSize(L); await frames(2);
+await checkComicPanels('漫画 竖→横 #2', 'landscape');
 await rotate(P, '漫画 横→竖');
 await page.click('#btn-save'); await sleep(800);
 const share = await page.evaluate(() => window.__native.sent.find(x => x.action === 'share'));

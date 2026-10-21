@@ -144,6 +144,9 @@ final class MotuoUITests:XCTestCase {
         for (name,o) in [("landscapeLeft",UIDeviceOrientation.landscapeLeft),("landscapeRight",.landscapeRight),("portrait",.portrait)]{
             rotate(app, o)
             XCTAssertTrue(waitHittable(save), "保存图片 reachable in \(name)"); XCTAssertTrue(app.buttons["查看详细复盘"].isHittable)
+            // 横屏换横版页、竖屏换竖版页；旋转后整页完整（揭示立即收尾、没有空格）
+            let want = o == .portrait ? "漫画 竖版 完整" : "漫画 横版 完整"
+            XCTAssertTrue(app.staticTexts[want].waitForExistence(timeout:2), "\(want) after rotating to \(name)")
             hold(1.5); addScreenshot("comic-\(name)")
         }
         app.buttons["完成"].firstMatch.tap()

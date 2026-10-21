@@ -136,10 +136,15 @@ button{font:inherit;color:inherit;cursor:pointer}
 /* 今日骑行漫画 */
 .comic{position:absolute;inset:0;z-index:80;background:var(--ink) radial-gradient(circle,rgba(255,61,166,.22) 28%,transparent 31%) 0 0/12px 12px;display:flex;align-items:center;justify-content:center;gap:18px;padding:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))}
 .comic-canvas{background:var(--paper);box-shadow:10px 10px 0 rgba(0,0,0,.6);border:3px solid var(--paper)}
-.landscape .comic-canvas{height:calc(100vh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));width:auto;aspect-ratio:1080/1528}
+/* 画布本身的宽高（竖版 1080×1528 / 横版 1680×800）决定比例；只用 max-* 限制，按比例缩放到可用区域 */
+.landscape .comic-canvas{width:auto;height:auto;max-height:calc(100vh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));max-width:calc(100vw - 150px - env(safe-area-inset-left) - env(safe-area-inset-right))}
 .portrait .comic{flex-direction:column}
-.portrait .comic-canvas{width:auto;height:auto;aspect-ratio:1080/1528;max-width:calc(100vw - 24px - env(safe-area-inset-left) - env(safe-area-inset-right));max-height:calc(100vh - 130px - env(safe-area-inset-top) - env(safe-area-inset-bottom))}
+.portrait .comic-canvas{width:auto;height:auto;max-width:calc(100vw - 24px - env(safe-area-inset-left) - env(safe-area-inset-right));max-height:calc(100vh - 130px - env(safe-area-inset-top) - env(safe-area-inset-bottom))}
 .comic-actions{display:flex;flex-direction:column;gap:14px;align-items:flex-start;max-width:220px}
+.landscape .comic{gap:10px}
+.landscape .comic-actions{width:104px;max-width:104px;gap:10px}
+.landscape .comic-actions .sticker{font-size:13px;padding:6px 8px 5px;width:100%;text-align:center}
+.landscape .comic-actions .note{font-size:10px;line-height:1.4}
 .portrait .comic-actions{flex-direction:row;flex-wrap:wrap;max-width:none;justify-content:center}
 .comic-actions .note{color:var(--paper)}
 

@@ -17,8 +17,12 @@ test('减少动态的替代路径在 CSS 与主程序中存在', () => {
   assert.match(css, /\.reduced \.camera\{transform:none!important\}/);
   assert.match(app, /matchMedia\('\(prefers-reduced-motion: reduce\)'\)/);
   // 翻页、拟声字、冲刺、漫画逐格揭示在减少动态时都有跳过分支。
-  for (const fn of ['function pageFlip', 'function word', 'function revealComic']) {
+  for (const fn of ['function pageFlip', 'function word']) {
     const body = app.slice(app.indexOf(fn), app.indexOf(fn) + 400);
     assert.match(body, /isReduced\(\)/, fn);
   }
+  // 漫画逐格揭示在 render/comic-view.js：主程序把 isReduced 交给它，show() 里减少动态直接整页。
+  assert.match(app.slice(app.indexOf('function buildComic')), /createComicView\(\{[^)]*reduced: isReduced/);
+  const view = readFileSync(new URL('render/comic-view.js', root), 'utf8');
+  assert.match(view.slice(view.indexOf('show(o, t)'), view.indexOf('show(o, t)') + 300), /if \(reduced\(\)\) return full\(o, t\)/);
 });

@@ -6,7 +6,8 @@ import {createLoop, createPerfGovernor, TIER_CONFIG} from './core/loop.js';
 import {buildDemoScript, createDemoPlayer} from './core/demo-script.js';
 import {createRideModel, speedText, sourceLabel, formatClock, formatKm} from './core/ride-model.js';
 import {createDirector, createFlashLimiter, cutinLayout, IMPACT_MS} from './core/director.js';
-import {selectMoments, PAGE} from './core/comic-layout.js';
+import {selectMoments, PAGE, PAGE_LANDSCAPE} from './core/comic-layout.js';
+import {createComicView} from './render/comic-view.js';
 import {stageLayout, speedFit, countdownFit, maxDash, clampBikeShift, bikeMapping as mapBike} from './core/layout.js';
 import {tracePath} from './core/geometry.js';
 import {WORLDS, WORLD_ORDER, nextWorld, normalizeWorld} from './render/worlds.js';
@@ -98,6 +99,8 @@ function layoutLive({W, H, sa}) {
   S.liveL = L; fitSpeed(true);
   // 按旧尺寸定位的短命层（拟声字、粒子）直接收掉，不在新版式里错位残留。
   $('sfx-layer').replaceChildren(); fx.clear();
+  // 漫画页：换到对应方向的版式，揭示立即收尾，本帧就整页上屏（不出现空格）。
+  if (S.phase === 'comic' && comicView) comicView.orient(L.landscape ? 'landscape' : 'portrait', now());
   S.layoutLive = (S.layoutLive || 0) + 1;
 }
 // 尺寸稳定后：按新尺寸与 devicePixelRatio 重建缓冲，并让正在进行的分镜、剧场、倒计时按新版式继续。
@@ -191,6 +194,7 @@ function renderHud() {
   const sec = riding ? Math.floor(S.mode === 'native' ? S.nativeElapsed || 0 : ride.rideT) : 0;
   setText('ax-clock', `骑行计时 ${sec} 秒`);
   setText('ax-theatre', mplayer.active ? '突破剧场播放中' : '突破剧场空闲');
+  setText('ax-comic', S.phase === 'comic' && comicView ? `漫画 ${comicView.current === 'landscape' ? '横版' : '竖版'} ${comicView.revealing ? '揭示中' : '完整'}` : '漫画 无');
   setText('score', `游戏分 ${ride.score.toLocaleString('en-US')}`);
   setText('tier-badge', tier().label);
 }
@@ -364,50 +368,38 @@ function doFinish() {
 }
 
 /* ---------- 今日骑行漫画 ---------- */
-const pageCanvas = document.createElement('canvas');
+// 屏显：竖屏竖版页、横屏横版页（render/comic-view.js）；导出 / 分享永远用竖版页。
+const comicPages = {portrait: document.createElement('canvas'), landscape: document.createElement('canvas')};
+let comicView = null;
+const comicOrientation = () => ((S.liveL || S.L)?.landscape ? 'landscape' : 'portrait');
 async function buildComic(record) {
   clearCountdown();
   await document.fonts.ready;
   const moments = selectMoments(record);
   const view = $('comic-canvas');
-  view.width = PAGE.W; view.height = PAGE.H;
+  comicView = null;
   if (moments.length < 2) {
+    view.width = PAGE.W; view.height = PAGE.H;
     $('comic-note').textContent = '本次记录的有效读数太少，未生成漫画。';
     setPhase('comic'); $('comic').hidden = false; return;
   }
-  const t0 = now();
-  const result = renderComicPage(pageCanvas, {record, moments, painter, bike});
-  S.comic = {record, moments, panels: result.panels, summary: result.summary, renderMs: Math.round(now() - t0), revealedAt: null};
-  $('comic-note').textContent = `${moments.length} 格 · ${result.summary.source}。游戏分为游戏，非驾驶评价。`;
+  const t0 = now(), date = new Date();
+  comicView = createComicView({view, reduced: isReduced, onStamp: () => sfx.play('stamp'),
+    render: o => { const r = renderComicPage(comicPages[o], {record, moments, painter, bike, date, page: o === 'landscape' ? PAGE_LANDSCAPE : PAGE}); return {canvas: comicPages[o], panels: r.panels, summary: r.summary}; }});
   setPhase('comic'); $('comic').hidden = false;
+  const pg = comicView.show(comicOrientation(), now());
+  const cv = comicView;
+  S.comic = {record, moments, panels: pg.panels, summary: pg.summary, renderMs: Math.round(now() - t0), get revealedAt() { return cv.revealedAt; }};
+  $('comic-note').textContent = `${moments.length} 格 · ${pg.summary.source}。游戏分为游戏，非驾驶评价。`;
   sfx.play('shutter');
-  revealComic(view, result);
-  restoreDemoSound();
-}
-function revealComic(view, result) {
-  const g = view.getContext('2d');
-  // 第一拍：纸 + 页眉页脚，格子空白；之后逐格砸入。
-  g.drawImage(pageCanvas, 0, 0);
-  for (const p of result.panels) { tracePath(g, p.poly); g.fillStyle = '#f3ead6'; g.fill(); g.lineWidth = 7; g.strokeStyle = '#0b0a12'; g.stroke(); }
-  if (isReduced()) { g.drawImage(pageCanvas, 0, 0); S.comic.revealedAt = now(); return; }
-  const t0 = now(), each = 420;
-  let shown = -1;
+  // 揭示结束后，空闲时把另一种方向的页也渲染好：旋转时直接贴缓存。
   loop.add(t => {
-    if (S.phase !== 'comic') return false;
-    const i = Math.min(result.panels.length - 1, Math.floor((t - t0) / each));
-    const k = clamp(((t - t0) - i * each) / 160, 0, 1);
-    for (let j = 0; j <= i; j++) {
-      const p = result.panels[j], scale = j === i ? 1 + .14 * (1 - k) * (1 - k) : 1;
-      g.save(); tracePath(g, p.poly); g.clip();
-      g.fillStyle = '#f3ead6'; g.fill();
-      const b = p.poly.reduce((a, [x, y]) => ({x: a.x + x / p.poly.length, y: a.y + y / p.poly.length}), {x: 0, y: 0});
-      g.translate(b.x, b.y); g.scale(scale, scale); g.translate(-b.x, -b.y);
-      g.drawImage(pageCanvas, 0, 0); g.restore();
-      tracePath(g, p.poly); g.lineWidth = 7; g.strokeStyle = '#0b0a12'; g.stroke();
-    }
-    if (i !== shown) { shown = i; sfx.play('stamp'); }
-    if (t - t0 > each * result.panels.length + 200) { g.drawImage(pageCanvas, 0, 0); S.comic.revealedAt = now(); return false; }
+    if (S.phase !== 'comic' || comicView !== cv) return false;
+    if (cv.frame(t)) return true;
+    setTimeout(() => { if (comicView === cv) cv.prerender(comicOrientation() === 'landscape' ? 'portrait' : 'landscape'); }, 60);
+    return false;
   }, {fps: 30, name: 'comic-reveal'});
+  restoreDemoSound();
 }
 function restoreDemoSound() { if (S.demoSoundRestore !== null) { sound.setMode(S.demoSoundRestore); S.demoSoundRestore = null; } }
 function backToIdle() {
@@ -760,10 +752,10 @@ $('btn-save').addEventListener('click', async () => {
   sfx.play('shutter');
   if (S.mode === 'native') {
     // 原生：把 PNG 交给系统分享面板（可存到相册、文件或发送），网页不申请相册权限。
-    try { const out = await exportComic(pageCanvas, {toBlob: false}); $('comic-note').textContent = native.send('share', {png: out.dataURL}) ? '已打开系统分享面板' : '分享暂不可用'; } catch { $('comic-note').textContent = '图片生成失败，请重试'; }
+    try { const out = await exportComic(comicView.page('portrait').canvas, {toBlob: false}); $('comic-note').textContent = native.send('share', {png: out.dataURL}) ? '已打开系统分享面板' : '分享暂不可用'; } catch { $('comic-note').textContent = '图片生成失败，请重试'; }
     return;
   }
-  const out = await downloadComic(pageCanvas); $('comic-note').textContent = `已保存 ${out.filename}`;
+  const out = await downloadComic(comicView.page('portrait').canvas); $('comic-note').textContent = `已保存 ${out.filename}`;
 });
 $('btn-again').addEventListener('click', () => { backToIdle(); startDemo(); });
 $('btn-detail').addEventListener('click', () => { native.send('rideDetail'); backToIdle(); });
@@ -998,7 +990,8 @@ globalThis.__motuoV3 = {
   get events() { return S.eventsLog.slice(); },
   get director() { return director.history.map(p => ({type: p.type, kind: p.kind, at: p.at, until: p.until, impact: p.impact})); },
   get comic() { return S.comic ? {moments: S.comic.moments, captions: S.comic.panels.map(p => p.caption), summary: S.comic.summary, record: {readings: S.comic.record.readings, events: S.comic.record.events, summary: S.comic.record.summary}, renderMs: S.comic.renderMs, revealedAt: S.comic.revealedAt} : null; },
-  async exportComicDataURL() { const out = await exportComic(pageCanvas, {toBlob: false}); return out.dataURL; },
+  async exportComicDataURL() { const out = await exportComic(comicView.page('portrait').canvas, {toBlob: false}); return out.dataURL; },
+  get comicView() { return comicView ? {current: comicView.current, revealing: comicView.revealing, cachedPortrait: comicView.cached('portrait'), cachedLandscape: comicView.cached('landscape'), panels: comicView.page(comicView.current).panels.map(p => p.poly)} : null; },
   startDemo, skip: () => player?.skipCountdown(), switchWorld, setPaint, setTier: v => { governor.setMode(v); renderSettings(); },
   bikePoint: name => bike.point(name), speedRect,
   get milestones() { return {plans: mdir.plans.map(({layers, compare, ...p}) => ({...p, compare: compare?.id || null})), counters: mdir.counters, active: mplayer.active ? {main: mplayer.active.main, threshold: mplayer.active.threshold, tier: mplayer.active.tier, item: mplayer.active.item || null, startedAt: mplayer.active.startedAt, ms: mplayer.active.ms, now: performance.now()} : null, todayBestAtStart: mdir.todayBestAtStart}; },

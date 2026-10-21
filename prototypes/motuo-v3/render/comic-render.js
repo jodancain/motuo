@@ -128,25 +128,26 @@ function caption(ctx, b, cap, world, scale = 1, poly = null) {
   ctx.restore();
 }
 
-/* 画整页到 canvas（PAGE 尺寸）。返回各格多边形，供逐格揭示动画使用。 */
-export function renderComicPage(canvas, {record, moments, painter, bike, date = new Date()}) {
-  const layout = pageLayout(moments.length);
-  canvas.width = PAGE.W; canvas.height = PAGE.H;
+/* 画整页到 canvas（默认竖版 PAGE；横屏屏显传 PAGE_LANDSCAPE）。返回各格多边形，供逐格揭示动画使用。 */
+export function renderComicPage(canvas, {record, moments, painter, bike, date = new Date(), page = PAGE}) {
+  const PAGE_ = page, hk = page.header / PAGE.header; // 页眉按页眉高度等比缩放
+  const layout = pageLayout(moments.length, page);
+  canvas.width = PAGE_.W; canvas.height = PAGE_.H;
   const ctx = canvas.getContext('2d');
   // 纸
-  ctx.fillStyle = '#f3ead6'; ctx.fillRect(0, 0, PAGE.W, PAGE.H);
+  ctx.fillStyle = '#f3ead6'; ctx.fillRect(0, 0, PAGE_.W, PAGE_.H);
   const r = rng(42); ctx.fillStyle = 'rgba(80,60,30,.06)';
-  for (let i = 0; i < 2400; i++) ctx.fillRect(r() * PAGE.W, r() * PAGE.H, 1 + r() * 2, 1 + r() * 2);
+  for (let i = 0; i < 2400; i++) ctx.fillRect(r() * PAGE_.W, r() * PAGE_.H, 1 + r() * 2, 1 + r() * 2);
   // 页眉
   const ink = '#0b0a12';
-  ctx.fillStyle = ink; ctx.fillRect(PAGE.margin, 40, PAGE.W - PAGE.margin * 2, 118);
-  ctx.globalAlpha = .35; halftone(ctx, PAGE.margin, 40, PAGE.W - PAGE.margin * 2, 118, '#ff3da6', 9, x => Math.min(1, (x - PAGE.margin) / (PAGE.W * 1.1))); ctx.globalAlpha = 1;
-  drawTextStamp(ctx, 'MOTUO', PAGE.margin + 134, 98, 70, {fill: '#ffe45c', shadow: '#38f0ff', ink, rotate: -.05});
-  ctx.save(); ctx.fillStyle = '#ffffff'; ctx.font = '50px MotuoHan, sans-serif'; ctx.textBaseline = 'middle'; ctx.fillText('今日骑行漫画', PAGE.margin + 290, 86); ctx.restore();
+  ctx.fillStyle = ink; ctx.fillRect(PAGE_.margin, 40 * hk, PAGE_.W - PAGE_.margin * 2, 118 * hk);
+  ctx.globalAlpha = .35; halftone(ctx, PAGE_.margin, 40 * hk, PAGE_.W - PAGE_.margin * 2, 118 * hk, '#ff3da6', 9, x => Math.min(1, (x - PAGE_.margin) / (PAGE_.W * 1.1))); ctx.globalAlpha = 1;
+  drawTextStamp(ctx, 'MOTUO', PAGE_.margin + 134 * hk, 98 * hk, 70 * hk, {fill: '#ffe45c', shadow: '#38f0ff', ink, rotate: -.05});
+  ctx.save(); ctx.fillStyle = '#ffffff'; ctx.font = `${Math.round(50 * hk)}px MotuoHan, sans-serif`; ctx.textBaseline = 'middle'; ctx.fillText('今日骑行漫画', PAGE_.margin + 290 * hk, 86 * hk); ctx.restore();
   const worldsUsed = [...new Set(moments.map(m => m.world))].map(k => (WORLDS[k] || WORLDS.neon));
-  ctx.save(); ctx.fillStyle = '#ffe45c'; ctx.font = '22px MotuoHan, sans-serif'; ctx.textBaseline = 'middle';
+  ctx.save(); ctx.fillStyle = '#ffe45c'; ctx.font = `${Math.round(22 * Math.max(hk, .8))}px MotuoHan, sans-serif`; ctx.textBaseline = 'middle';
   const p = v => String(v).padStart(2, '0');
-  ctx.fillText(`${date.getFullYear()}.${p(date.getMonth() + 1)}.${p(date.getDate())} · ${worldsUsed.map(w => `${w.chapter} ${w.name}`).join(' → ')}`, PAGE.margin + 292, 132, PAGE.W - PAGE.margin * 2 - 310);
+  ctx.fillText(`${date.getFullYear()}.${p(date.getMonth() + 1)}.${p(date.getDate())} · ${worldsUsed.map(w => `${w.chapter} ${w.name}`).join(' → ')}`, PAGE_.margin + 292 * hk, 132 * hk, PAGE_.W - PAGE_.margin * 2 - 310 * hk);
   ctx.restore();
   // 各格
   const panels = [];
@@ -185,14 +186,21 @@ export function renderComicPage(canvas, {record, moments, painter, bike, date = 
   }
   // 页脚
   const sum = pageSummary(record);
-  const fy = PAGE.H - PAGE.footer + 30;
+  const landscapePage = !!page.landscape, fk = landscapePage ? .78 : 1;
+  const fy = PAGE_.H - PAGE_.footer + (landscapePage ? 14 : 30), textW = PAGE_.W - PAGE_.margin * 2 - 230 * fk;
   ctx.save(); ctx.fillStyle = ink; ctx.textBaseline = 'top';
-  ctx.font = '30px MotuoHan, sans-serif'; ctx.fillText(sum.line, PAGE.margin, fy, PAGE.W - PAGE.margin * 2 - 230);
-  ctx.font = '22px MotuoHan, sans-serif'; ctx.fillText(sum.score, PAGE.margin, fy + 44, PAGE.W - PAGE.margin * 2 - 230);
-  ctx.fillStyle = '#6a5a44'; ctx.font = '18px MotuoHan, sans-serif'; ctx.fillText(`${sum.source} · 本页数值均来自本次记录`, PAGE.margin, fy + 80, PAGE.W - PAGE.margin * 2 - 230);
+  if (landscapePage) {
+    // 横版：时长/里程/最高速与游戏分同一行，来源一行
+    ctx.font = '26px MotuoHan, sans-serif'; ctx.fillText(`${sum.line} · ${sum.score}`, PAGE_.margin, fy, textW);
+    ctx.fillStyle = '#6a5a44'; ctx.font = '17px MotuoHan, sans-serif'; ctx.fillText(`${sum.source} · 本页数值均来自本次记录`, PAGE_.margin, fy + 38, textW);
+  } else {
+    ctx.font = '30px MotuoHan, sans-serif'; ctx.fillText(sum.line, PAGE_.margin, fy, textW);
+    ctx.font = '22px MotuoHan, sans-serif'; ctx.fillText(sum.score, PAGE_.margin, fy + 44, textW);
+    ctx.fillStyle = '#6a5a44'; ctx.font = '18px MotuoHan, sans-serif'; ctx.fillText(`${sum.source} · 本页数值均来自本次记录`, PAGE_.margin, fy + 80, textW);
+  }
   ctx.restore();
   // 结尾箭头
-  ctx.save(); ctx.translate(PAGE.W - PAGE.margin - 200, fy + 18);
+  ctx.save(); ctx.translate(PAGE_.W - PAGE_.margin - 200 * fk, fy + 18 * fk); ctx.scale(fk, fk);
   ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(160, 0); ctx.lineTo(160, -16); ctx.lineTo(200, 26); ctx.lineTo(160, 68); ctx.lineTo(160, 52); ctx.lineTo(0, 52); ctx.closePath();
   ctx.fillStyle = '#7a5c2e'; ctx.fill(); ctx.lineWidth = 4; ctx.strokeStyle = ink; ctx.stroke();
   ctx.fillStyle = '#fff3d0'; ctx.font = '24px MotuoDisplay, sans-serif'; ctx.textBaseline = 'middle'; ctx.fillText('FIN.', 22, 27); ctx.font = '20px MotuoHan, sans-serif'; ctx.fillText('下一话', 80, 27);

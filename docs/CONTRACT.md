@@ -33,6 +33,12 @@ Shared DATA_DIR default ./data (container /data): manuals/{manualId}/original.pd
 
 AI configured server-side AI_BASE_URL/AI_MODEL/AI_API_KEY. Absent/unavailable provider gives truthful local/extractive result. Manual text is untrusted evidence, not instructions; no execution tools. Numbers in answers require exact cited source support. Reports bind to immutable ride dataVersion.
 
+## Native cockpit bridge (v3, 2026-10-21)
+
+Native → web: `window.MotuoNativeReceive(snapshot)` ~10 Hz while visible, 1 Hz when hidden. Fields: `phase` idle|riding|paused, `seconds` (ride time excluding pauses), `distanceM`, `speedKmh|null`, `speedSource` gps|inertial|unavailable, `speedSampleTime`/`speedSampleElapsed` (uptime and ride time of the current GPS/demo reading; absent without a reading), `sampleTime`, `uncertaintyKmh`, `motion`, `simulated`, `demoMode`, `modal`, `active`, `reduced`, `thermal`, `thermalState` nominal|fair|serious|critical, `lowPower`, `locationStatus`, `stateLabel`, `sound{live,status,level,db,spectrum[32],wave[64],clipped}`, `appearance{paint,finish,world}|null`, `panel{id,name}|null`, music fields, and while the recap is pending `finishedRide{id,distanceM,durationS,maxSpeedKmh|null,simulated,validSpeedSamples,timeline:[{t,v|null}],events:[{t,kind}]}` (timeline from saved telemetry only, ride-time base).
+
+Web → native: `webkit.messageHandlers.motuo.postMessage({action,...})`, main frame of `motuo://bundle` only, allowlist in `CockpitCommand.commands`. Payload actions: `appearance{paint∈panda|stealth|glacier|ember|violet, finish∈gloss|satin, world∈neon|sunset|snow|cosmic}`, `share{png: data:image/png;base64,…}` (≤16 MiB, PNG signature checked). Others carry no payload: ready, primary, finish, demoStart, countdown, countdownCancel, microphone, stopMicrophone, garage, wrappedShown, rideDetail, wrappedDone (plus v2: music*, history, settings, navigation).
+
 ## iOS ownership
 
 iOS main agent owns app, model, sensor engine, telemetry files, SwiftData, UI, Watch, XcodeGen project and tests. Parent owns `ios/Motuo/Integrations/` (MusicService.swift, NavigationService.swift, APIClient.swift, AccessoryService.swift), app icons and deployment/signing scripts. Shared service API supplied by parent. Agent may add UI around these services after confirming interface.

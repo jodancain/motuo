@@ -4,6 +4,8 @@
 
 **0.1.0 (1) 已通过Apple处理并分发至TestFlight内部组，本人可接受邀请安装。** 实际iPhone/Watch安装和实车验收仍待完成。 2026-09-20 最终模拟器31单元＋2 UI测试通过。NAS曾完成API/AI smoke，但当前节点离线，正式手册导入尚未完成。实际证据与待验收事项见 [STATUS](docs/STATUS.md)。
 
+**10/21 原生已接入 v3 漫画 MV 座舱（分支 `feature/v3-comic-cockpit`，`0.3.0 (3)` 仅本地签名、未上传）：** 横竖屏旋转（竖屏、横屏左/右）全状态适配，单一原生 TabBar，倒计时后才开始记录，结束先播“今日骑行漫画”再进原生复盘，漫画可经系统分享面板保存为 PNG。v2 可用 `python3 scripts/prepare-native-cockpit.py --variant v2` 回退。C5913 GLB 分发授权未核验，公开发布前必须解决。见 [STATUS](docs/STATUS.md) 与 [v3 README](prototypes/motuo-v3/README.md)。
+
 **下一版先评审 HTML 效果：** [交互原型](prototypes/motuo-v2/index.html) · [启动方式与验收](prototypes/motuo-v2/README.md)。以 YU7 仪表布局为基础：日常模式保留持续起伏的蓝色波面和独立音乐，运动模式提供四种无地图主题；声浪趋势与正负加速度突出显示，没有数字 RPM。开始骑行后进入页面沉浸，暂停保持，结束复盘并恢复导航。10/20 按用户要求改为游戏／MV 级夸张特效：自写 WebGL 全屏世界、追尾 3D 车、可跳过的电影化出发、游戏事件巨字与连击游戏分（明示非测量）、子弹时间暂停、Wrapped 复盘，特效强度默认“夸张”，仍保留单一 rAF、60／30fps 档位、闪光限流与速度始终可读；已同步进原生并通过模拟器测试，真机未验收，见 [动效调研](docs/research/remotion-motion-20261020.md)。见 [仪表参考](docs/research/yu7-reference-20260920.md)、[动效世界](docs/research/motion-worlds-20260920.md) 和 [声音／惯导边界](docs/design/vehicle-sound-transition-20260920.md)。
 
 **实时 3D 已换用用户确认的 C5913 近似模型。** `Suzuki 550 GSX R1000` 已转换接入车库、待机与共享画布出发，支持旋转、缩放、视角、分区改色及外观保存；熊猫方案为白色车身与黑色辅色。展示明确标为 **GSX-R1000，非准确 GSX250R**，GSX250R 车辆档案保持独立。52,432 三角面、17 网格、9 材质与18张原始 JPEG 保留，原素材和 GLB 仅本机使用、不进入 Git；有原始包时运行 `python3 scripts/prepare-suzuki-model.py` 可重建。见 [模型接入与验证](docs/research/c5913-model-selection-20260920.md)。手机持续性能、法线绿通道约定和分发授权仍待核验；本轮未变更原生 App、TestFlight 或 NAS。
@@ -46,7 +48,7 @@ xcodebuild -project Motuo.xcodeproj -scheme Motuo \
   -configuration Debug -destination 'generic/platform=iOS Simulator' build
 ```
 
-App 中可直接进入明确标注的演示骑行；真实采集按功能请求定位、运动、蓝牙和音乐权限。构建与模拟器说明见 [ios/README](ios/README.md)。自有 Apple Team 构建应配置自己的签名，不复制其他项目私钥。
+构建前先打包座舱资源（默认 v3；GLB 为本机素材，不入 Git）：`python3 scripts/prepare-native-cockpit.py`，回退 v2 用 `--variant v2`。App 中可直接进入明确标注的演示骑行；真实采集按功能请求定位、运动、蓝牙和音乐权限。构建与模拟器说明见 [ios/README](ios/README.md)。自有 Apple Team 构建应配置自己的签名，不复制其他项目私钥。
 
 API 使用 Node.js 22+ 和 PostgreSQL。环境变量须在私有运行环境中设置；应用不会自动加载 `.env`。
 

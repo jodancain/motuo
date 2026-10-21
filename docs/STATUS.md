@@ -2,6 +2,24 @@
 
 更新：2026-10-20。源码、模拟器、本机真实 HTTP、NAS、公网、Apple 分发和实车是独立验收层。已形成完整本机工程与主要交互；**0.2.0 (2) 已分发至TestFlight内部组，本人可接受邀请安装；实际iPhone/Watch安装和实车内测尚未验收。**
 
+> 2026-10-21 追加：原生座舱已换用 v3 漫画 MV 并适配横竖屏旋转，版本 **0.3.0 (3) 仅本地签名归档/导出，未上传 TestFlight**；上方 0.2.0 (2) 的分发状态不变。详见下一节。
+
+## 10/21 原生接入 v3 漫画 MV 座舱 + 横竖屏旋转（模拟器 ＋ 本地签名归档，`0.3.0 (3)`）
+
+用户认可 v3 方向后要求“开始开发，横竖屏都要适配旋转”。分支 `feature/v3-comic-cockpit`，未推送、未合并。
+
+- **打包**：`scripts/prepare-native-cockpit.py` 默认打包 `prototypes/motuo-v3`（字体、Three.js、校验过 SHA 的 GLB 全部本地，入口文件出现远程 URL 即失败），写 `cockpit-manifest.json` 记录版本。v2 保留为**构建开关**回退：`--variant v2`（或 `MOTUO_COCKPIT=v2`）后重新构建。选构建开关而非设置项：两套座舱桥接行为不同（倒计时、复盘、导航），同包双份资源会让包体与测试组合翻倍，而回退只在评审期需要。UI 测试按 v3 编写，v2 包需另行回归。
+- **桥接**：`native-adapter.js` 即 v3 原生运行层；原生 `CockpitCommand.parse` 对每个动作做白名单与参数校验（外观取值、分享只收 PNG 数据并核对文件头）。新增动作 `countdown`、`countdownCancel`、`appearance`、`share`；Swift 与 node 测试都扫描网页源码里所有发送的动作名并断言在白名单内。快照新增 `active`、`demoMode`、`speedSampleTime`/`speedSampleElapsed`（1Hz 读数身份与骑行计时时基）、`thermalState`、`lowPower`、`appearance`、`panel`，`finishedRide` 带上由遥测文件生成的速度时间线与事件。
+- **导航**：只保留原生 TabBar。v3 的关卡/配色/声浪/设置变成场景左上角的小贴纸；底部只剩“开始骑行/演示骑行”。原生“车库”页新增“外观与配色”，跳到驾驶舱并打开 v3 漫画车库；漫画车库里“车辆档案 · 手册 · 保养 →”回到原生车库页。车漆、漆面、关卡由原生 `AppSettings` 持久化并回推网页。座舱 WebView 在其他 tab 后常驻（不重载 GLB），不可见时停 rAF 与音效、快照降到 1Hz。倒计时、骑行中、复盘漫画期间隐藏 TabBar 与状态栏，结束后恢复。
+- **出发与演示**：倒计时（READY/3/2/1，可跳过，减少动态时跳过）在记录开始**之前**播放，走完才把动作交给原生；原生演示骑行改为 1Hz 离散读数、0→104→0 km/h 剧本，“演示骑行”贴纸只让这一次为模拟，不改演示设置。
+- **复盘**：确认结束后网页先播 FIN. 与“今日骑行漫画”，数据为原生保存的汇总与遥测时间线（只含 GPS 实测或模拟读数，惯导估计不入记录；按来源标注；格内数字只取记录）；短骑行不足 4 格时空格画成“下回待续”。漫画页“保存图片”经 `UIActivityViewController` 分享 PNG（不新增权限，排除了需要相册权限的“存储图像”，可存到“文件”）、“查看详细复盘”打开原生复盘、“完成”回待机；4 秒兜底保留。
+- **旋转**：iPhone 支持竖屏与横屏左/右（不含倒置）。网页两段式：每帧最多一次只改 DOM 版式（速度巨字立即适配），尺寸稳定 160ms 后按新尺寸与 devicePixelRatio 重建画布并重排车；分镜按新版式继续，突破剧目换新环境继续（无逐帧内部状态），倒计时按新尺寸重放当前字，翻页与短命拟声字直接收尾。安全区由 `viewport-fit=cover` + `env(safe-area-inset-*)` 处理（面板、漫画页、画廊），WKWebView `contentInsetAdjustmentBehavior = .never`。
+- **性能/发热**：发热 serious/critical 或低电量模式 → 低档封顶（手动档也压低，解除后恢复）；切后台或切 tab 时 rAF 停、音效停、剧目收尾不补播。
+- **验证**（本机）：node v3 **78/78**、v2 **177/177**；Playwright 模拟原生桥跑打包后的座舱，倒计时/骑行/剧目/暂停/漫画中途切 390×844 ↔ 844×390：Chromium 与 WebKit 各 **57/57** 检查通过，速度最长遮挡 106/107ms（≤150ms），控制台 0 error/warn。iPhone 17 模拟器（iOS 26.5）**43 单测 ＋ 4 UI 测试**连续两轮全部通过；iPhone 17e 再跑 4 项 UI 测试通过；另以展示模式录屏三段（同样通过）。录屏、关键帧、xcresult 与浏览器报告在 `artifacts/v3-native-20261021/`（不入 Git）。
+- **本地签名**：`apple-release.py --archive --export --build-number 3 --build-dir ~/Library/Developer/MotuoBuilds/0.3.0-3`（单独目录，没有覆盖 0.2.0 (2) 归档）成功，iPhone 与 Watch 均 0.3.0 / 3、签名校验通过；IPA 9,450,328 字节，SHA-256 `bed77fdb750ebcea2c40204e9bfec0afedfef5ecc11f0b797129be0fccb283be`。**未上传、未查询 App Store Connect。**
+- **许可风险（公开发布前必须解决）**：C5913 GLB 的分发授权仍未核验。核查结果：0.2.0 (2) 的已上传 IPA（SHA-256 `ab343d91…2ce`，与 APPLE_RELEASE 记录一致）里已含 `Cockpit/assets/models/suzuki-gsx-r1000/model.glb`（7,186,536 字节，SHA-256 `504ce1cc…a559`，与 manifest 一致），当时脚本 `ee5e81d` 版即复制 GLB；本轮 0.3.0 (3) IPA 同样包含该文件。manifest 写明“原始再分发许可未声明、仅本机私有运行”，与已进入 TestFlight 内部组的事实不符。仅限本人内部测试可继续；任何外部测试或公开发布前必须取得授权或替换为可分发模型。
+- **未做**：真机安装、真机帧率/发热/续航、真实 GPS 骑行、真实麦克风拾音、VoiceOver 逐项检查、v2 回退包的模拟器回归、TestFlight、NAS。
+
 ## 10/20 加码：游戏字体与 2D 漫画摩托（HTML ＋ 模拟器）
 
 本地打包三款 OFL 字体（Orbitron 改为等宽数字、Russo One、得意黑），子集化后共约 0.5MB，覆盖页面全部中文；座舱的车改为 2D 漫画后期渲染（卡通分层、墨线、网点），改色照常，车库可切换 2D/3D，默认 2D。新增点车轰油门、长按蓄力冲刺（驾驶舱中蓄满后松开，经可取消的倒计时才出发）、拖动甩尾漂移，以及骑行中的 wheelie、点头、集中线、冲击帧（计入闪光限流）、火焰、火花、残影、拟声字。原生资源处理器支持 woff2，字体随 App 打包；UI 测试会读网页上报的 `document.fonts` 状态，确认三款字体在 App 内实际加载（非回退）。详见 [原型说明](../prototypes/motuo-v2/README.md)。

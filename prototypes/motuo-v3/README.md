@@ -67,7 +67,7 @@ python3 -m http.server 8766 --bind 127.0.0.1 --directory prototypes/motuo-v3
 - 漫画每格的时刻、速度、加速度、时长、里程、最高速都取自本次记录；测试会剔除记录值后检查注释里不剩任何数字。
 - 展示车为 GSX-R1000 近似外观，非准确 GSX250R。
 
-## 接入原生（本轮未改原生工程）
+## 接入原生（10/20 时的说明，已于 10/21 接入，见文末）
 
 `installNativeAdapter(app)` 在存在 `window.webkit.messageHandlers.motuo` 时注册 `window.MotuoNativeReceive(state)`，输入形状与 `ios/Motuo/Cockpit/native-runtime.js` 相同：`phase, seconds, distanceM, speedKmh, sampleTime, speedSource, uncertaintyKmh, motion, simulated, reduced, thermal, modal, sound{live,level,spectrum[32]}, finishedRide{id,distanceM,durationS,maxSpeedKmh,simulated}`。
 
@@ -105,3 +105,21 @@ python3 -m http.server 8766 --bind 127.0.0.1 --directory prototypes/motuo-v3
 视觉返工（10/21 审核后）：剧目改用整屏（速度区挖空）、道具按屏高 30–60% 取尺寸、每个剧目都有“起—冲突—爆点—余韵”四拍和车的动作（后退/冲刺/抬头/压扁/甩尾/残影），一次只突出一个主文字；编辑盖章、烟花写字、趣味弹幕、速度对比（11 种平涂动物）、音障锥、冲线横幅、破纸墙、三个镜头花活和 100 大事件逐一重做；画廊控制条收成底部细条；GLB 加载期间显示 LOADING 卡片。见 [DESIGN.md 第 9 节](DESIGN.md#9-速度突破剧场2026-10-21)。
 
 验证（2026-10-21，本机，视觉返工后）：`node --test prototypes/motuo-v3/tests/*.test.mjs` **61/61 通过**（新增 4 项：17 种剧目都让车动且幅度有界、道具尺寸与不进入速度区、一次一个主文字、画廊细条与加载过场）；v2 **177/177**。Chrome for Testing headless 录了横屏演示、横屏画廊（20 项全播）、竖屏演示，并导出横屏 20 条 + 竖屏 6 条四格分镜条与动物对照图：五遍控制台 0 error/warn，14,889 帧速度命中测试，最长不可读 0ms，闪光每秒最多 2 次。本轮录制时本机 load average 约 5–11.5，骑行帧间隔均值约 13–14ms、剧场期间 p95 约 26ms，只能作参考。产物在 `artifacts/motuo-v3-20261021-milestones/`。
+
+## 原生接入（2026-10-21）
+
+`python3 scripts/prepare-native-cockpit.py` 把本目录打包进 App（`ios/Motuo/Resources/Cockpit/`，gitignore），并注入 `ios/Motuo/Cockpit/v3/native-runtime.css`（原生专属版式）。浏览器预览不受影响：没有 `webkit.messageHandlers.motuo` 时原生分支不生效。
+
+| 模块 | 作用 |
+|---|---|
+| `native-adapter.js` | 原生运行层：快照映射（1Hz 读数身份 `speedSampleTime`、骑行计时时基、发热/低电量封顶、外观、面板请求、复盘时间线）与带参数校验的动作发送 |
+| `core/native-record.js` | 用原生保存的时间线、汇总与事件生成漫画记录；网页实时记录只补世界、剧目与游戏分 |
+| `core/resize.js` | 旋转两段式：每帧 DOM 版式 → 稳定 160ms 后重建缓冲 |
+
+- **一套导航**：原生 TabBar 是唯一导航；场景里“关卡 / 配色 / 声浪 / 设置”为左上角小贴纸。“配色”即漫画车库，里面的“车辆档案 · 手册 · 保养 →”回到原生车库；原生车库的“外观与配色”打开这里。外观由原生持久化。
+- **出发**：原生模式下“开始骑行 / 进入演示骑行 / 演示骑行”先播倒计时，走完（或“跳过”）才发 `primary` / `demoStart`；原生开始记录后放 GO!!。演示数据来自原生演示骑行（1Hz，DEMO 由原生 `simulated` 决定），网页不跑脚本。
+- **复盘**：原生结束 → FIN. → 漫画（原生时间线）→“保存图片”发 `share`（PNG 数据，原生弹系统分享面板）/“查看详细复盘”发 `rideDetail` /“完成”发 `wrappedDone`。
+- **旋转**：任何状态都可旋转；分镜与突破剧目按新版式继续，倒计时继续，暂停定格不变，漫画页横竖两种排法。速度巨字始终在最上层。
+- **无障碍读数**：视觉隐藏的 `#font-status`、`#ax-theatre`、`#ax-clock`、`#ax-layout`、`#ax-error`，供 VoiceOver 与原生 UI 测试读取。
+
+验证：`node --test prototypes/motuo-v3/tests/*.test.mjs` **78/78**；浏览器旋转回归 `tests/browser/native-rotation.pw.mjs`（先 `python3 -m http.server 8767 --bind 127.0.0.1 --directory ios/Motuo/Resources/Cockpit`）Chromium、WebKit 各 57/57；模拟器结果见 `docs/STATUS.md`。

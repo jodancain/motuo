@@ -85,10 +85,15 @@ const spring = (s, target, dt, k = 140, c = 17) => { s.v += (k * (target - s.x) 
 
 /* ---------- 版式 ---------- */
 function tier() { return TIER_CONFIG[governor.tier]; }
-function measure() { return {W: Math.max(1, panel.clientWidth), H: Math.max(1, panel.clientHeight), dpr: devicePixelRatio || 1}; }
+/* 安全区内边距：原生全出血时场景铺满整屏，HUD 与演员按 env(safe-area-inset-*) 内缩。浏览器里为 0。 */
+function readSafe() {
+  const cs = getComputedStyle($('safe-probe')), px = v => Math.round(parseFloat(v) || 0);
+  return {t: px(cs.paddingTop), r: px(cs.paddingRight), b: px(cs.paddingBottom), l: px(cs.paddingLeft)};
+}
+function measure() { const sa = readSafe(); return {W: Math.max(1, panel.clientWidth), H: Math.max(1, panel.clientHeight), dpr: devicePixelRatio || 1, sa, key: `${sa.t},${sa.r},${sa.b},${sa.l}`}; }
 // 旋转第一拍（每帧最多一次）：只改 DOM 版式，速度巨字立即按新尺寸适配；画布保持旧缓冲由 CSS 拉伸，不清空。
-function layoutLive({W, H}) {
-  const L = stageLayout(W, H);
+function layoutLive({W, H, sa}) {
+  const L = stageLayout(W, H, sa);
   app.classList.toggle('landscape', L.landscape); app.classList.toggle('portrait', !L.landscape);
   S.liveL = L; fitSpeed(true);
   // 按旧尺寸定位的短命层（拟声字、粒子）直接收掉，不在新版式里错位残留。
@@ -96,8 +101,8 @@ function layoutLive({W, H}) {
   S.layoutLive = (S.layoutLive || 0) + 1;
 }
 // 尺寸稳定后：按新尺寸与 devicePixelRatio 重建缓冲，并让正在进行的分镜、剧场、倒计时按新版式继续。
-function layoutSettle({W, H, dpr}) {
-  S.W = W; S.H = H; S.L = stageLayout(W, H); S.liveL = S.L;
+function layoutSettle({W, H, dpr, sa}) {
+  S.W = W; S.H = H; S.safe = sa; S.L = stageLayout(W, H, sa); S.liveL = S.L;
   app.classList.toggle('landscape', S.L.landscape); app.classList.toggle('portrait', !S.L.landscape);
   const t = tier();
   S.dpr = Math.min(dpr, t.dpr);

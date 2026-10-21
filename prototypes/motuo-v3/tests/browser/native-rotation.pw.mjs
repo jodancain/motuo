@@ -68,15 +68,30 @@ await ctx.addInitScript(() => {
 });
 const page = await ctx.newPage();
 const logs = [];
-page.on('console', m => { if (['error', 'warning'].includes(m.type())) logs.push(`${m.type()}: ${m.text()}`); });
+// 测试自身的 getImageData 回读会触发 Chrome 的 willReadFrequently 提示，不计入页面告警。
+page.on('console', m => { if (['error', 'warning'].includes(m.type()) && !/willReadFrequently/.test(m.text())) logs.push(`${m.type()}: ${m.text()}`); });
 page.on('pageerror', e => logs.push('pageerror: ' + e.message));
 const st = () => page.evaluate(() => ({...window.__motuoV3.state, layout: window.__motuoV3.layout, m: window.__motuoV3.milestones.active, sent: window.__native.sent.map(x => x.action), N: {phase: window.__native.phase, countdown: window.__native.countdown}, ax: [...document.querySelectorAll('.ax span')].map(s => s.textContent), sfx: document.querySelectorAll('.sfx-word').length, mHidden: document.getElementById('milestone').hidden, cutHidden: document.getElementById('cutin').hidden, flipHidden: document.getElementById('flip').hidden, countdownText: document.getElementById('countdown').textContent}));
 const checks = [];
 const check = (name, ok, detail) => { checks.push({name, ok: !!ok, detail}); if (!ok) console.error('FAIL', name, JSON.stringify(detail)); };
+const frames = n => page.evaluate(n => new Promise(r => { const f = k => (k ? requestAnimationFrame(() => f(k - 1)) : r()); f(n); }), n);
+// 全出血：场景面板等于整个视口；截图四角与四边中点都不是米色纸色（#f3ead6）。
+async function checkBleed(label) {
+  const r = await page.evaluate(() => { const p = document.getElementById('panel').getBoundingClientRect(); return {x: p.left, y: p.top, w: p.width, h: p.height, W: innerWidth, H: innerHeight}; });
+  const png = await page.screenshot();
+  const px = await page.evaluate(async b64 => {
+    const img = new Image(); img.src = 'data:image/png;base64,' + b64; await img.decode();
+    const c = document.createElement('canvas'); c.width = img.width; c.height = img.height; const g = c.getContext('2d'); g.drawImage(img, 0, 0);
+    const pts = [[2, 2], [img.width - 3, 2], [2, img.height - 3], [img.width - 3, img.height - 3], [img.width >> 1, 2], [img.width >> 1, img.height - 3], [2, img.height >> 1], [img.width - 3, img.height >> 1]];
+    return pts.map(([x, y]) => [...g.getImageData(x, y, 1, 1).data.slice(0, 3)]);
+  }, png.toString('base64'));
+  const paper = px.filter(([r, g, b]) => Math.abs(r - 243) < 10 && Math.abs(g - 234) < 10 && Math.abs(b - 214) < 10);
+  check(`${label}: 场景全出血（面板=视口，边缘无米色纸边）`, Math.abs(r.x) < 1 && Math.abs(r.y) < 1 && Math.abs(r.w - r.W) < 1 && Math.abs(r.h - r.H) < 1 && paper.length === 0, {rect: r, edgePixels: px, paper: paper.length});
+}
 async function rotate(size, label) {
   await page.setViewportSize(size); await sleep(320);
   const s = await st(), lay = s.layout;
-  const want = {W: size.width - 12, H: size.height - 12};
+  const want = {W: size.width, H: size.height};
   check(`${label}: 重排到新尺寸 ${size.width}×${size.height}`, Math.abs(lay.W - want.W) <= 8 && Math.abs(lay.H - want.H) <= 8 && lay.landscape === size.width > size.height, lay);
   const scene = lay.canvases.find(c => c.id === 'scene');
   check(`${label}: 画布缓冲 = CSS 尺寸 × dpr`, scene.w === Math.round(lay.W * lay.dpr) && scene.h === Math.round(lay.H * lay.dpr), {scene, W: lay.W, H: lay.H, dpr: lay.dpr});
@@ -92,7 +107,8 @@ check('原生模式与字体自检', s.mode === 'native' && s.ax[0] === '座舱�
 check('就绪后回传 ready，外观首次同步给原生', s.sent[0] === 'ready' && s.sent.includes('appearance'), s.sent);
 const nav = await page.evaluate(() => [...document.querySelectorAll('#btn-world,#btn-garage,#btn-sound,#btn-settings')].map(b => { const r = b.getBoundingClientRect(); return {id: b.id, top: r.top, bottom: r.bottom, text: b.textContent}; }));
 check('待机：场景小控件在上方竖排，不形成底部导航', nav.every(n => n.bottom < 844 * .3) && nav.find(n => n.id === 'btn-garage').text === '配色', nav);
-await rotate(L, '待机 竖→横'); await rotate(P, '待机 横→竖');
+await checkBleed('待机 竖屏');
+await rotate(L, '待机 竖→横'); await checkBleed('待机 横屏'); await rotate(P, '待机 横→竖');
 // 出发倒计时中旋转：倒计时继续，走完才把 demoStart 交给原生
 await page.click('#btn-native-demo');
 await sleep(1300); s = await st();
@@ -106,6 +122,7 @@ await page.waitForFunction(() => window.__motuoV3.milestones.active, null, {time
 const clock0 = (await st()).ax[2];
 const plays = [];
 for (const [size, label] of [[P, '剧场 横→竖'], [L, '剧场 竖→横'], [P, '剧场 横→竖 #2']]) { s = await rotate(size, label); plays.push(!!s.m); }
+await checkBleed('骑行剧场 竖屏');
 check('剧场按新布局继续或正常播完（无残留）', true, plays);
 await page.waitForFunction(() => !window.__motuoV3.milestones.active, null, {timeout: 6000});
 s = await st(); check('剧场结束后画布隐藏', s.mHidden, s.mHidden);

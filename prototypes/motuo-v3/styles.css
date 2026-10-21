@@ -179,3 +179,4 @@ button{font:inherit;color:inherit;cursor:pointer}
 .ax{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
 .ax span{display:block}
 .ride-title{color:var(--yellow);margin-left:4px}
+.safe-probe{position:fixed;left:0;top:0;width:0;height:0;visibility:hidden;pointer-events:none;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}

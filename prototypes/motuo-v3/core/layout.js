@@ -1,6 +1,22 @@
 /* 舞台版式：横屏与竖屏的地平线、路面、车与速度巨字位置。纯函数。 */
 
-export function stageLayout(W, H) {
+/* safe：原生全出血时的安全区内边距 {t,r,b,l}（灵动岛/刘海、状态栏、Home 指示条）。世界铺满整屏 W×H；
+ * 车与速度巨字等“演员”按安全区内的矩形排版再平移回整屏坐标。浏览器预览 safe 全为 0，结果与旧版相同。 */
+export const NO_SAFE = Object.freeze({t: 0, r: 0, b: 0, l: 0});
+export function stageLayout(W, H, safe = NO_SAFE) {
+  const sa = {t: safe.t || 0, r: safe.r || 0, b: safe.b || 0, l: safe.l || 0};
+  if (!sa.t && !sa.r && !sa.b && !sa.l) return baseLayout(W, H);
+  const iw = Math.max(1, W - sa.l - sa.r), ih = Math.max(1, H - sa.t - sa.b);
+  const L = baseLayout(iw, ih);
+  return {
+    ...L, W, H, landscape: W >= H * 1.05, safe: sa,
+    roadTop: L.roadTop + sa.t, ground: L.ground + sa.t, horizon: L.horizon + sa.t,
+    bike: {...L.bike, rearX: L.bike.rearX + sa.l, ground: L.bike.ground + sa.t},
+    speed: {...L.speed, right: L.speed.right + sa.r, top: L.speed.top + sa.t},
+    scrollScale: W / (L.landscape ? 844 : 600),
+  };
+}
+function baseLayout(W, H) {
   const landscape = W >= H * 1.05;
   if (landscape) {
     const roadTop = Math.round(H * .73);
@@ -22,7 +38,8 @@ export function stageLayout(W, H) {
   return {
     W, H, landscape, roadTop, ground, horizon: Math.round(H * .6),
     bike: {rearX: Math.round(W * .05), ground, lengthPx},
-    speed: {right: Math.round(W * .05), top: Math.round(H * .085), fontSize: Math.round(H * .43), lineHeight: .82, maxWidth: Math.round(W * .86), scaleMin: .52},
+    // 最大宽度扣掉 -8° 斜体在字底的外扩（字高 × tan8°），全出血时左下角也不出画。
+    speed: {right: Math.round(W * .05), top: Math.round(H * .085), fontSize: Math.round(H * .43), lineHeight: .82, maxWidth: Math.round(Math.min(W * .86, W * .95 - H * .43 * .82 * .1405 - 6)), scaleMin: .52},
     scrollScale: W / 600,
   };
 }
@@ -65,3 +82,4 @@ export function maxDash(L, W) {
   const m = bikeMapping(L);
   return Math.max(0, (W * .98 - m.sx(1.05)) / m.ppu);
 }
+

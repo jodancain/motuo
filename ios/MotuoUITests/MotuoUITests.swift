@@ -15,6 +15,7 @@ final class MotuoUITests:XCTestCase {
         XCTAssertTrue(app.staticTexts["座舱字体已加载 3/3"].waitForExistence(timeout:10), app.debugDescription)
         XCTAssertTrue(app.buttons["tab.garage"].exists, "standby keeps the single native tab bar")
         hold(2); addScreenshot("standby-portrait")
+        assertFullBleed("standby-portrait", corners: [.topLeft, .topRight])
         start.tap()
         // The departure countdown runs before recording; the tab bar is already hidden.
         XCTAssertTrue(app.staticTexts["倒计时 · 出发后开始记录"].waitForExistence(timeout:3))
@@ -23,6 +24,7 @@ final class MotuoUITests:XCTestCase {
         XCTAssertTrue(app.staticTexts["路上见"].waitForExistence(timeout:5), "status title follows the native riding phase")
         XCTAssertFalse(app.buttons["tab.garage"].exists, "riding hides the native tab bar")
         assertSpeedVisible(app,"riding")
+        sleep(1); assertFullBleed("riding-portrait")
         XCTAssertTrue(app.staticTexts["突破剧场播放中"].waitForExistence(timeout:20), "a milestone act plays on a real crossing")
         addScreenshot("theatre-portrait"); hold(6)
         pause.tap();XCTAssertTrue(app.buttons["继续骑行"].waitForExistence(timeout:5)); hold(3); addScreenshot("paused")
@@ -86,6 +88,7 @@ final class MotuoUITests:XCTestCase {
         for (i,o) in [UIDeviceOrientation.landscapeLeft,.landscapeRight,.portrait].enumerated(){
             XCUIDevice.shared.orientation = o
             assertSpeedVisible(app,"theatre-\(i)")
+            sleep(1); assertFullBleed("riding-\(o.rawValue)")
             XCTAssertTrue(app.staticTexts.matching(NSPredicate(format:"label BEGINSWITH %@",o == .portrait ? "布局 竖屏":"布局 横屏")).firstMatch.waitForExistence(timeout:3),"web relaid out for \(o.rawValue)")
             addScreenshot("theatre-rotate-\(i)-\(o == .portrait ? "portrait":o == .landscapeLeft ? "landscapeLeft":"landscapeRight")"); hold(1.5)
         }
@@ -197,6 +200,20 @@ final class MotuoUITests:XCTestCase {
     @MainActor private func dismissShareSheet(_ app: XCUIApplication){
         for label in ["关闭","Close"] where app.buttons[label].exists { app.buttons[label].firstMatch.tap(); return }
         app.swipeDown(velocity:.fast)
+    }
+    /// Full-bleed scene: the screenshot's corners must not be the beige paper margin (#f3ead6).
+    private enum Corner { case topLeft, topRight, bottomLeft, bottomRight }
+    private func assertFullBleed(_ name:String, corners:[Corner] = [.topLeft,.topRight,.bottomLeft,.bottomRight], file:StaticString = #filePath, line:UInt = #line){
+        guard let image=XCUIScreen.main.screenshot().image.cgImage else { XCTFail("no screenshot"); return }
+        let w=image.width,h=image.height
+        guard let data=image.dataProvider?.data,let bytes=CFDataGetBytePtr(data) else { XCTFail("no pixels"); return }
+        let bpp=image.bitsPerPixel/8,row=image.bytesPerRow,bgra=image.bitmapInfo.contains(.byteOrder32Little)
+        for corner in corners {
+            let x = corner == .topLeft || corner == .bottomLeft ? 6 : w-7, y = corner == .topLeft || corner == .topRight ? 6 : h-7
+            let p=bytes+y*row+x*bpp
+            let (r,g,b)=bgra ? (Int(p[2]),Int(p[1]),Int(p[0])) : (Int(p[0]),Int(p[1]),Int(p[2]))
+            XCTAssertFalse(abs(r-243)<14 && abs(g-234)<14 && abs(b-214)<14, "\(name): beige paper margin at \(corner) rgb(\(r),\(g),\(b))", file:file, line:line)
+        }
     }
     private func hold(_ seconds:Double){ if showcase { usleep(UInt32(seconds*1_000_000)) } }
     private func addScreenshot(_ name:String) { let attachment=XCTAttachment(screenshot:XCUIScreen.main.screenshot());attachment.name=name;attachment.lifetime = .keepAlways;add(attachment) }

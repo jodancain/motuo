@@ -1,19 +1,43 @@
 /* v3 原生座舱（只在打包进 App 时注入，html.native-host）。
+ * 全出血：漫画场景（天空、世界、路面、天气）铺满整屏，包括灵动岛/刘海、状态栏与 Home 指示条区域；
+ * 只有 HUD 文字、按钮与速度巨字按 env(safe-area-inset-*) 内缩（速度巨字与车的位置由 core/layout.js 按安全区计算）。
  * 导航只有一套：原生 TabBar（驾驶舱 / 车库 / 骑行档案 / 控制中心）。场景里的“关卡 / 配色 / 声浪 / 设置”是左上角的小贴纸，
- * 不再排成第二条底部导航；底部只留出发动作（开始骑行 / 演示骑行）。安全区由 .page 的 env(safe-area-inset-*) 内边距负责。 */
-html.native-host .stickers.idle-only{left:0;right:0;top:0;bottom:0;max-width:none;padding:0 0 30px;pointer-events:none;align-items:flex-end;flex-wrap:nowrap;gap:10px}
+ * 不再排成第二条底部导航；底部只留出发动作（开始骑行 / 演示骑行）。 */
+html.native-host{--sat:env(safe-area-inset-top);--sar:env(safe-area-inset-right);--sab:env(safe-area-inset-bottom);--sal:env(safe-area-inset-left)}
+html.native-host,html.native-host body{background:var(--ink)}
+/* 浏览器预览里的 6px 纸边与墨线框在原生里去掉，背景不再露米色 */
+html.native-host .page{padding:0;background:var(--ink)}
+html.native-host .panel{border:0;background:var(--ink)}
+/* 页角 HUD */
+html.native-host .corner.tl{top:var(--sat);left:var(--sal)}
+html.native-host .corner.tr{top:var(--sat);right:var(--sar)}
+html.native-host .corner.bl{bottom:var(--sab);left:var(--sal)}
+html.native-host .corner.br{bottom:var(--sab);right:var(--sar)}
+html.native-host .caption{left:calc(12px + var(--sal));top:calc(34px + var(--sat))}
+html.native-host .skip{right:calc(14px + var(--sar));bottom:calc(36px + var(--sab))}
+html.native-host .portrait .skip{bottom:calc(150px + var(--sab))}
+html.native-host .tbc{right:calc(16px + var(--sar));bottom:calc(92px + var(--sab))}
+html.native-host .portrait .tbc{right:calc(10px + var(--sar));bottom:calc(150px + var(--sab))}
+/* 骑行按钮 */
+html.native-host .landscape .stickers.ride-only{right:calc(14px + var(--sar));bottom:calc(30px + var(--sab))}
+html.native-host .portrait .stickers.ride-only{left:calc(10px + var(--sal));right:calc(10px + var(--sar));bottom:calc(30px + var(--sab))}
+/* 待机：容器就是安全区矩形 */
+html.native-host .stickers.idle-only{left:var(--sal);right:var(--sar);top:var(--sat);bottom:var(--sab);max-width:none;padding:0 0 30px;pointer-events:none;align-items:flex-end;flex-wrap:nowrap;gap:10px}
 html.native-host .portrait .stickers.idle-only{justify-content:center}
 html.native-host .landscape .stickers.idle-only{justify-content:flex-end;padding-right:14px}
 html.native-host .stickers.idle-only>.sticker{pointer-events:auto}
 html.native-host .stickers.idle-only #btn-native-demo{font-size:14px;padding:7px 12px 6px;align-self:flex-end}
 html.native-host .stickers.idle-only #btn-native-demo small{display:block;font-size:10px;margin-top:2px;letter-spacing:.04em}
 html.native-host .portrait .sticker.primary{flex-basis:auto;max-width:none}
-/* 场景小控件：左上角竖排，避开页角标题 */
+/* 场景小控件：安全区左上角竖排，避开页角标题 */
 html.native-host #btn-world,html.native-host #btn-garage,html.native-host #btn-sound,html.native-host #btn-settings{position:absolute;left:6px;font-size:12px;padding:4px 9px 3px;box-shadow:3px 3px 0 var(--ink);min-width:56px;min-height:30px;transform:rotate(-1.5deg)}
 html.native-host #btn-world{top:34px}
 html.native-host #btn-garage{top:72px}
 html.native-host #btn-sound{top:110px}
 html.native-host #btn-settings{top:148px}
-html.native-host .portrait .hint{top:auto;bottom:88px;left:50%;transform:translateX(-50%)}
+html.native-host .portrait .hint{top:auto;bottom:calc(88px + var(--sab));left:50%;transform:translateX(-50%)}
+html.native-host .landscape .hint{left:calc(12px + var(--sal));bottom:calc(30px + var(--sab))}
 html.native-host #btn-vehicle{align-self:flex-start}
 html.native-host .comic-actions .sticker{min-height:44px}
+/* 暂停“缩成一页上的一格”：原生里页底用深色网点（浏览器预览仍是米色纸），四周不露米色 */
+html.native-host .app[data-phase=paused] .panel{background:var(--ink) radial-gradient(circle,rgba(255,228,92,.16) 28%,transparent 31%) 0 0/9px 9px}

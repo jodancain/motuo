@@ -5,7 +5,7 @@
  * 依赖注入，便于 node 测试。 */
 export function createResizeController({measure, live, settle, schedule = f => requestAnimationFrame(f), setTimer = setTimeout, clearTimer = clearTimeout, settleMs = 160}) {
   let applied = null, pending = null, frame = false, timer = null, liveCount = 0, settleCount = 0;
-  const same = (a, b) => !!a && !!b && a.W === b.W && a.H === b.H && a.dpr === b.dpr;
+  const same = (a, b) => !!a && !!b && a.W === b.W && a.H === b.H && a.dpr === b.dpr && a.key === b.key;
   function onFrame() {
     frame = false;
     const size = measure();

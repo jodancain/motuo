@@ -61,7 +61,7 @@ export const bulletTime = {
       for (let i = 0; i < 3; i++) { ctx.save(); ctx.globalAlpha = .5; ctx.strokeStyle = W.c; ctx.lineWidth = 3; ctx.setLineDash([12, 14]); ctx.lineDashOffset = -p * 200; ctx.beginPath(); ctx.ellipse(c.x, c.y, e.ppu * (1.2 + i * .45), e.ppu * (.6 + i * .25), 0, 0, TAU); ctx.stroke(); ctx.restore(); }
       if (!e.quiet) {
         // 时钟大字
-        const s = back(seg(p, .02, .14)), r = e.big * .36 * s, x = e.landscape ? e.stage.x + e.stage.w * .56 : e.W * .24, y = e.landscape ? e.H * .45 : e.zones.title.y + r + 4;
+        const z = e.zones.title, s = back(seg(p, .02, .14)), r = (e.landscape ? e.big * .36 : Math.min(e.big * .36, z.h * .46)) * s, x = e.landscape ? e.stage.x + e.stage.w * .56 : e.W * .24, y = e.landscape ? e.H * .45 : z.y + z.h * .5;
         ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fillStyle = W.paper; ctx.fill(); ctx.lineWidth = 6; ctx.strokeStyle = W.ink; ctx.stroke();
         for (let k = 0; k < 12; k++) { const a = k / 12 * TAU; ctx.beginPath(); ctx.moveTo(x + Math.cos(a) * r * .8, y + Math.sin(a) * r * .8); ctx.lineTo(x + Math.cos(a) * r * .92, y + Math.sin(a) * r * .92); ctx.lineWidth = 3; ctx.stroke(); }
         const a = -Math.PI / 2 + p * .8; ctx.lineWidth = 6; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(a) * r * .72, y + Math.sin(a) * r * .72); ctx.stroke();
@@ -77,12 +77,13 @@ export const bulletTime = {
 };
 
 /* ---------------- 数字变形：大号阈值副本居中于主舞台 ---------------- */
-// 横屏：数字在主舞台中部，叫声在数字下方；竖屏：叫声在主文字区顶部，数字在其下方。字号按位数封顶，不出画。
+// 横屏：数字在主舞台中部，叫声在数字下方。竖屏：车占下半屏，数字放在车下方的路面带（按带高封顶），
+// 叫声放在速度巨字与车之间的注释带；都不压车身、不出画。字号按位数封顶。
 const big = e => {
   const n = Math.max(2, e.thText.length);
   if (e.landscape) { const size = Math.min(e.H * .44, e.stage.w * .9 / (n * .8)); return {x: e.stage.x + e.stage.w * .5, y: e.H * .5, size, sayY: e.H * .5 + size * .62}; }
-  const size = Math.min(e.H * .26, e.W * .9 / (n * .8)), top = e.zones.title.y + 54;
-  return {x: e.W * .5, y: top + size * .5, size, sayY: e.zones.title.y + 22};
+  const band = e.zones.title, note = e.zones.note, size = Math.min(band.h / .8, e.W * .9 / (n * .8));
+  return {x: e.W * .5, y: band.y + band.h * .5, size, sayY: note.y + note.h * .5};
 };
 
 export const numFire = {
@@ -97,7 +98,7 @@ export const numFire = {
     num(ctx, e.thText, x, y, size * s, {fill: char > 0 ? lerpColor('#ff8a2a', '#3a2a22', char) : fire > .3 ? '#ff8a2a' : '#ffffff', ghost: ['#ffd23a', '#d7262b']});
     ctx.fillStyle = '#ffd23a';
     for (let i = 0; i < count(e, 30) * fire; i++) { const sx = x + (rnd() - .5) * size * 1.2, sy = y - size * .3 - ((p * 1.6 + rnd()) % 1) * size; ctx.fillRect(sx, sy, 5, 5); }
-    if (p >= .46 && p < .9) e.say('燃起来了！', x, sayY, size * .2 * back(seg(p, .46, .56)), {prio: 2, fill: '#fff'});
+    if (p >= .46 && p < .9) e.say('燃起来了！', x, sayY, size * .2 * back(seg(p, .46, .56)), {free: !e.landscape, prio: 2, fill: '#fff'});
   },
 };
 function lerpColor(a, b, t) { const pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16), ch = s => Math.round(lerp(pa >> s & 255, pb >> s & 255, t)); return `rgb(${ch(16)},${ch(8)},${ch(0)})`; }
@@ -121,8 +122,8 @@ export const numShatter = {
         ctx.beginPath(); ctx.rect(ox, oy, cw, ch); ctx.clip(); num(ctx, e.thText, x, y, size, {fill: W.y, ghost: [W.c, W.m]}); ctx.restore();
       }
     }
-    if (p >= .46 && p < .7) e.say('CRASH!', x, sayY, size * .3 * back(seg(p, .46, .56)), {prio: 2, fill: '#fff'});
-    else if (p > .74 && p < .95) e.say('重组！', x, sayY, size * .18, {prio: 1, fill: W.y});
+    if (p >= .46 && p < .7) e.say('CRASH!', x, sayY, size * .3 * back(seg(p, .46, .56)), {free: !e.landscape, prio: 2, fill: '#fff'});
+    else if (p > .74 && p < .95) e.say('重组！', x, sayY, size * .18, {free: !e.landscape, prio: 1, fill: W.y});
   },
 };
 
@@ -141,7 +142,7 @@ export const numFreeze = {
         ctx.lineWidth = 5; ctx.strokeStyle = W.ink; ctx.stroke();
         ctx.strokeStyle = '#fff'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(x - w * .38, y - h * .3); ctx.lineTo(x - w * .1, y - h * .38); ctx.moveTo(x + w * .2, y + h * .28); ctx.lineTo(x + w * .36, y + h * .1); ctx.stroke();
         ctx.restore();
-        e.say('冻住了…', x, sayY, size * .18, {prio: 1, fill: '#fff'});
+        e.say('冻住了…', x, sayY, size * .18, {free: !e.landscape, prio: 1, fill: '#fff'});
       }
       return;
     }
@@ -151,7 +152,7 @@ export const numFreeze = {
       ctx.beginPath(); ctx.moveTo(0, -r); ctx.lineTo(r * .7, r * .5); ctx.lineTo(-r * .6, r * .6); ctx.closePath(); ctx.fillStyle = i % 3 ? '#cfefff' : '#fff'; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = W.ink; ctx.stroke(); ctx.restore();
     }
     num(ctx, e.thText, x, y, size * (1 + shatter * .1), {fill: '#fff', ghost: [W.c, W.m], alpha: 1 - seg(shatter, .5, 1)});
-    if (shatter < .6) e.say('CRACK!', x, sayY, size * .32 * back(seg(shatter, 0, .2)), {prio: 2});
+    if (shatter < .6) e.say('CRACK!', x, sayY, size * .32 * back(seg(shatter, 0, .2)), {free: !e.landscape, prio: 2});
   },
 };
 
@@ -174,8 +175,8 @@ export const numNeon = {
     ctx.shadowColor = W.c; ctx.lineWidth = size * .02; ctx.strokeStyle = '#fff'; ctx.strokeText(e.thText, x, y);
     ctx.restore();
     if (on < 1 && on > 0) { const r2 = rng(e.seed + Math.floor(p * 20)); ctx.strokeStyle = W.y; ctx.lineWidth = 3; ctx.beginPath(); const sx = x - size * .55 + on * size * 1.1, sy = y + (r2() - .5) * size * .6; for (let i = 0; i < 6; i++) { ctx.moveTo(sx, sy); ctx.lineTo(sx + (r2() - .5) * 60, sy + (r2() - .5) * 60); } ctx.stroke(); }
-    if (p >= .46 && p < .9) e.say('ON AIR', x, sayY, size * .22 * back(seg(p, .46, .56)), {prio: 2, fill: W.c, ghost: [W.m, '#fff']});
-    else if (p > .1 && p < .46) e.say('滋…滋滋…', x, sayY, size * .15, {prio: 1, fill: '#fff'});
+    if (p >= .46 && p < .9) e.say('ON AIR', x, sayY, size * .22 * back(seg(p, .46, .56)), {free: !e.landscape, prio: 2, fill: W.c, ghost: [W.m, '#fff']});
+    else if (p > .1 && p < .46) e.say('滋…滋滋…', x, sayY, size * .15, {free: !e.landscape, prio: 1, fill: '#fff'});
   },
 };
 

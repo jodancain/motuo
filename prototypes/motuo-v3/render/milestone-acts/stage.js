@@ -140,9 +140,11 @@ export const sonicCone = {
     // 爆点：2–3 圈清晰冲击环
     if (p >= .46) rings(ctx, nose.x + L * .4, nose.y, seg(p, .46, 1), {n: 3, maxR: e.W * .55, color: W.c, ink: W.ink, lw: 12, squash: .78});
     if (p >= .46 && p < .9) {
-      const bx = e.stage.x + e.stage.w * (e.landscape ? .26 : .5), by = e.landscape ? e.H * .44 : e.zones.title.y + e.big * .3, bs = back(seg(k, 0, .6));
-      burst(ctx, bx, by, e.big * .46 * bs, 16, W.y, W.ink, e.seed);
-      e.say('BOOM', bx, by, e.big * .34 * bs, {prio: 2, fill: W.m, free: true});
+      // 竖屏：BOOM 落在车下方的路面带，按带高封顶
+      const z = e.zones.title, R = e.landscape ? e.big * .46 : Math.min(e.big * .46, z.h * .62);
+      const bx = e.stage.x + e.stage.w * (e.landscape ? .26 : .5), by = e.landscape ? e.H * .44 : z.y + z.h * .5, bs = back(seg(k, 0, .6));
+      burst(ctx, bx, by, R * bs, 16, W.y, W.ink, e.seed);
+      e.say('BOOM', bx, by, R / .46 * .34 * bs, {prio: 2, fill: W.m, free: true});
     }
   },
 };

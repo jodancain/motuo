@@ -7,7 +7,7 @@ import {buildDemoScript, createDemoPlayer} from './core/demo-script.js';
 import {createRideModel, speedText, sourceLabel, formatClock, formatKm} from './core/ride-model.js';
 import {createDirector, createFlashLimiter, cutinLayout, IMPACT_MS} from './core/director.js';
 import {selectMoments, PAGE} from './core/comic-layout.js';
-import {stageLayout, speedFit, countdownFit, maxDash} from './core/layout.js';
+import {stageLayout, speedFit, countdownFit, maxDash, clampBikeShift, bikeMapping as mapBike} from './core/layout.js';
 import {tracePath} from './core/geometry.js';
 import {WORLDS, WORLD_ORDER, nextWorld, normalizeWorld} from './render/worlds.js';
 import {createWorldPainter} from './render/scene.js';
@@ -469,7 +469,8 @@ function milestoneReading(frame) {
   const plan = mdir.reading({...frame, world: S.world}, now());
   if (plan) startMilestone(plan);
 }
-function milestoneEnv() { return {W: S.W, H: S.H, L: S.L, point: n => bike.point(n), speedRect: speedRect(), particles: isReduced() ? 0 : tier().particles, dpr: S.dpr, seed: 7, bikeImage: bike.mode === 'glb' ? $('bike-gl') : $('bike-vec')}; }
+// 车锚点给的是 camera 层坐标；剧场播放器按本帧镜头（平移 + 1.06 缩放）换成屏幕坐标（render/milestone-player.js）。
+function milestoneEnv() { return {W: S.W, H: S.H, L: S.L, point: n => bike.point(n), cameraSpace: true, speedRect: speedRect(), particles: isReduced() ? 0 : tier().particles, dpr: S.dpr, seed: 7, bikeImage: bike.mode === 'glb' ? $('bike-gl') : $('bike-vec')}; }
 function startMilestone(plan) {
   mplayer.play(plan, milestoneEnv(), plan.startedAt);
   // 分镜让位：剧场期间不出 cut-in，结束后再播排队的那个
@@ -572,6 +573,11 @@ function updatePose(t, dt) {
   // 突破剧场：车按剧目动作（前冲/后退、抬头、压低、甩尾、震动），仍按 12fps 步进渲染
   const mb = S.mcam?.bike;
   if (mb && !reduced) { p.dz += mb.dz; p.dy = mb.dy; p.pitch += mb.pitch; p.yaw += mb.yaw; p.squash *= mb.squash; p.shake += mb.shake; } else p.dy = 0;
+  // 骑行中（剧目、GO 冲刺）车出画不超过 ≈12% 车长；镜头平移已在剧场里夹过，这里按总位移再夹一次。
+  if (S.phase === 'riding' || S.phase === 'gallery') {
+    const ppu = mapBike(S.L).ppu, pan = (S.mcam?.panX || 0) * S.W;
+    p.dz = (clampBikeShift(S.L, p.dz * ppu + pan) - pan) / ppu;
+  }
 }
 function logic(t, dt) {
   const reduced = isReduced();

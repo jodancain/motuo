@@ -83,3 +83,25 @@ export function maxDash(L, W) {
   return Math.max(0, (W * .98 - m.sx(1.05)) / m.ppu);
 }
 
+/* 车出画比例：按镜头（camera 层 scale 1.06、原点 40% 宽）后的车身左右外缘计算，超出画面的部分 / 车长。
+ * shiftPx = 车的水平位移（剧目前冲/后退 dz × ppu + 镜头平移）。 */
+export const CAMERA = Object.freeze({scale: 1.06, originX: .4});
+export function bikeOutRatio(L, shiftPx = 0, W = L.W) {
+  const m = bikeMapping(L), k = CAMERA.scale, ox = W * CAMERA.originX;
+  const x0 = ox + (m.sx(-1.05) + shiftPx - ox) * k, x1 = ox + (m.sx(1.05) + shiftPx - ox) * k, len = x1 - x0;
+  return (Math.max(0, -x0) + Math.max(0, x1 - W)) / len;
+}
+/* 把车的水平位移夹到出画 ≤ max（默认 9%，给镜头抖动与倾斜留余量，满足“≤15% 车长”）；返回允许的位移。 */
+export function clampBikeShift(L, shiftPx, {max = .09, W = L.W} = {}) {
+  const m = bikeMapping(L), k = CAMERA.scale, ox = W * CAMERA.originX;
+  const len = (m.sx(1.05) - m.sx(-1.05)) * k, slack = max * len;
+  // 左缘 ≥ -slack、右缘 ≤ W + slack（镜头缩放后）
+  const lo = (-slack - ox) / k + ox - m.sx(-1.05), hi = (W + slack - ox) / k + ox - m.sx(1.05);
+  if (lo > hi) return (lo + hi) / 2;
+  return Math.max(lo, Math.min(hi, shiftPx));
+}
+/* 车身包围盒（静止姿态，屏幕坐标）：轮胎外缘到风挡顶、地面。剧场据此给车让位。 */
+export function bikeBox(L, shiftPx = 0) {
+  const m = bikeMapping(L);
+  return {x: m.sx(-1.05) + shiftPx, y: m.sy(1.16), w: m.sx(1.05) - m.sx(-1.05), h: L.bike.ground - m.sy(1.16)};
+}

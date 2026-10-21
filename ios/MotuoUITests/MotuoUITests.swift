@@ -79,14 +79,14 @@ final class MotuoUITests:XCTestCase {
         let start=app.buttons["进入演示骑行"];XCTAssertTrue(start.waitForExistence(timeout:15));start.tap()
         // Rotate during the countdown too: it keeps going and still hands over to recording.
         XCTAssertTrue(app.staticTexts["倒计时 · 出发后开始记录"].waitForExistence(timeout:3))
-        XCUIDevice.shared.orientation = .landscapeLeft
+        rotate(app, .landscapeLeft)
         XCTAssertTrue(app.buttons["暂停"].waitForExistence(timeout:12), "countdown survived rotation")
-        XCUIDevice.shared.orientation = .portrait
+        rotate(app, .portrait)
         assertSpeedVisible(app,"riding-portrait")
         let first=clock(app)
         XCTAssertTrue(app.staticTexts["突破剧场播放中"].waitForExistence(timeout:20))
         for (i,o) in [UIDeviceOrientation.landscapeLeft,.landscapeRight,.portrait].enumerated(){
-            XCUIDevice.shared.orientation = o
+            rotate(app, o)
             assertSpeedVisible(app,"theatre-\(i)")
             sleep(1); assertFullBleed("riding-\(o.rawValue)")
             XCTAssertTrue(app.staticTexts.matching(NSPredicate(format:"label BEGINSWITH %@",o == .portrait ? "布局 竖屏":"布局 横屏")).firstMatch.waitForExistence(timeout:3),"web relaid out for \(o.rawValue)")
@@ -94,7 +94,7 @@ final class MotuoUITests:XCTestCase {
         }
         // A second act, rotated while it plays.
         XCTAssertTrue(app.staticTexts["突破剧场播放中"].waitForExistence(timeout:20))
-        for o in [UIDeviceOrientation.landscapeRight,.landscapeLeft,.portrait]{ XCUIDevice.shared.orientation = o; assertSpeedVisible(app,"theatre-2-\(o.rawValue)"); hold(1) }
+        for o in [UIDeviceOrientation.landscapeRight,.landscapeLeft,.portrait]{ rotate(app, o); assertSpeedVisible(app,"theatre-2-\(o.rawValue)"); hold(1) }
         XCTAssertTrue(app.staticTexts["座舱脚本正常"].exists, scriptError(app))
         XCTAssertTrue(app.staticTexts["突破剧场空闲"].waitForExistence(timeout:12), "acts end cleanly after rotation (no stuck layer): \(scriptError(app))")
         let later=clock(app)
@@ -102,8 +102,8 @@ final class MotuoUITests:XCTestCase {
         XCTAssertFalse(app.buttons["tab.garage"].exists, "still immersive")
         // Paused, then rotate.
         app.buttons["暂停"].tap();XCTAssertTrue(app.buttons["继续骑行"].waitForExistence(timeout:5))
-        XCUIDevice.shared.orientation = .landscapeLeft; assertSpeedVisible(app,"paused-landscape"); addScreenshot("paused-landscapeLeft")
-        XCUIDevice.shared.orientation = .portrait
+        rotate(app, .landscapeLeft); assertSpeedVisible(app,"paused-landscape"); addScreenshot("paused-landscapeLeft")
+        rotate(app, .portrait)
         XCTAssertEqual(app.state, .runningForeground)
         app.buttons["继续骑行"].tap(); XCTAssertTrue(app.buttons["暂停"].waitForExistence(timeout:5))
         app.buttons["结束"].tap();app.buttons["结束并生成复盘"].tap()
@@ -116,7 +116,7 @@ final class MotuoUITests:XCTestCase {
         let app=launch()
         let start=app.buttons["进入演示骑行"];XCTAssertTrue(start.waitForExistence(timeout:15))
         for (name,o) in [("landscapeLeft",UIDeviceOrientation.landscapeLeft),("landscapeRight",.landscapeRight),("portrait",.portrait)]{
-            XCUIDevice.shared.orientation = o
+            rotate(app, o)
             XCTAssertTrue(start.waitForExistence(timeout:5)); XCTAssertTrue(waitHittable(start), "start reachable in \(name)")
             XCTAssertTrue(app.buttons["tab.garage"].isHittable, "one tab bar in \(name)")
             hold(2); addScreenshot("standby-\(name)")
@@ -142,7 +142,7 @@ final class MotuoUITests:XCTestCase {
         app.buttons["结束"].tap();app.buttons["结束并生成复盘"].tap()
         let save=openComic(app)
         for (name,o) in [("landscapeLeft",UIDeviceOrientation.landscapeLeft),("landscapeRight",.landscapeRight),("portrait",.portrait)]{
-            XCUIDevice.shared.orientation = o
+            rotate(app, o)
             XCTAssertTrue(waitHittable(save), "保存图片 reachable in \(name)"); XCTAssertTrue(app.buttons["查看详细复盘"].isHittable)
             hold(1.5); addScreenshot("comic-\(name)")
         }
@@ -176,6 +176,22 @@ final class MotuoUITests:XCTestCase {
         XCTAssertTrue(speed.waitForExistence(timeout:3), "speed missing (\(name))")
         let frame=speed.frame,window=app.windows.firstMatch.frame
         XCTAssertTrue(frame.width>20 && frame.height>20 && window.intersects(frame) && window.insetBy(dx:-2,dy:-2).contains(CGPoint(x:frame.midX,y:frame.midY)), "speed off screen (\(name)): \(frame) in \(window)")
+    }
+    /// Rotate and wait until the app window really has the new orientation. A request issued while the previous
+    /// rotation is still animating can be ignored by the simulator, so retry instead of racing it.
+    @MainActor private func rotate(_ app: XCUIApplication, _ o: UIDeviceOrientation, file: StaticString = #filePath, line: UInt = #line) {
+        let landscape = o.isLandscape
+        for attempt in 0..<4 {
+            if attempt > 0 { XCUIDevice.shared.orientation = .faceUp; usleep(300_000) }
+            XCUIDevice.shared.orientation = o
+            let end = Date().addingTimeInterval(3)
+            while Date() < end {
+                let f = app.windows.firstMatch.frame
+                if f.width > 0, (f.width > f.height) == landscape { usleep(250_000); return }
+                usleep(150_000)
+            }
+        }
+        XCTFail("app did not rotate to \(o.rawValue)", file: file, line: line)
     }
     @MainActor private func swatch(_ app: XCUIApplication,_ name:String)->XCUIElement{
         // Swatches are aria-pressed toggles, which WebKit exposes as switches.

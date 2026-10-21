@@ -58,8 +58,10 @@ export const stamp = {
   bike: p => ({squash: p >= .4 && p < .5 ? .88 : 1, shake: p >= .4 && p < .5 ? 1.4 : 0, dy: p >= .4 && p < .5 ? -.03 : 0}),
   draw(ctx, p, e) {
     const W = e.world, st = e.stage, slam = .4, lift = [.5, .6];
-    const cw = e.landscape ? Math.min(st.w * .62, e.H * .82) : e.W * .82, ch = e.landscape ? e.H * .5 : Math.min(e.H * .26, st.h * .5);
-    const cx = e.landscape ? st.x + st.w * .45 : e.W * .5, cy = e.landscape ? e.H * .38 : st.y + 60 + ch / 2;
+    // 竖屏：车占下半屏，认证单放在车下方的路面带（按带高），印章与“认证中”都看得见、不压车。
+    const band = e.zones.title;
+    const cw = e.landscape ? Math.min(st.w * .62, e.H * .82) : e.W * .82, ch = e.landscape ? e.H * .5 : Math.max(60, band.h - 6);
+    const cx = e.landscape ? st.x + st.w * .45 : e.W * .5, cy = e.landscape ? e.H * .38 : band.y + band.h / 2;
     // 纸签：从左下甩入、旋转落定
     const q = back(seg(p, 0, .2)), rot = lerp(-.6, -.05, q);
     ctx.save(); ctx.translate(lerp(-cw, cx, q), cy); ctx.rotate(rot);
@@ -89,7 +91,7 @@ export const stamp = {
     const hs = ch * .62 * (e.landscape ? 1 : 1.1), down = easeIn(seg(p, .14, slam)), up = easeIn(seg(p, lift[0], lift[1]));
     const hy = lerp(-hs * .3, cy, down) - up * (cy + hs * .2), hx = cx + 6;
     if (up < 1) inkHand(ctx, hx, hy, hs, W, {sleeve: W.c});
-    if (p >= slam && p < .62) e.say('啪！', cx + cw * .34, Math.max(e.zones.title.y + 20, cy - ch * .62), ch * .5 * back(seg(p, slam, slam + .1)), {prio: 2, fill: W.y, free: e.landscape});
+    if (p >= slam && p < .62) e.say('啪！', cx + cw * .34, e.landscape ? Math.max(e.zones.title.y + 20, cy - ch * .62) : e.zones.note.y + e.zones.note.h / 2, (e.landscape ? ch * .5 : Math.min(ch * .7, 64)) * back(seg(p, slam, slam + .1)), {prio: 2, fill: W.y, free: true});
     else if (p > .05 && p < slam) e.say('认证中……', cx, cy + ch * .12, ch * .16, {prio: 1, fill: W.ink, ink: '#fff8e6', ghost: null, stroke: .04, free: true});
   },
 };
@@ -150,7 +152,8 @@ export const danmaku = {
     // 爆点：彩色描边大字“前方高能!!!”从中间轨道穿过（主文字）
     const big = seg(p, .38, .92);
     if (big > 0 && big < 1) {
-      const y = lerp(top, bottom, .5), size = e.big * (e.landscape ? .3 : .22), x = lerp(e.W + 20, -size * 6, big);
+      // 竖屏：中间轨道正好是车身，大字改走车下方的路面带
+      const y = e.landscape ? lerp(top, bottom, .5) : e.zones.title.y + e.zones.title.h / 2, size = e.landscape ? e.big * .3 : Math.min(e.big * .22, e.zones.title.h * .7), x = lerp(e.W + 20, -size * 6, big);
       e.say('前方高能!!!', x, y, size, {prio: 2, align: 'left', fill: '#ff3b2f', ink: '#ffffff', ghost: [W.ink, W.y], stroke: .2, free: true, rot: 0, maxWidth: 0});
     }
     ctx.save(); ctx.globalAlpha = 1 - seg(p, .92, 1);

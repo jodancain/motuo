@@ -8,7 +8,7 @@ final class CockpitAssetHandler: NSObject, WKURLSchemeHandler {
         let path = url.path.isEmpty || url.path == "/" ? "index.html" : String(url.path.dropFirst())
         let file = root.appendingPathComponent(path).standardizedFileURL.resolvingSymlinksInPath()
         let base = root.standardizedFileURL.resolvingSymlinksInPath().path + "/"
-        guard file.path.hasPrefix(base), ["html","js","css","glb","png","jpg","svg","txt"].contains(file.pathExtension) else { return nil }
+        guard file.path.hasPrefix(base), ["html","js","css","glb","png","jpg","svg","txt","woff2"].contains(file.pathExtension) else { return nil }
         return file
     }
     func webView(_ webView: WKWebView, start urlSchemeTask: WKURLSchemeTask) {
@@ -16,7 +16,7 @@ final class CockpitAssetHandler: NSObject, WKURLSchemeHandler {
               let file=Self.resource(url,root:root), let data=try? Data(contentsOf:file) else {
             urlSchemeTask.didFailWithError(URLError(.fileDoesNotExist)); return
         }
-        let types=["html":"text/html","js":"text/javascript","css":"text/css","glb":"model/gltf-binary","png":"image/png","jpg":"image/jpeg","svg":"image/svg+xml","txt":"text/plain"]
+        let types=["html":"text/html","js":"text/javascript","css":"text/css","glb":"model/gltf-binary","png":"image/png","jpg":"image/jpeg","svg":"image/svg+xml","txt":"text/plain","woff2":"font/woff2"]
         let response=HTTPURLResponse(url:url,statusCode:200,httpVersion:"HTTP/1.1",headerFields:["Content-Type":types[file.pathExtension] ?? "application/octet-stream","Content-Length":String(data.count),"Access-Control-Allow-Origin":"*","Cache-Control":"no-cache"] )!
         urlSchemeTask.didReceive(response);urlSchemeTask.didReceive(data);urlSchemeTask.didFinish()
     }
@@ -56,7 +56,7 @@ struct CockpitWebView: UIViewRepresentable {
         var onCommand:(String)->Void
         var onError:(String?)->Void
         init(onCommand:@escaping(String)->Void,onError:@escaping(String?)->Void){self.onCommand=onCommand;self.onError=onError}
-        static let commands:Set<String>=["ready","primary","finish","demoStart","microphone","stopMicrophone","musicToggle","musicNext","musicPrevious","musicLibrary","garage","history","settings","navigation"]
+        static let commands:Set<String>=["ready","primary","finish","demoStart","microphone","stopMicrophone","musicToggle","musicNext","musicPrevious","musicLibrary","garage","history","settings","navigation","wrappedShown","rideDetail","wrappedDone"]
         func userContentController(_ userContentController:WKUserContentController,didReceive message:WKScriptMessage){
             guard message.frameInfo.isMainFrame,message.frameInfo.securityOrigin.protocol == "motuo",message.frameInfo.securityOrigin.host == "bundle",
                   let body=message.body as? [String:Any],body.count==1,let action=body["action"] as? String,Self.commands.contains(action) else{return}

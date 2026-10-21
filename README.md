@@ -4,7 +4,7 @@
 
 **0.1.0 (1) 已通过Apple处理并分发至TestFlight内部组，本人可接受邀请安装。** 实际iPhone/Watch安装和实车验收仍待完成。 2026-09-20 最终模拟器31单元＋2 UI测试通过。NAS曾完成API/AI smoke，但当前节点离线，正式手册导入尚未完成。实际证据与待验收事项见 [STATUS](docs/STATUS.md)。
 
-**下一版先评审 HTML 效果：** [交互原型](prototypes/motuo-v2/index.html) · [启动方式与验收](prototypes/motuo-v2/README.md)。以 YU7 仪表布局为基础：日常模式保留持续起伏的蓝色波面和独立音乐，运动模式提供四种无地图主题；声浪趋势与正负加速度突出显示，没有数字 RPM。开始骑行后进入页面沉浸，暂停保持，结束复盘并恢复导航。见 [仪表参考](docs/research/yu7-reference-20260920.md)、[动效世界](docs/research/motion-worlds-20260920.md) 和 [声音／惯导边界](docs/design/vehicle-sound-transition-20260920.md)。
+**下一版先评审 HTML 效果：** [交互原型](prototypes/motuo-v2/index.html) · [启动方式与验收](prototypes/motuo-v2/README.md)。以 YU7 仪表布局为基础：日常模式保留持续起伏的蓝色波面和独立音乐，运动模式提供四种无地图主题；声浪趋势与正负加速度突出显示，没有数字 RPM。开始骑行后进入页面沉浸，暂停保持，结束复盘并恢复导航。10/20 按用户要求改为游戏／MV 级夸张特效：自写 WebGL 全屏世界、追尾 3D 车、可跳过的电影化出发、游戏事件巨字与连击游戏分（明示非测量）、子弹时间暂停、Wrapped 复盘，特效强度默认“夸张”，仍保留单一 rAF、60／30fps 档位、闪光限流与速度始终可读；已同步进原生并通过模拟器测试，真机未验收，见 [动效调研](docs/research/remotion-motion-20261020.md)。见 [仪表参考](docs/research/yu7-reference-20260920.md)、[动效世界](docs/research/motion-worlds-20260920.md) 和 [声音／惯导边界](docs/design/vehicle-sound-transition-20260920.md)。
 
 **实时 3D 已换用用户确认的 C5913 近似模型。** `Suzuki 550 GSX R1000` 已转换接入车库、待机与共享画布出发，支持旋转、缩放、视角、分区改色及外观保存；熊猫方案为白色车身与黑色辅色。展示明确标为 **GSX-R1000，非准确 GSX250R**，GSX250R 车辆档案保持独立。52,432 三角面、17 网格、9 材质与18张原始 JPEG 保留，原素材和 GLB 仅本机使用、不进入 Git；有原始包时运行 `python3 scripts/prepare-suzuki-model.py` 可重建。见 [模型接入与验证](docs/research/c5913-model-selection-20260920.md)。手机持续性能、法线绿通道约定和分发授权仍待核验；本轮未变更原生 App、TestFlight 或 NAS。
 

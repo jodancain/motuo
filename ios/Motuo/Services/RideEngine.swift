@@ -14,6 +14,9 @@ import simd
     }
     var currentRide: Ride?
     var lastFinishedRide: Ride?
+    // The cockpit web layer plays its full-screen recap first; the native detail sheet waits.
+    var wrappedPending = false
+    var wrappedAcknowledged = false
     var speedMPS: Double?
     var accelerationIntensity: Double = 0
     var rotationIntensity: Double = 0
@@ -97,7 +100,7 @@ import simd
         WatchBridge.shared.activate()
     }
     func clearWatchSummary() {
-        watchSummary = nil; lastFinishedRide = nil; recentEvents = []; calibrationId = nil
+        watchSummary = nil; lastFinishedRide = nil; wrappedPending = false; wrappedAcknowledged = false; recentEvents = []; calibrationId = nil
         speedMPS = nil; elapsedSeconds = 0; accelerationIntensity = 0; rotationIntensity = 0; turnDirection = 0; longitudinalTrend = 0
         UserDefaults.standard.removeObject(forKey: "motuo.watch.lastSummary")
         NavigationService.shared.clear(); WatchBridge.shared.clear()

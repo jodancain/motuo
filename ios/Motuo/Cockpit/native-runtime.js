@@ -1,5 +1,5 @@
  // Runs inside the reviewed HUD closure only in the bundled native entry point.
- let nativeReceivedAt=0, nativePendingDeparture=null;
+ let nativeReceivedAt=0, nativePendingDeparture=null, nativeWrappedId=null;
  function nativeSend(action){if(nativeHost)window.webkit.messageHandlers.motuo.postMessage({action});}
  function nativeAudio(){
   const s=state.nativeSnapshot;
@@ -39,6 +39,12 @@
   $('page-subtitle').textContent=s.simulated?'DEMO · 模拟数据':'MOTUO / RIDE OS';
   if(state.phase==='idle')$('ride-primary').innerHTML=icon('power')+`<span class="button-label">${s.simulated?'进入演示骑行':'开始骑行'}</span>`;
  }
+ // The saved native ride summary drives the full-screen recap; the native detail opens from its last card.
+ function nativeWrapped(f){
+  const ride={distance:Math.max(0,f.distanceM||0),seconds:Math.max(0,f.durationS||0),maxSpeed:Math.max(0,f.maxSpeedKmh||0),source:f.simulated?'simulated':'measured'};
+  if(!fxLevel().world||!gameFx.wrappedRecap(ride,game.summary(),{native:true,onClose:reason=>nativeSend(reason==='detail'?'rideDetail':'wrappedDone')})){nativeSend('rideDetail');return;}
+  nativeSend('wrappedShown');
+ }
  if(nativeHost){
   document.documentElement.classList.add('native-host');
   $('cockpit').setAttribute('aria-label','原生骑行驾驶舱');
@@ -58,15 +64,18 @@
   window.MotuoNativeReceive=s=>{
    if(!s||!['idle','riding','paused'].includes(s.phase))return;
    nativeReceivedAt=performance.now();const oldPhase=state.phase,oldMotion=state.motion;
-   state.nativeSnapshot=s;state.phase=s.phase;state.seconds=Math.max(0,s.seconds||0);state.distance=Math.max(0,s.distanceM||0);
+   state.nativeSnapshot=s;state.nativeModal=!!s.modal;state.phase=s.phase;state.seconds=Math.max(0,s.seconds||0);state.distance=Math.max(0,s.distanceM||0);
    state.speed=Number.isFinite(s.speedKmh)?s.speedKmh:0;state.speedSampleTime=s.sampleTime;
    state.speedReading={speedKmh:s.phase==='riding'&&Number.isFinite(s.speedKmh)?s.speedKmh:null,source:s.speedSource||'unavailable',uncertaintyKmh:s.uncertaintyKmh||0,confidence:'low',reason:'native'};
    state.scenario=s.phase==='riding'&&s.speedSource==='unavailable'?'gps':'normal';state.motion=motionLabels[s.motion]?s.motion:'ready';
-   state.reduced=!!s.reduced;state.music=!!s.musicPlaying;$('app').classList.toggle('reduced-effects',state.reduced);
+   const wasReduced=state.reduced;state.reduced=!!s.reduced;state.music=!!s.musicPlaying;$('app').classList.toggle('reduced-effects',state.reduced);
+   // Thermal pressure lowers the motion tier (30fps, fewer particles/blur); reduced motion stays a user/system choice.
+   motionClock.setHint(!!s.thermal);if(state.reduced&&!wasReduced)hudReset();renderPerfTier();
    $('app').classList.toggle('immersive',s.phase!=='idle');$('ride-stop').hidden=s.phase==='idle';
-   if(oldPhase!==s.phase){updateControls();if(s.phase!=='riding')cancelDeparture();if(s.phase==='idle'){state.stoppedSince=null;state.distance=0;state.seconds=0;setPage('cockpit');}}
+   if(oldPhase!==s.phase){updateControls();if(s.phase!=='riding')cancelDeparture();if(s.phase==='idle')hudReset();else if(oldPhase!=='idle')pauseFx(s.phase==='paused');if(s.phase==='idle'){state.stoppedSince=null;state.distance=0;state.seconds=0;setPage('cockpit');}}
    if(oldMotion!==state.motion&&s.phase==='riding')pulseEvent();
    nativeAudio();render();
+   if(s.finishedRide&&s.finishedRide.id!==nativeWrappedId){nativeWrappedId=s.finishedRide.id;nativeWrapped(s.finishedRide);}
    if(oldPhase==='idle'&&s.phase==='riding'&&nativePendingDeparture){state.departureUntil=state.seconds+3.8;beginDeparture(nativePendingDeparture);nativePendingDeparture=null;}
   };
  }

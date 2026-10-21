@@ -29,7 +29,13 @@ struct NativeCockpitView:View {
             guard scenePhase == .active else{EngineSoundService.shared.stop("后台已停止");return}
             while !Task.isCancelled{snapshot=makeSnapshot();try? await Task.sleep(for:.milliseconds(100))}
         }
-        .onDisappear{EngineSoundService.shared.stop()}
+        .onDisappear{EngineSoundService.shared.stop();engine.wrappedPending=false}
+        // Tell the web layer at once when a native dialog, sheet or system alert covers it.
+        .onChange(of:confirmFinish){_,_ in snapshot=makeSnapshot()}
+        .onChange(of:confirmMicrophone){_,_ in snapshot=makeSnapshot()}
+        .onChange(of:route){_,_ in snapshot=makeSnapshot()}
+        .onChange(of:scenePhase){_,_ in snapshot=makeSnapshot()}
+        .onChange(of:webError){_,error in if error != nil{engine.wrappedPending=false}}
         .onChange(of:engine.isPaused){_,paused in if paused{EngineSoundService.shared.stop("骑行暂停 · 声音已停止")}}
         .onChange(of:engine.currentRide?.id){_,id in if id == nil{EngineSoundService.shared.stop()}}
         .sheet(item:$route){item in
@@ -54,7 +60,7 @@ struct NativeCockpitView:View {
             }.preferredColorScheme(.dark)
         }
         .confirmationDialog("结束这次骑行？",isPresented:$confirmFinish,titleVisibility:.visible){
-            Button("结束并生成复盘"){EngineSoundService.shared.stop();engine.finish()}
+            Button("结束并生成复盘"){EngineSoundService.shared.stop();engine.wrappedAcknowledged=false;engine.wrappedPending=webError == nil;engine.finish();scheduleWrappedFallback()}
             Button("继续骑行",role:.cancel){}
         }message:{Text("原生记录先安全保存在手机，随后生成本地复盘。")}
         .confirmationDialog("用手机麦克风聆听声浪",isPresented:$confirmMicrophone,titleVisibility:.visible){
@@ -73,6 +79,9 @@ struct NativeCockpitView:View {
             if EngineSoundService.shared.isCapturing || EngineSoundService.shared.status == "等待麦克风授权"{EngineSoundService.shared.stop()}
             else if scenePhase == .active && !engine.isPaused{confirmMicrophone=true}
         case "stopMicrophone":EngineSoundService.shared.stop()
+        case "wrappedShown":engine.wrappedAcknowledged=true
+        case "rideDetail":engine.wrappedPending=false
+        case "wrappedDone":engine.wrappedPending=false;engine.lastFinishedRide=nil
         case "musicToggle":Task{await MusicService.shared.togglePlayback()}
         case "musicNext":Task{await MusicService.shared.skipNext()}
         case "musicPrevious":Task{await MusicService.shared.skipPrevious()}
@@ -82,6 +91,14 @@ struct NativeCockpitView:View {
         default:break
         }
         snapshot=makeSnapshot()
+    }
+    // If the web recap never confirms it started, fall back to the native recap sheet.
+    private func scheduleWrappedFallback(){
+        Task{try? await Task.sleep(for:.seconds(4));if !engine.wrappedAcknowledged{engine.wrappedPending=false}}
+    }
+    private var finishedRideSummary:[String:Any]?{
+        guard engine.wrappedPending,let ride=engine.lastFinishedRide else{return nil}
+        return ["id":ride.id.uuidString,"distanceM":ride.distanceM,"durationS":ride.durationS,"maxSpeedKmh":ride.maxSpeedMPS*3.6,"simulated":ride.isSimulated,"validSpeedSamples":ride.validSpeedSamples]
     }
     private func makeSnapshot()->String{
         let sound=EngineSoundService.shared,music=MusicService.shared
@@ -93,14 +110,16 @@ struct NativeCockpitView:View {
         let live=sound.live && ProcessInfo.processInfo.systemUptime-sound.sampleUptime<1 && scenePhase == .active && !engine.isPaused
         var audio:[String:Any]=["live":live,"status":sound.status]
         if live,let f=sound.features{audio.merge(["level":f.level,"db":f.db,"clipped":f.clipped,"spectrum":f.spectrum,"wave":f.wave]){_,new in new}}
-        let data:[String:Any]=[
+        var data:[String:Any]=[
+            "modal":confirmFinish || confirmMicrophone || route != nil || scenePhase != .active || webError != nil,
             "phase":phase,"simulated":engine.isSimulated,"speedKmh":speed.map{$0*3.6} as Any? ?? NSNull(),"speedSource":source,
             "uncertaintyKmh":(estimate?.uncertainty ?? 0)*3.6,"sampleTime":ProcessInfo.processInfo.systemUptime,
             "seconds":engine.elapsedSeconds,"distanceM":engine.currentRide?.distanceM ?? 0,"stateLabel":engine.stateLabel,"motion":motion,
             "locationStatus":engine.isSimulated ? "DEMO · 模拟定位":estimate != nil ? "GPS 缺失 · IMU 估速":engine.locationStatus,
-            "reduced":settings.reducedEffects || reduceMotion || engine.thermalLimited,"watchReachable":WatchBridge.shared.isReachable,
+            "reduced":settings.reducedEffects || reduceMotion,"thermal":engine.thermalLimited,"watchReachable":WatchBridge.shared.isReachable,
             "vehicleModel":vehicle?.model ?? "我的摩托","sound":audio,"musicTitle":music.currentTitle,"musicArtist":music.currentArtist,"musicPlaying":music.isPlaying
         ]
+        if let finished=finishedRideSummary{data["finishedRide"]=finished}
         guard JSONSerialization.isValidJSONObject(data),let encoded=try? JSONSerialization.data(withJSONObject:data),let string=String(data:encoded,encoding:.utf8)else{return "{}"}
         return string
     }

@@ -1,0 +1,33 @@
+{
+ "built_by": "scripts/build-cockpit-fonts.py",
+ "fonts": [
+  {
+   "file": "motuo-num.woff2",
+   "origin": "Orbitron (wght 800, tabular digits)",
+   "reserved_font_name": "Orbitron",
+   "bytes": 5108,
+   "sha256": "78ac82c73023b8f282e722626a7ccc9fff7fd94203f5fa3995fc0853ddefb6b4",
+   "codepoints": 105
+  },
+  {
+   "file": "motuo-display.woff2",
+   "origin": "Russo One",
+   "reserved_font_name": "Russo",
+   "bytes": 4600,
+   "sha256": "16c30c51786f50358919d08f0a2fca38f49047294fb0dcd1944a2ba3c88a2377",
+   "codepoints": 109
+  },
+  {
+   "file": "motuo-han.woff2",
+   "origin": "Smiley Sans Oblique 得意黑 v2.0.1",
+   "reserved_font_name": "Smiley / 得意黑",
+   "bytes": 500240,
+   "sha256": "63918a79b53b8a4425a636f0e458311cd27240d8137e5e300d8cd5ff1fbb6b5f",
+   "codepoints": 3886
+  }
+ ],
+ "page_cjk_chars": 600,
+ "page_cjk_missing": [],
+ "digit_advance": 834,
+ "total_bytes": 509948
+}

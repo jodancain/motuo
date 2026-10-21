@@ -1,0 +1,65 @@
+/* HUD motion layer (hud-motion.js). Temporary layers are light-only and aria-hidden. */
+.k-letter{display:inline-block;white-space:pre;will-change:auto}
+.wordmark .k-letter{font-style:inherit}
+
+/* Standby boot scan */
+.boot-scan{position:absolute;left:0;right:0;top:0;height:28%;pointer-events:none;z-index:6;background:linear-gradient(180deg,transparent,rgba(var(--motion-rgb,98,209,255),.07) 70%,rgba(var(--motion-rgb,98,209,255),.4) 99%,transparent);border-radius:inherit}
+
+/* Speed roller: overlays the real reading only while two real integers swap. */
+.speed-roller{position:absolute;inset:0;pointer-events:none;z-index:2}
+.roller-column{position:absolute;clip-path:inset(0 -60% 0 -60%);white-space:pre;text-align:left}
+.roller-stack{position:absolute;left:0;top:0;width:100%;height:200%;display:flex;flex-direction:column;will-change:transform}
+.roller-stack>span{display:block;height:50%;line-height:inherit}
+.speed-rolling{color:transparent!important;text-shadow:none!important}
+
+/* Acceleration impact */
+.impact-canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2;border-radius:inherit}
+.drive-cockpit .accel-meter{box-shadow:0 0 calc(var(--impact,0) * 30px) var(--accel-glow),inset 0 0 calc(var(--impact,0) * 22px) var(--accel-glow)}
+.drive-cockpit .cockpit[data-impact=push] #accel-positive,.drive-cockpit .cockpit[data-impact=brake] #accel-negative{filter:brightness(calc(1 + var(--impact,0) * .8))}
+
+/* Scene transitions: translucent veil, readouts stay legible. */
+.scene-wipe{position:absolute;inset:0;z-index:7;pointer-events:none;border-radius:inherit;overflow:hidden;background:linear-gradient(105deg,rgba(var(--motion-rgb,98,209,255),.2),rgba(8,10,20,.42) 55%,rgba(186,120,255,.18)),repeating-linear-gradient(0deg,#ffffff06 0 1px,transparent 1px 4px)}
+/* Full-width track so translateX(100%) spans the cockpit without measuring it. */
+.scene-wipe-edge{position:absolute;inset:0;will-change:transform}
+.scene-wipe-edge:before{content:"";position:absolute;top:0;bottom:0;left:0;width:2px;background:var(--motion-a,#6ce4ff);box-shadow:0 0 18px 4px rgba(var(--motion-rgb,98,209,255),.55)}
+.scene-wipe-scene{background:radial-gradient(ellipse at 50% 55%,rgba(var(--motion-rgb,98,209,255),.24),rgba(8,10,20,.45) 70%),repeating-linear-gradient(0deg,#ffffff06 0 1px,transparent 1px 4px)}
+.scene-wipe-hand{position:absolute;left:50%;bottom:45%;width:2px;height:160%;margin-left:-1px;transform-origin:50% 100%;background:linear-gradient(transparent,rgba(var(--motion-rgb,98,209,255),.85));will-change:transform}
+.scene-tag{position:absolute;left:50%;top:18%;translate:-50% 0;font:600 11px var(--mono);letter-spacing:4px;color:#eef8ff;text-shadow:0 0 16px rgba(var(--motion-rgb,98,209,255),.8);white-space:nowrap}
+
+/* Pause: time freeze (static look, motion comes from hud-motion.js). */
+.freeze-veil{display:none;position:absolute;inset:0;z-index:5;pointer-events:none;border-radius:inherit;background:repeating-linear-gradient(0deg,#d8e8ff09 0 1px,transparent 1px 3px),radial-gradient(ellipse at 50% 45%,transparent 45%,#05080f88)}
+.time-frozen .cockpit:not(.map-focus) .freeze-veil{display:block}
+.time-frozen .fx-canvas,.time-frozen .impact-canvas{filter:saturate(.2) brightness(.75)}
+.time-frozen .pause-shade{letter-spacing:1px;box-shadow:0 0 22px #a9c4ff22}
+.freeze-flash{position:absolute;inset:0;z-index:8;pointer-events:none;border-radius:inherit;background:radial-gradient(ellipse at 50% 45%,#e8f4ff,#c9dcff55 60%,transparent);opacity:0}
+.freeze-sweep{position:absolute;top:0;bottom:0;left:0;width:40%;z-index:8;pointer-events:none;background:linear-gradient(90deg,transparent,rgba(var(--motion-rgb,98,209,255),.16) 60%,rgba(220,245,255,.5) 98%,transparent)}
+
+/* Departure light layers */
+.departure-sweep{position:absolute;top:-10%;bottom:-10%;left:0;width:28%;z-index:6;pointer-events:none;background:linear-gradient(90deg,transparent,rgba(var(--motion-rgb,98,209,255),.08) 45%,rgba(232,248,255,.55) 92%,transparent);mix-blend-mode:screen}
+.departure-ring{position:absolute;z-index:6;pointer-events:none;border-radius:50%;border:2px solid rgba(var(--motion-rgb,98,209,255),.85);box-shadow:0 0 24px rgba(var(--motion-rgb,98,209,255),.6),inset 0 0 18px rgba(var(--motion-rgb,98,209,255),.35)}
+.departure-vehicle:before{content:"";position:absolute;inset:30% 55% 30% -25%;background:repeating-linear-gradient(0deg,transparent 0 9px,rgba(170,230,255,.35) 9px 10px);mask-image:linear-gradient(90deg,transparent,#000);-webkit-mask-image:linear-gradient(90deg,transparent,#000);animation:departure-trail 1.15s ease-out both}
+@keyframes departure-trail{0%,15%{opacity:0;transform:scaleX(.2)}45%{opacity:1}100%{opacity:0;transform:scaleX(1.2) translateX(-12%)}}
+
+/* Recap: Unwrapped-style cards and a labelled tally. */
+.hud-recap .recap-mark,.hud-recap .chapter,.content-page.active.hud-recap .chapter{animation:none!important}
+.hud-recap .recap-metrics{gap:12px;border:0;position:relative}
+.hud-recap .recap-metrics>div{padding:16px 10px;border:1px solid rgba(161,138,255,.3);border-radius:16px;background:linear-gradient(150deg,rgba(123,220,250,.08),rgba(161,138,255,.1));box-shadow:0 10px 30px #0004,inset 0 0 24px rgba(161,138,255,.06);transform-origin:50% 100%}
+.recap-metrics strong[data-transition=tally]{opacity:.78}
+.tallying .recap-metrics:after{content:"汇总动画 · 落定为本次记录";position:absolute;left:50%;bottom:-18px;translate:-50% 0;font:9px var(--mono);letter-spacing:1px;color:#9aa8c8;white-space:nowrap}
+
+/* Performance tier badge */
+.perf-tier{display:inline-flex;align-items:center;gap:5px;margin-left:10px;font:8px var(--mono);letter-spacing:1px;color:#8fa5bb;white-space:nowrap}
+.perf-tier:before{content:"";width:5px;height:5px;border-radius:50%;background:#6ce4ff;box-shadow:0 0 6px #6ce4ff}
+.perf-tier[data-tier=eco]:before{background:#ffcd86;box-shadow:0 0 6px #ffcd86}
+.perf-tier[data-tier=reduced]:before{background:#81929f;box-shadow:none}
+.perf-eco .speed-value,.perf-eco .rpm-readout strong,.perf-eco .accel-readout strong{text-shadow:none!important}
+.perf-eco .gauge-energy,.perf-eco .speed-trace .trace-line{filter:none!important}
+.perf-eco .drive-meter,.perf-eco .event-banner,.perf-eco .music{backdrop-filter:none!important}
+.perf-eco .world-atmosphere{display:none}
+
+/* Reduced motion: only state changes. */
+.reduced-effects .impact-canvas,.reduced-effects .scene-wipe,.reduced-effects .boot-scan,.reduced-effects .freeze-flash,.reduced-effects .freeze-sweep,.reduced-effects .departure-sweep,.reduced-effects .departure-ring,.reduced-effects .speed-roller{display:none!important}
+.reduced-effects .speed-rolling{color:inherit!important}
+@media(prefers-reduced-motion:reduce){.impact-canvas,.scene-wipe,.boot-scan,.freeze-flash,.freeze-sweep,.departure-sweep,.departure-ring,.speed-roller{display:none!important}.speed-rolling{color:inherit!important}}
+@media(max-height:570px) and (orientation:landscape){.perf-tier{font-size:6px;margin-left:6px}.scene-tag{font-size:8px;letter-spacing:2px}}
+@media(orientation:portrait),(max-width:600px){.perf-tier{font-size:6px;margin-left:6px}.scene-tag{font-size:9px;letter-spacing:2px;top:12%}.hud-recap .recap-metrics{gap:8px}.hud-recap .recap-metrics>div{padding:12px 6px}}

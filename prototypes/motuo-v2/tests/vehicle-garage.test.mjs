@@ -32,6 +32,7 @@ function harness({ stored = null, storageDenied = false, delayedImport = false }
     'garage-showroom', 'vehicle-reset', 'garage-vehicle-host', 'cockpit-vehicle-host']) node(id);
   const paint = node('paint-violet', { paint: 'violet', vehicleControl: '' });
   const finish = node('finish-satin', { finish: 'satin', vehicleControl: '' });
+  const style2d = node('style-2d', { renderStyle: '2d', vehicleControl: '' }), style3d = node('style-3d', { renderStyle: '3d', vehicleControl: '' });
   const retry = node('retry', { vehicleRetry: '' });
   node('status', { vehicleStatus: '' }, 'SPAN');
   node('loading', { loading: '' }, 'DIV');
@@ -57,7 +58,8 @@ function harness({ stored = null, storageDenied = false, delayedImport = false }
       setAutoRotate(value) { this.autoRotate = value; },
       setInteractive(value) { this.interactive = value; },
       setActive(value) { this.active = value; },
-      setView() {}, zoom() {}, resetView() {},
+      setView(view) { this.view = view; }, zoom() {}, resetView() {},
+      setRenderStyle(value) { this.renderStyle = value; },
       dispose() { this.disposed = true; },
       report: onStatus,
       succeed() { onStatus({ status: 'ready' }); resolve(); },
@@ -74,7 +76,7 @@ function harness({ stored = null, storageDenied = false, delayedImport = false }
   };
   vm.runInNewContext(source.replace(imported, 'await loadViewerModule()'), context);
   const api = context.window.MotuoGarage;
-  return { api, create: () => api.create(doc), doc, nodes, viewers, imports, writes, paint, finish, retry };
+  return { api, create: () => api.create(doc), doc, nodes, viewers, imports, writes, paint, finish, retry, style2d, style3d };
 }
 
 test('appearance persistence accepts only versioned colors and supported finish; drops unrelated data', () => {
@@ -158,4 +160,35 @@ test('disposal while the viewer module is loading prevents late renderer creatio
   garage.dispose(); h.imports[0](); await flush();
   assert.equal(h.viewers.length, 0);
   assert.equal(garage.getViewer(), null);
+});
+
+test('2D comic is the default render style; switching to 3D persists and paint still applies in 2D', async () => {
+  const h = harness(), garage = h.create(); await flush();
+  const viewer = h.viewers[0]; viewer.succeed(); await flush();
+  assert.equal(copy(h.api.normalizeAppearance(null)).renderStyle, '2d');
+  assert.equal(copy(h.api.normalizeAppearance({ version: 1, renderStyle: 'bogus' })).renderStyle, '2d');
+  assert.equal(viewer.renderStyle, '2d');
+  assert.equal(h.style2d.attrs['aria-pressed'], 'true');
+  assert.equal(h.doc.documentElement.dataset.vehicleStyle, '2d');
+  h.paint.dispatch('click');
+  assert.equal(viewer.appearance.bodyColor, '#7854ba', 'paint changes reach the viewer while 2D is active');
+  assert.equal(viewer.renderStyle, '2d');
+  h.style3d.dispatch('click');
+  assert.equal(viewer.renderStyle, '3d');
+  assert.equal(h.writes.at(-1).value.renderStyle, '3d');
+  assert.equal(h.style3d.attrs['aria-pressed'], 'true');
+  assert.equal(viewer.appearance.bodyColor, '#7854ba', 'switching style keeps the paint');
+  garage.dispose();
+});
+
+test('riding in sport mounts the same canvas as a chase camera and restores the hero view afterwards', async () => {
+  const h = harness(), garage = h.create(); await flush();
+  const viewer = h.viewers[0]; viewer.succeed(); await flush();
+  const chase = { id: 'chase-host', children: [], appendChild(c) { this.children.push(c); c.parentNode = this; } };
+  h.nodes.set('chase-host', chase);
+  garage.update({ chase: true, parked: false });
+  assert.equal(viewer.canvas.parentNode, chase); assert.equal(viewer.view, 'chase'); assert.equal(viewer.interactive, false);
+  garage.update({ chase: false, parked: true });
+  assert.equal(viewer.view, 'hero');
+  garage.dispose();
 });

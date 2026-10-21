@@ -14,12 +14,14 @@
     const color = (x,fallback) => typeof x === 'string' && /^#[0-9a-f]{6}$/i.test(x) ? x.toLowerCase() : fallback;
     return {version:1, bodyColor:color(v.bodyColor,presets.panda.bodyColor),
       accentColor:color(v.accentColor,presets.panda.accentColor),
-      finish:v.finish === 'satin' ? 'satin' : 'gloss', autoRotate:v.autoRotate !== false};
+      finish:v.finish === 'satin' ? 'satin' : 'gloss', autoRotate:v.autoRotate !== false,
+      // 2D comic is the default look; 3D realistic stays one tap away.
+      renderStyle:v.renderStyle === '3d' ? '3d' : '2d'};
   }
   function create(doc = document) {
     const $ = id => doc.getElementById(id), all = selector => [...doc.querySelectorAll(selector)];
     let appearance, viewer=null, status='loading', disposed=false, generation=0;
-    let context={page:'cockpit',parked:true,departing:false,reduced:false,active:!doc.hidden};
+    let context={page:'cockpit',parked:true,departing:false,reduced:false,active:!doc.hidden,chase:false},chasing=false;
     try { appearance=normalizeAppearance(JSON.parse(global.localStorage.getItem(KEY))); }
     catch { appearance=normalizeAppearance(null); }
     function save() {
@@ -33,11 +35,14 @@
       all('button[data-paint]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.paint===preset?.[0])));
       all('button[data-finish]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.finish===appearance.finish)));
       $('vehicle-auto').setAttribute('aria-pressed',String(appearance.autoRotate));
+      all('button[data-render-style]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.renderStyle===appearance.renderStyle)));
+      doc.documentElement.dataset.vehicleStyle=appearance.renderStyle;
       $('vehicle-auto').textContent=context.reduced&&appearance.autoRotate?'环绕已减弱':appearance.autoRotate?'自动环绕 开':'自动环绕 关';
       $('garage-showroom').style.setProperty('--paint',appearance.bodyColor);
     }
     function apply() {
       viewer?.setAppearance(appearance);
+      viewer?.setRenderStyle?.(appearance.renderStyle);
       viewer?.setAutoRotate(appearance.autoRotate&&!context.reduced);
       paintUI();
     }
@@ -45,11 +50,13 @@
       if (!viewer || disposed) return;
       // The departure controller owns the very same canvas for 1.15 seconds.
       if(context.departing)return;
-      const garage=context.page==='garage';
-      viewer.mount($(garage?'garage-vehicle-host':'cockpit-vehicle-host'));
-      viewer.setInteractive(context.active&&(garage||context.parked));
-      viewer.setActive(context.active&&(garage||(context.page==='cockpit'&&context.parked)));
-      viewer.setAutoRotate(appearance.autoRotate&&!context.reduced);
+      const garage=context.page==='garage',chase=!garage&&context.chase&&!!$('chase-host');
+      // While riding in the sport world the same canvas becomes a chase camera.
+      viewer.mount($(garage?'garage-vehicle-host':chase?'chase-host':'cockpit-vehicle-host'));
+      if(chase!==chasing){chasing=chase;viewer.setView(chase?'chase':'hero');}
+      viewer.setInteractive(context.active&&!chase&&(garage||context.parked));
+      viewer.setActive(context.active&&(garage||chase||(context.page==='cockpit'&&context.parked)));
+      viewer.setAutoRotate(appearance.autoRotate&&!context.reduced&&!chase);
       paintUI();
     }
     function report(next) {
@@ -83,6 +90,7 @@
       $(id).addEventListener('input',()=>{appearance=normalizeAppearance({...appearance,[key]:$(id).value});save();apply();});
     }
     all('button[data-finish]').forEach(b=>b.addEventListener('click',()=>{appearance.finish=b.dataset.finish;save();apply();}));
+    all('button[data-render-style]').forEach(b=>b.addEventListener('click',()=>{appearance.renderStyle=b.dataset.renderStyle==='3d'?'3d':'2d';save();apply();}));
     all('[data-vehicle-view]').forEach(b=>b.addEventListener('click',()=>{
       appearance.autoRotate=false;save();apply();viewer?.setView(b.dataset.vehicleView);
     }));

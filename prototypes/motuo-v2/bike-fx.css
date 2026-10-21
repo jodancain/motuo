@@ -1,0 +1,19 @@
+/* 2D bike layer (bike-fx.js). Poses are CSS variables on the shared canvas: decoration only. */
+.vehicle-webgl-canvas{transform:translate(var(--bike-tx,0px),var(--bike-ty,0px)) rotate(var(--bike-rot,0deg)) scale(var(--bike-sx,1),var(--bike-sy,1));transform-origin:32% 90%;touch-action:none}
+.chase-host .vehicle-webgl-canvas{transform-origin:50% 92%}
+/* Ghost trail: coloured silhouette after-images behind the motion. */
+.vehicle-webgl-canvas.bike-trail{filter:drop-shadow(calc(var(--trail,0) * -1px) 0 0 rgba(0,232,255,.6)) drop-shadow(calc(var(--trail,0) * -2px) 0 0 rgba(255,46,170,.38)) drop-shadow(calc(var(--trail,0) * -3px) 0 0 rgba(255,210,63,.22))!important}
+.bike-fx{position:fixed;inset:0;width:100vw;height:100vh;pointer-events:none;z-index:30}
+/* Impact frame: 1–2 frames of inverted monochrome; rate-limited with every other flash. */
+.impact-frame{position:fixed;inset:0;z-index:31;pointer-events:none;-webkit-backdrop-filter:invert(1) grayscale(1) contrast(1.6);backdrop-filter:invert(1) grayscale(1) contrast(1.6)}
+.bike-charge{position:fixed;left:50%;bottom:calc(104px + env(safe-area-inset-bottom));translate:-50% 0;z-index:32;display:flex;gap:12px;align-items:center;padding:10px 16px;border-radius:14px;background:#06070de6;border:1px solid #5ff0ff77;color:#fff;font-size:15px;box-shadow:0 10px 30px #0008;white-space:nowrap}
+.bike-charge[data-state=armed]{border-color:#ffd23f;box-shadow:0 0 26px #ffd23f66}
+.bike-charge[data-state=confirming]{border-color:#ff6a2b;box-shadow:0 0 26px #ff6a2b66}
+.bike-charge button{min-height:44px;min-width:64px;padding:0 14px;border-radius:10px;background:#ff6a2b;color:#fff;font-weight:700}
+.bike-hint{position:absolute;right:3%;bottom:4%;z-index:4;font-size:12px;color:#ffd23f;letter-spacing:1px;text-shadow:0 0 10px #000,0 0 2px #000;pointer-events:none}
+.immersive .bike-hint{display:none}
+.garage-scene .bike-hint{display:block}
+.render-style{margin-bottom:10px}
+@media(orientation:portrait),(max-width:600px){.bike-hint{font-size:10px;bottom:1%}.bike-charge{font-size:13px;bottom:calc(150px + env(safe-area-inset-bottom))}}
+.reduced-effects .vehicle-webgl-canvas{transform:none!important;filter:none!important}
+@media(prefers-reduced-motion:reduce){.vehicle-webgl-canvas{transform:none!important}.bike-fx{display:none}}

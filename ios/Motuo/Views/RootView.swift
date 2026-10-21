@@ -36,7 +36,9 @@ struct RootView: View {
         .alert("记录提示", isPresented: Binding(get: { engine.errorMessage != nil }, set: { if !$0 { engine.errorMessage = nil } })) {
             Button("知道了") { engine.errorMessage = nil }
         } message: { Text(engine.errorMessage ?? "") }
-        .sheet(item: Binding(get: { engine.lastFinishedRide }, set: { engine.lastFinishedRide = $0 })) { ride in
+        // While the cockpit plays its recap, the detail sheet waits for an explicit request (or the fallback).
+        .onChange(of: tab) { _, next in if next != .cockpit { engine.wrappedPending = false } }
+        .sheet(item: Binding(get: { engine.wrappedPending ? nil : engine.lastFinishedRide }, set: { engine.lastFinishedRide = $0 })) { ride in
             NavigationStack { RideDetailView(ride: ride).toolbar { ToolbarItem(placement: .topBarTrailing) { Button("完成") { engine.lastFinishedRide = nil } } } }
         }
     }

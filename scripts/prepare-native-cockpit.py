@@ -13,6 +13,8 @@ def main():
     for path in SRC.iterdir():
         if path.suffix in ['.js','.css'] and path.is_file(): shutil.copy2(path,DST/path.name)
     shutil.copytree(SRC/'vendor',DST/'vendor',dirs_exist_ok=True)
+    # Bundled OFL display fonts (woff2 + licenses); the WebView is offline.
+    shutil.copytree(SRC/'assets/fonts',DST/'assets/fonts',dirs_exist_ok=True)
     target=DST/'assets/models/suzuki-gsx-r1000/model.glb';target.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(model,target)
     html=(SRC/'index.html').read_text()
     def replace(old,new):

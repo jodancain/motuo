@@ -4,6 +4,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { createMaskedPaint } from './vehicle-paint.js?v=suzuki-20260920';
 import { disposeTree } from './vehicle-resources.js';
+import { createComicPass } from './vehicle-comic.js';
 
 // A real mesh viewer. Its presentation animation never consumes vehicle telemetry.
 export function createVehicleViewer({ host, modelURL, onStatus = () => {} }) {
@@ -39,6 +40,10 @@ export function createVehicleViewer({ host, modelURL, onStatus = () => {} }) {
   let contact = null;
   let floor = null;
   let frameRequest = 0;
+  // '2d' = comic post pass (default), '3d' = the original PBR look.
+  let renderStyle = '2d', comic = null;
+  // Render on the page's shared motion clock when present: one rAF for the HUD and 3D.
+  const frameClock = globalThis.MotuoMotion?.sharedClock?.() || null;
   let lastFrame = 0;
   let frameCount = 0;
   let sizeKey = '';
@@ -85,11 +90,11 @@ export function createVehicleViewer({ host, modelURL, onStatus = () => {} }) {
   }
 
   function wake() {
-    if (!frameRequest && canRender()) frameRequest = requestAnimationFrame(frame);
+    if (!frameRequest && canRender()) frameRequest = frameClock ? frameClock.requestFrame(frame) : requestAnimationFrame(frame);
   }
 
   function cancelFrame() {
-    if (frameRequest) cancelAnimationFrame(frameRequest);
+    if (frameRequest) { if (frameClock) frameClock.cancelFrame(frameRequest); else cancelAnimationFrame(frameRequest); }
     frameRequest = 0;
     lastFrame = 0;
   }
@@ -207,6 +212,13 @@ export function createVehicleViewer({ host, modelURL, onStatus = () => {} }) {
     wake();
   }
 
+  function setRenderStyle(style = '2d') {
+    renderStyle = style === '3d' ? '3d' : '2d';
+    canvas.dataset.renderStyle = comic ? renderStyle : '3d';
+    interactionUntil = performance.now() + 120;
+    wake();
+  }
+
   function setAutoRotate(value) {
     const starting = !!value && !autoRotate;
     autoRotate = !!value;
@@ -268,7 +280,9 @@ export function createVehicleViewer({ host, modelURL, onStatus = () => {} }) {
     if (disposed || !controls) return;
     const directions = {
       hero: [1.5, 0.48, 1.25], front: [0, 0.3, 1.7],
-      side: [1.7, 0.3, 0], rear: [-1.15, 0.55, -1.5]
+      side: [1.7, 0.3, 0], rear: [-1.15, 0.55, -1.5],
+      // Chase cam for the sport world: straight behind, slightly above (decorative).
+      chase: [0.02, 0.36, -1.75]
     };
     if (!directions[view]) return;
     stopDeparture();
@@ -359,7 +373,7 @@ export function createVehicleViewer({ host, modelURL, onStatus = () => {} }) {
       lastFrame = now;
       if (departure) animateDeparture(now);
       else controls?.update(dt);
-      renderer.render(scene, camera);
+      if (renderStyle === '2d' && comic) comic.render(scene, camera); else renderer.render(scene, camera);
       frameCount += 1;
       updateReadback();
     }
@@ -417,6 +431,7 @@ export function createVehicleViewer({ host, modelURL, onStatus = () => {} }) {
     departure = null;
     disposeTree(scene, sourceMaterials);
     environmentTarget?.dispose();
+    comic?.dispose(); comic = null;
     renderer?.dispose();
     canvas.remove();
     updateReadback();
@@ -472,6 +487,8 @@ export function createVehicleViewer({ host, modelURL, onStatus = () => {} }) {
       renderer.toneMappingExposure = 1.02;
       renderer.shadowMap.enabled = true;
       renderer.shadowMap.type = THREE.PCFShadowMap;
+      try { comic = createComicPass(renderer); } catch { comic = null; }
+      canvas.dataset.renderStyle = comic ? renderStyle : '3d';
       controls = new OrbitControls(camera, canvas);
       controls.enableDamping = true;
       controls.dampingFactor = 0.075;
@@ -584,5 +601,5 @@ export function createVehicleViewer({ host, modelURL, onStatus = () => {} }) {
   const ready = initialize();
   // Keep disposal-before-await from producing an unhandled rejection; callers still receive the rejection.
   ready.catch(() => {});
-  return { canvas, ready, mount, setActive, setInteractive, setAppearance, setAutoRotate, resetView, setView, zoom, startDeparture, stopDeparture, dispose };
+  return { canvas, ready, mount, setActive, setInteractive, setAppearance, setRenderStyle, setAutoRotate, resetView, setView, zoom, startDeparture, stopDeparture, dispose };
 }

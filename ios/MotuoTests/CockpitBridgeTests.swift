@@ -30,6 +30,11 @@ final class CockpitBridgeTests:XCTestCase {
         XCTAssertGreaterThan(f.spectrum.max() ?? 0,0.1)
         XCTAssertEqual(SoundFeatures.analyze([.nan],sampleRate:48000).level,0)
     }
+    @MainActor func testBridgeAcceptsRecapHandoffActions(){
+        // The cockpit recap must be able to confirm itself and hand over to the native detail.
+        for action in ["wrappedShown","rideDetail","wrappedDone","finish","primary"]{XCTAssertTrue(CockpitWebView.Coordinator.commands.contains(action),action)}
+        XCTAssertFalse(CockpitWebView.Coordinator.commands.contains("eval"))
+    }
     func testAssetHandlerConfinesLocalResourcePaths(){
         let root=URL(fileURLWithPath:"/tmp/motuo-cockpit")
         XCTAssertEqual(CockpitAssetHandler.resource(URL(string:"motuo://bundle/vendor/three/three.module.js?v=2")!,root:root)?.lastPathComponent,"three.module.js")

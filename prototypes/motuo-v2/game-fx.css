@@ -1,0 +1,107 @@
+/* Exaggerated game layer (game-fx.js / game-world.js / cinematic departure).
+ * Rails: nothing opaque covers the speed; flashes are rate-limited in JS. */
+.game-world{position:absolute;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none;border-radius:inherit;display:none}
+.world-on .game-world{display:block}
+.world-on .fx-canvas,.world-on .world-atmosphere,.world-on .perimeter-flow{opacity:0!important}
+.world-on .cockpit:not(.map-focus){background:#02030a!important}
+.world-on .cockpit.vehicle-rest .game-world{opacity:.42}
+.world-on .drive-meter{background:linear-gradient(135deg,#0b1a2acc,#100c22c4)}
+.game-overlay{position:absolute;inset:0;width:100%;height:100%;z-index:6;pointer-events:none;border-radius:inherit}
+.game-flash{position:absolute;inset:0;z-index:7;pointer-events:none;opacity:0;border-radius:inherit;background:radial-gradient(ellipse at 50% 50%,rgba(var(--flash-rgb,240,248,255),1),rgba(var(--flash-rgb,240,248,255),.45) 55%,rgba(var(--flash-rgb,240,248,255),.15));mix-blend-mode:screen}
+
+/* Chase camera: the shared 3D canvas rides in front of the world. Lean is decorative. */
+.chase-host{position:absolute;left:50%;bottom:14%;height:50%;aspect-ratio:1.7;max-width:94%;translate:-50% 0;z-index:0;pointer-events:none;display:none;transform-origin:50% 92%}
+.world-on.sport-mode.immersive .cockpit:not(.vehicle-rest):not(.map-focus) .chase-host{display:block}
+.chase-host canvas{width:100%!important;height:100%!important;filter:drop-shadow(0 18px 24px #000a)}
+.chase-host:after{content:"";position:absolute;left:30%;right:30%;bottom:4%;height:10%;border-radius:50%;background:radial-gradient(ellipse,#ff3d5a66,transparent 70%);filter:blur(6px)}
+
+/* Speed: bigger, heat-coloured, chromatic split and bloom from CSS variables. */
+.speed-digits{position:relative}
+.speed-ghost{position:absolute;left:0;right:0;top:0;text-align:center;z-index:-1;pointer-events:none;color:var(--heat-color,#8de)!important;margin:0!important}
+.fx-standard .cockpit:not(.vehicle-rest) .speed-content{scale:1.18}
+.fx-extreme .cockpit:not(.vehicle-rest) .speed-content{scale:1.36}
+.fx-standard .cockpit:not(.vehicle-rest) .speed-value,.fx-extreme .cockpit:not(.vehicle-rest) .speed-value{color:color-mix(in srgb,#fff 52%,var(--heat-color,#fff));text-shadow:calc(var(--ca,0)*-3px) 0 rgba(255,40,110,.75),calc(var(--ca,0)*3px) 0 rgba(40,225,255,.75),0 0 calc(10px + var(--bloom,0)*46px) var(--heat-color,#8de),0 0 calc(var(--bloom,0)*64px) color-mix(in srgb,var(--heat-color,#8de) 55%,transparent);animation:none}
+.speed-aura{display:none;position:absolute;left:50%;top:52%;width:150%;aspect-ratio:1;translate:-50% -50%;border-radius:50%;pointer-events:none;z-index:-1;opacity:clamp(0,calc(var(--heat,0)*1.6 - .2),1);background:conic-gradient(from 0deg,transparent,var(--heat-color,#8de) 16%,transparent 32%,var(--heat-color,#8de) 58%,transparent 74%,var(--heat-color,#8de) 90%,transparent);-webkit-mask:radial-gradient(circle,transparent 50%,#000 54%,#000 60%,transparent 66%);mask:radial-gradient(circle,transparent 50%,#000 54%,#000 60%,transparent 66%);animation:aura-spin 1.4s linear infinite}
+.speed-aura:after{content:"";position:absolute;inset:-12%;border-radius:50%;background:radial-gradient(circle,transparent 48%,color-mix(in srgb,var(--heat-color,#8de) 40%,transparent) 62%,transparent 72%)}
+.fx-standard.immersive .cockpit:not(.vehicle-rest) .speed-aura,.fx-extreme.immersive .cockpit:not(.vehicle-rest) .speed-aura{display:block}
+@keyframes aura-spin{to{rotate:360deg}}
+
+/* Giant callouts (game events), score HUD and rhythm judgement — all labelled game/demo. */
+.game-callout{position:absolute;left:50%;top:7%;translate:-50% 0;z-index:9;pointer-events:none;text-align:center;white-space:nowrap;--rgb:120,232,255}
+.game-callout[data-tone=magenta]{--rgb:255,90,220}.game-callout[data-tone=red]{--rgb:255,96,88}.game-callout[data-tone=violet]{--rgb:186,120,255}.game-callout[data-tone=amber]{--rgb:255,196,90}
+.callout-word{display:block;font:italic 900 calc(clamp(46px,11vw,132px) * var(--callout-scale,1))/.9 "Avenir Next","Arial Black",var(--sans);letter-spacing:-.02em;color:#fff;-webkit-text-stroke:2px rgb(var(--rgb));text-shadow:0 0 18px rgba(var(--rgb),.95),0 0 64px rgba(var(--rgb),.6),-5px 0 rgba(255,40,120,.55),5px 0 rgba(40,230,255,.55)}
+.callout-sub{display:inline-block;margin-top:8px;padding:4px 10px;border-radius:20px;background:#05070dcc;font:600 10px var(--mono);letter-spacing:2px;color:rgb(var(--rgb))}
+.game-score{position:absolute;right:18px;top:30px;z-index:8;text-align:right;font:8px var(--mono);letter-spacing:1.5px;color:#9fb6cc;pointer-events:none;display:none}
+.immersive .game-score{display:block}
+.game-score b{display:block;font:italic 800 28px/1 "Avenir Next",var(--sans);color:#fff;text-shadow:0 0 16px #7be8ffaa;letter-spacing:0}
+.game-score em{display:block;font:italic 700 12px var(--mono);color:#ffd27a;margin:3px 0}
+.game-score small{display:block;font-size:7px;color:#e6c58a}
+.game-judge{position:absolute;right:12px;top:-6px;z-index:5;pointer-events:none;font:italic 900 20px "Avenir Next",var(--sans);letter-spacing:1px;color:#7be8ff;text-shadow:0 0 14px #7be8ff}
+.game-judge[data-grade=perfect]{color:#ffd27a;text-shadow:0 0 16px #ffb84d}
+.game-judge[data-grade=good]{color:#c9d3e0;text-shadow:none}
+.game-transition{position:absolute;left:50%;top:44%;translate:-50% -50%;z-index:9;pointer-events:none;font:italic 900 clamp(26px,6vw,64px) "Avenir Next",var(--sans);color:#fff;letter-spacing:.12em;text-shadow:0 0 30px #c48cff,-4px 0 #ff3d8a99,4px 0 #3de3ff99;white-space:nowrap}
+
+/* Bullet time / rewind / glitch */
+.game-paused{position:absolute;inset:0;z-index:8;display:grid;place-content:center;pointer-events:none;text-align:center}
+.game-paused b{font:italic 900 clamp(70px,17vw,200px)/.85 "Avenir Next","Arial Black",var(--sans);color:transparent;-webkit-text-stroke:2px #dce9ffd9;letter-spacing:.05em;text-shadow:0 0 50px #9fb8ff55}
+.game-paused small{font:600 10px var(--mono);letter-spacing:3px;color:#cfd9ef;margin-top:10px}
+.bullet-time .drive-meter{filter:saturate(.25)}
+.rewinding .game-overlay{background:repeating-linear-gradient(0deg,#ffffff12 0 2px,transparent 2px 7px);animation:rewind-roll .34s linear}
+@keyframes rewind-roll{to{background-position:0 -70px}}
+.glitching .speed-content{--ca:3.2!important}
+
+/* Cinematic departure */
+.cine-backdrop{position:fixed;inset:0;z-index:40;background:#000;pointer-events:auto;cursor:pointer;overflow:hidden}
+.cine-flare{position:absolute;width:70vmax;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,#fff,#d8f4ffee 6%,#78c8ff55 22%,transparent 58%);opacity:0}
+.cine-white{position:absolute;inset:0;background:#fff;opacity:0}
+.cine-skip{position:fixed;right:max(16px,env(safe-area-inset-right));top:max(14px,env(safe-area-inset-top));z-index:75;min-height:44px;padding:0 16px;border-radius:22px;border:1px solid #ffffff55;background:#0008;color:#fff;font:600 13px var(--sans);letter-spacing:1px;backdrop-filter:blur(8px)}
+.cine-active .cockpit{z-index:60;pointer-events:none}
+.cine-active .cockpit:not(.map-focus){background:transparent!important}
+.cine-hold>*:not(.instrument):not(.game-world):not(.fx-canvas):not(.cine-word):not(.cine-shock):not(.drive-meters):not(.game-overlay){opacity:0!important}
+.cine-hold .instrument>:not(.gauge),.cine-hold .gauge>:not(.speed-flight){opacity:0!important}
+.cine-hold .speed-value{text-shadow:0 0 30px #8de8ff,0 0 80px #4cc8ff}
+.cine-word{position:absolute;left:50%;top:9%;z-index:1;pointer-events:none;white-space:nowrap;font:italic 900 clamp(56px,14vw,170px)/1 "Avenir Next","Arial Black",var(--sans);color:#fff;-webkit-text-stroke:2px #7be8ff;text-shadow:0 0 30px #7be8ff,0 0 90px #b07bff,-6px 0 #ff3d8a88,6px 0 #3de3ff88}
+.cine-shock{position:absolute;z-index:8;border-radius:50%;border:5px solid #fff;box-shadow:0 0 40px #7be8ff,inset 0 0 30px #7be8ff;pointer-events:none}
+.departure-charge{z-index:50}
+
+/* Wrapped recap */
+.wrapped{position:fixed;inset:0;z-index:80;display:grid;grid-template-rows:1fr auto;background:radial-gradient(ellipse at 50% 35%,#1b2a6a,#07061a 62%,#020208);color:#fff;overflow:hidden;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+.wrapped canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.wrapped-stage{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:18px;--rgb:120,232,255}
+.wrapped-stage[data-tone=violet]{--rgb:186,120,255}.wrapped-stage[data-tone=amber]{--rgb:255,196,90}.wrapped-stage[data-tone=magenta]{--rgb:255,90,220}
+.wrapped-kicker{font:600 11px var(--mono);letter-spacing:5px;color:rgb(var(--rgb))}
+.wrapped-title{font:700 clamp(24px,5vw,44px) var(--sans);margin:10px 0 0}
+.wrapped-number{font:italic 900 clamp(96px,26vw,280px)/.95 "Avenir Next","Arial Black",var(--sans);letter-spacing:-.04em;color:#fff;text-shadow:0 0 40px rgba(var(--rgb),.8),0 0 120px rgba(var(--rgb),.5),-6px 0 #ff3d8a88,6px 0 #3de3ff88}
+.wrapped-number[data-transition=tally]{opacity:.85}
+.wrapped-unit{font:italic 700 clamp(18px,4vw,34px) var(--sans);color:rgb(var(--rgb))}
+.wrapped-note{margin-top:14px;font:11px var(--sans);color:#c8cfe6;max-width:520px}
+.wrapped-controls{position:relative;display:flex;gap:10px;justify-content:center;padding:14px 18px 22px}
+.wrapped-controls button{min-height:44px;padding:0 18px;border-radius:12px;border:1px solid #ffffff3a;background:#ffffff12;color:#fff;font:600 13px var(--sans)}
+.wrapped-controls .primary{background:linear-gradient(100deg,#a6e9ff,#ceb0ff);color:#081020;border:0}
+.wrapped:not([data-step=card]) [data-wrapped-close],.wrapped [data-wrapped-detail]{display:none}
+.wrapped[data-native=true][data-step=card] [data-wrapped-detail]{display:inline-flex;align-items:center}
+.wrapped[data-native=true][data-step=card] [data-wrapped-close]{background:#ffffff12;color:#fff;border:1px solid #ffffff3a}
+.wrapped[data-step=card] [data-wrapped-next],.wrapped[data-step=card] [data-wrapped-skip]{display:none}
+.wrapped-badge{position:absolute;left:16px;top:max(14px,env(safe-area-inset-top));font:600 9px var(--mono);letter-spacing:2px;color:#e6c58a}
+.wrapped-card{position:relative;width:min(92vw,420px);padding:26px 24px;border-radius:26px;background:linear-gradient(150deg,#16224acc,#2a1440cc);border:1px solid #ffffff2e;box-shadow:0 0 0 1px #7be8ff33,0 30px 80px #0009,inset 0 0 60px #7be8ff14;text-align:left}
+.card-kicker{font:600 10px var(--mono);letter-spacing:4px;color:#7be8ff}
+.card-rating{font:italic 900 120px/1 "Avenir Next","Arial Black",var(--sans);background:linear-gradient(120deg,#fff,#ffd27a 40%,#ff5ad8);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 22px #ffb84d88);margin:6px 0 0}
+.card-score{font:italic 800 26px var(--sans);color:#fff;margin-bottom:12px}
+.card-grid{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;margin:0;font-size:13px}
+.card-grid dt{color:#9fb0cc}.card-grid dd{margin:0;font-family:var(--mono);text-align:right}
+.card-note{margin:14px 0 0;font-size:10px;line-height:1.6;color:#e6c58a}
+@media(max-height:570px) and (orientation:landscape){
+ .callout-word{font-size:calc(66px * var(--callout-scale,1))}.game-callout{left:60%;top:4%}
+ .game-score{top:22px}.game-score b{font-size:20px}
+ .chase-host{bottom:38%;height:46%;left:56%}
+ .wrapped-number{font-size:120px}.wrapped-card{padding:14px 18px;display:grid;grid-template-columns:auto 1fr;gap:0 18px;width:min(92vw,620px)}.card-rating{font-size:84px;grid-row:1/4}.card-grid{grid-column:2}.card-note{grid-column:1/3}
+ .cine-word{font-size:84px}
+ .fx-standard .cockpit:not(.vehicle-rest) .speed-content,.fx-extreme .cockpit:not(.vehicle-rest) .speed-content{scale:1.16;translate:0 10px}
+}
+@media(orientation:portrait),(max-width:600px){.game-score{right:10px;top:22px}.game-score b{font-size:20px}.game-judge{font-size:15px}}
+
+/* Reduced motion: state only. Performance eco: lighter glows. */
+.reduced-effects .game-overlay,.reduced-effects .speed-aura,.reduced-effects .game-flash,.reduced-effects .cine-backdrop,.reduced-effects .wrapped canvas{display:none!important}
+.reduced-effects .cockpit .speed-value{text-shadow:none!important}
+@media(prefers-reduced-motion:reduce){.game-overlay,.speed-aura,.game-flash,.wrapped canvas{display:none!important}}
+.perf-eco .speed-aura{animation-duration:3s}.perf-eco .callout-word{text-shadow:0 0 18px rgba(var(--rgb),.9)}.perf-eco .chase-host canvas{filter:none}

@@ -1,0 +1,38 @@
+/* Bundled display fonts (assets/fonts, SIL OFL 1.1, subset + renamed; see ThirdPartyNotices).
+ * font-display:block + preload: no flash of the system font on first paint.
+ * Declared weight range stops the browser from faking bold on a single-weight face. */
+@font-face{font-family:"MotuoNum";src:url("assets/fonts/motuo-num.woff2") format("woff2");font-weight:100 900;font-style:normal;font-display:block}
+@font-face{font-family:"MotuoDisplay";src:url("assets/fonts/motuo-display.woff2") format("woff2");font-weight:100 900;font-style:normal;font-display:block}
+@font-face{font-family:"MotuoHan";src:url("assets/fonts/motuo-han.woff2") format("woff2");font-weight:100 900;font-style:normal;font-display:block}
+:root{--font-num:"MotuoNum","MotuoHan",ui-monospace,"SF Mono",monospace;--font-display:"MotuoDisplay","MotuoHan","PingFang SC",sans-serif;--font-han:"MotuoHan","MotuoDisplay","PingFang SC","Microsoft YaHei",sans-serif}
+
+/* Numbers: tabular Orbitron-derived digits, so the reading never jitters in width. */
+#app .speed-value,#app .accel-readout strong,#app .game-score b,#app .wrapped-number,#app .trip-info,#app .card-grid dd,#app .card-score,#app #map-speed,#app .recap-metrics strong,.wrapped .wrapped-number,.wrapped .card-grid dd{font-family:var(--font-num);font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+#app .speed-value{letter-spacing:-.04em}
+/* Display words (English giant type). */
+.callout-word,.cine-word,.game-paused b,.card-rating,.game-transition,.game-judge,.scene-tag,.wordmark,.event-word,.callout-sub,.wrapped-kicker,.card-kicker{font-family:var(--font-display)!important;font-weight:400!important}
+/* Chinese headlines: 得意黑-derived oblique. Body text stays the system face for legibility. */
+#page-title,#sound-trend-value,.wrapped-title,.wrapped-note,.callout-sub,.vehicle-title small,.intro h2,.recap h2,.game-paused small,.bike-onomatopoeia,.bike-charge,.bike-hint,.wrapped-unit,.card-grid dt,.card-score{font-family:var(--font-han)!important;font-weight:400}
+.callout-sub,.game-paused small{font-family:var(--font-han)!important;letter-spacing:1px}
+
+/* ---- Text effects by intensity ---- */
+/* Standard: gradient fill + glow + slant. */
+.fx-standard .callout-word,.fx-extreme .callout-word{position:relative;display:block;background:linear-gradient(180deg,#fff 0%,#fff 40%,rgb(var(--rgb)) 64%,#fff 100%);-webkit-background-clip:text;background-clip:text;color:transparent;transform:skewX(-10deg)}
+.fx-standard #page-title,.fx-extreme #page-title{background:linear-gradient(100deg,#fff 20%,#9fe9ff 60%,#d8a8ff);-webkit-background-clip:text;background-clip:text;color:transparent;font-size:1.25em;letter-spacing:.06em;transform:skewX(-8deg);display:inline-block;filter:drop-shadow(0 0 8px #64d8ff66)}
+.fx-standard #sound-trend-value,.fx-extreme #sound-trend-value{background:linear-gradient(180deg,#fff 35%,#7be8ff);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 10px #59d6ff66)}
+.fx-standard .cockpit:not(.vehicle-rest) .speed-digits{transform:skewX(calc(var(--heat,0) * -7deg))}
+.fx-extreme .cockpit:not(.vehicle-rest) .speed-digits{transform:skewX(calc(-4deg + var(--heat,0) * -12deg))}
+/* Extreme: stroke + fill gradient on the speed, glitch slices on the giant words. */
+.fx-extreme .cockpit:not(.vehicle-rest) .speed-value{background:linear-gradient(180deg,#fff 28%,var(--heat-color,#8de) 88%);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-stroke:1.5px #ffffff59}
+.fx-extreme .callout-word::before,.fx-extreme .callout-word::after{content:attr(data-text);position:absolute;inset:0;-webkit-text-stroke:0;pointer-events:none;mix-blend-mode:screen;text-shadow:none}
+.fx-extreme .callout-word::before{color:#ff2fa8;clip-path:inset(8% 0 58% 0);translate:-6px 0;animation:glitch-a .5s steps(2,end) infinite}
+.fx-extreme .callout-word::after{color:#2ff3ff;clip-path:inset(60% 0 6% 0);translate:6px 0;animation:glitch-b .42s steps(2,end) infinite}
+@keyframes glitch-a{0%{translate:-6px 0;clip-path:inset(8% 0 58% 0)}50%{translate:4px -2px;clip-path:inset(30% 0 40% 0)}}
+@keyframes glitch-b{0%{translate:6px 0;clip-path:inset(60% 0 6% 0)}50%{translate:-5px 2px;clip-path:inset(46% 0 22% 0)}}
+.wrapped .wrapped-number{background:linear-gradient(180deg,#fff 30%,rgb(var(--rgb)) 92%);-webkit-background-clip:text;background-clip:text;color:transparent;transform:skewX(-8deg)}
+.fx-extreme .cine-word{background:linear-gradient(180deg,#fff 35%,#7be8ff 70%,#d79bff);-webkit-background-clip:text;background-clip:text;color:transparent}
+/* Restrained: the fonts only. */
+.fx-restrained .callout-word::before,.fx-restrained .callout-word::after{display:none}
+.reduced-effects .callout-word::before,.reduced-effects .callout-word::after{animation:none!important;display:none}
+@media(prefers-reduced-motion:reduce){.callout-word::before,.callout-word::after{display:none}}
+.font-status{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}

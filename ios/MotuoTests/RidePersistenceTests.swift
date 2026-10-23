@@ -14,7 +14,7 @@ import SwiftData
     }
     func testFinishSaveFailureKeepsRecoveryAndRetryCompletesOnce() throws {
         try withIsolatedDefaults {
-            let container = try ModelContainer(for: Vehicle.self, Ride.self, MaintenanceEntry.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+            let container = try ModelContainer(for: Vehicle.self, Ride.self, MaintenanceEntry.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true, cloudKitDatabase: .none))
             let context = ModelContext(container); context.autosaveEnabled = false
             let settings = AppSettings(); settings.demoMode = true; settings.watchHaptics = false
             var shouldFail = false
@@ -44,7 +44,7 @@ import SwiftData
     }
     func testResumeSaveFailureDoesNotRestartSensorsOrMarkRecording() throws {
         try withIsolatedDefaults {
-            let container = try ModelContainer(for: Vehicle.self, Ride.self, MaintenanceEntry.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+            let container = try ModelContainer(for: Vehicle.self, Ride.self, MaintenanceEntry.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true, cloudKitDatabase: .none))
             let context = ModelContext(container); context.autosaveEnabled = false
             let settings = AppSettings(); settings.demoMode = true; settings.watchHaptics = false
             var shouldFail = false
@@ -65,7 +65,7 @@ import SwiftData
     }
     func testFinishFlushFailureRecoversConfirmedChunksAndCompleteTailOnActualRetry() throws {
         try withIsolatedDefaults {
-            let container = try ModelContainer(for: Vehicle.self, Ride.self, MaintenanceEntry.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true))
+            let container = try ModelContainer(for: Vehicle.self, Ride.self, MaintenanceEntry.self, configurations: ModelConfiguration(isStoredInMemoryOnly: true, cloudKitDatabase: .none))
             let context = ModelContext(container); context.autosaveEnabled = false
             let settings = AppSettings(); settings.demoMode = true; settings.watchHaptics = false
             var causeFailure = true

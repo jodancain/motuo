@@ -125,6 +125,6 @@ final class CockpitV3Tests: XCTestCase {
         let info = Bundle.main.infoDictionary ?? [:]
         let orientations = Set(info["UISupportedInterfaceOrientations"] as? [String] ?? [])
         XCTAssertEqual(orientations, ["UIInterfaceOrientationPortrait", "UIInterfaceOrientationLandscapeLeft", "UIInterfaceOrientationLandscapeRight"])
-        XCTAssertEqual(info["CFBundleShortVersionString"] as? String, "0.3.0"); XCTAssertEqual(info["CFBundleVersion"] as? String, "3")
+        XCTAssertEqual(info["CFBundleShortVersionString"] as? String, "0.4.0"); XCTAssertEqual(info["CFBundleVersion"] as? String, "4")
     }
 }

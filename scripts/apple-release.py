@@ -5,6 +5,8 @@ import argparse, base64, hashlib, json, os, plistlib, re, shlex, subprocess, url
 
 ROOT = Path(__file__).resolve().parents[1]
 BUNDLE = 'cn.yundongyl.motuo'
+CONTAINER = 'iCloud.'+BUNDLE
+PROFILE_DIRS = [Path.home()/'Library/MobileDevice/Provisioning Profiles', Path.home()/'Library/Developer/Xcode/UserData/Provisioning Profiles']
 
 def settings(path):
     result = {}
@@ -40,7 +42,9 @@ def verify_archive(archive, expected_build):
         if not (path/'Assets.car').exists(): raise SystemExit('App icon assets missing from archive')
         if any(p.suffix.lower() in ['.p8','.pem','.p12','.mobileconfig','.pdf','.jsonl'] or p.name.endswith('.env') for p in path.rglob('*')):
             raise SystemExit('Unexpected private data or credential-like file in archive')
-        results.append({'bundleId':identifier,'version':info['CFBundleShortVersionString'],'build':info['CFBundleVersion'],'profile':profile['Name'],'signedIdentifier':appIdentifier,'codeSignatureVerified':True})
+        signed = subprocess.run(['codesign','-d','--entitlements','-','--xml',str(path)],capture_output=True).stdout
+        signed = plistlib.loads(signed) if signed.strip() else {}
+        results.append({'iCloudDocuments':CONTAINER in signed.get('com.apple.developer.icloud-container-identifiers',[]),'bundleId':identifier,'version':info['CFBundleShortVersionString'],'build':info['CFBundleVersion'],'profile':profile['Name'],'signedIdentifier':appIdentifier,'codeSignatureVerified':True})
     if results[0]['version'] != results[1]['version']: raise SystemExit('Phone/watch version mismatch')
     if not (app/'ThirdPartyNotices.txt').exists(): raise SystemExit('Third-party license notice missing')
     cockpit=app/'Cockpit'
@@ -52,7 +56,26 @@ def verify_archive(archive, expected_build):
     (archive.parent/'archive-verification.json').write_text(json.dumps(receipt,indent=2))
     print(json.dumps(receipt))
 
-def apple_status(config):
+def installed_profile(name):
+    """Newest unexpired installed profile with this exact name, decoded; None when absent."""
+    import datetime
+    found = []
+    for folder in PROFILE_DIRS:
+        for path in folder.glob('*.mobileprovision'):
+            decoded = subprocess.run(['security','cms','-D','-i',str(path)],capture_output=True)
+            if decoded.returncode: continue
+            profile = plistlib.loads(decoded.stdout)
+            if profile.get('Name') == name and profile['ExpirationDate'] > datetime.datetime.now(): found.append(profile)
+    return max(found, key=lambda p: p['CreationDate']) if found else None
+
+def profile_has_icloud(profile):
+    entitlements = (profile or {}).get('Entitlements', {})
+    containers = entitlements.get('com.apple.developer.icloud-container-identifiers', [])
+    services = entitlements.get('com.apple.developer.icloud-services', [])
+    services = [services] if isinstance(services, str) else services
+    return CONTAINER in containers and ('*' in services or 'CloudDocuments' in services)
+
+def asc_token(config):
     key = Path(config['ASC_KEY_PATH']).expanduser()
     header = {'alg':'ES256', 'kid':config['ASC_KEY_ID'], 'typ':'JWT'}
     import time
@@ -65,10 +88,58 @@ def apple_status(config):
     offset = 3; length = sig[offset]; r = sig[offset+1:offset+1+length]; offset += 1+length
     if sig[offset] != 2: raise ValueError('Unexpected signing response')
     length = sig[offset+1]; s = sig[offset+2:offset+2+length]
-    token = (message+b'.'+b64(r.lstrip(b'\0').rjust(32,b'\0')+s.lstrip(b'\0').rjust(32,b'\0'))).decode()
-    def get(path, params):
-        request = urllib.request.Request('https://api.appstoreconnect.apple.com'+path+'?'+urllib.parse.urlencode(params), headers={'Authorization':'Bearer '+token})
-        with urllib.request.urlopen(request, timeout=40) as response: return json.load(response)
+    return (message+b'.'+b64(r.lstrip(b'\0').rjust(32,b'\0')+s.lstrip(b'\0').rjust(32,b'\0'))).decode()
+
+def asc_client(config):
+    token = asc_token(config)
+    def call(method, path, params=None, body=None):
+        url = 'https://api.appstoreconnect.apple.com'+path+('?'+urllib.parse.urlencode(params) if params else '')
+        request = urllib.request.Request(url, method=method, data=json.dumps(body).encode() if body else None,
+                                         headers={'Authorization':'Bearer '+token,'Content-Type':'application/json'})
+        with urllib.request.urlopen(request, timeout=40) as response:
+            raw = response.read(); return json.loads(raw) if raw else None
+    return call
+
+def motuo_bundle(call, identifier=BUNDLE):
+    # Prefix search also returns the Watch identifier; require exact equality.
+    matches = [x for x in call('GET','/v1/bundleIds',{'filter[identifier]':identifier,'limit':20})['data'] if x['attributes']['identifier'] == identifier]
+    if not matches: raise SystemExit('Bundle ID not registered: '+identifier)
+    return matches[0]
+
+def icloud_status(config):
+    """Read-only: App ID capability on Apple's side plus the iCloud entitlements of the installed release profile."""
+    call = asc_client(config); bundle = motuo_bundle(call)
+    capabilities = [c['attributes'].get('capabilityType') for c in call('GET',f"/v1/bundleIds/{bundle['id']}/bundleIdCapabilities")['data']]
+    profile = installed_profile('Motuo App Store')
+    entitlements = (profile or {}).get('Entitlements', {})
+    return {'container':CONTAINER,'appIdCapabilities':capabilities,'appIdICloudEnabled':'ICLOUD' in capabilities,
+            'installedProfile':(profile or {}).get('UUID'),'profileContainers':entitlements.get('com.apple.developer.icloud-container-identifiers',[]),
+            'profileHasICloud':profile_has_icloud(profile),
+            'note':'App Store Connect API cannot create iCloud containers or assign them to an App ID; that step is on developer.apple.com.'}
+
+def refresh_profile(config, dry_run):
+    """Regenerate only the Motuo iPhone App Store profile (same name, current distribution certificate) and install it."""
+    call = asc_client(config); bundle = motuo_bundle(call)
+    local = subprocess.run(['security','find-identity','-v','-p','codesigning'],capture_output=True,text=True).stdout
+    certificates = [c for c in call('GET','/v1/certificates',{'filter[certificateType]':'DISTRIBUTION,IOS_DISTRIBUTION','limit':50})['data']
+                    if hashlib.sha1(base64.b64decode(c['attributes']['certificateContent'])).hexdigest().upper() in local]
+    if not certificates: raise SystemExit('No distribution certificate on Apple matches a local signing identity; nothing changed.')
+    old = [p for p in call('GET',f"/v1/bundleIds/{bundle['id']}/profiles",{'limit':50})['data']
+           if p['attributes']['name'] == 'Motuo App Store' and p['attributes']['profileType'] == 'IOS_APP_STORE']
+    plan = {'bundleId':BUNDLE,'deleteProfiles':[p['id'] for p in old],'certificates':[c['id'] for c in certificates],'dryRun':dry_run}
+    if dry_run: return plan
+    for profile in old: call('DELETE','/v1/profiles/'+profile['id'])
+    created = call('POST','/v1/profiles',body={'data':{'type':'profiles','attributes':{'name':'Motuo App Store','profileType':'IOS_APP_STORE'},
+        'relationships':{'bundleId':{'data':{'type':'bundleIds','id':bundle['id']}},'certificates':{'data':[{'type':'certificates','id':c['id']} for c in certificates]}}}})
+    content = base64.b64decode(created['data']['attributes']['profileContent'])
+    uuid = created['data']['attributes']['uuid']
+    PROFILE_DIRS[0].mkdir(parents=True, exist_ok=True); (PROFILE_DIRS[0]/(uuid+'.mobileprovision')).write_bytes(content)
+    decoded = plistlib.loads(subprocess.run(['security','cms','-D','-i',str(PROFILE_DIRS[0]/(uuid+'.mobileprovision'))],capture_output=True,check=True).stdout)
+    return {**plan,'created':created['data']['id'],'uuid':uuid,'state':created['data']['attributes']['profileState'],'profileHasICloud':profile_has_icloud(decoded)}
+
+def apple_status(config):
+    call = asc_client(config)
+    def get(path, params): return call('GET', path, params)
     apps = [app for app in get('/v1/apps', {'filter[bundleId]':BUNDLE,'limit':10})['data'] if app['attributes'].get('bundleId') == BUNDLE]
     if not apps: return {'appRecord':False, 'bundleId':BUNDLE, 'builds':[]}
     app = apps[0]
@@ -94,6 +165,10 @@ def main():
     parser.add_argument('--status', action='store_true')
     parser.add_argument('--upload', action='store_true')
     parser.add_argument('--build-number', default='1')
+    parser.add_argument('--icloud',choices=['auto','on','off'],default='auto',help='auto: sign the iCloud Drive entitlements only when the installed Motuo App Store profile carries '+CONTAINER+'; off: always build the local-only variant')
+    parser.add_argument('--check-icloud',action='store_true',help='Read-only: report App ID iCloud capability and installed profile containers')
+    parser.add_argument('--refresh-profile',action='store_true',help='Regenerate and install only the Motuo App Store profile (after enabling iCloud on the App ID)')
+    parser.add_argument('--dry-run',action='store_true',help='With --refresh-profile: show what would change')
     parser.add_argument('--build-dir',type=Path,default=Path.home()/'Library/Developer/MotuoBuilds',help='Build outside iCloud/FileProvider folders to prevent FinderInfo signing failures')
     args = parser.parse_args(); config = settings(args.env)
     if args.keychain_env and (args.archive or args.export_):
@@ -109,7 +184,12 @@ def main():
     if args.archive:
         subprocess.run(['python3',str(ROOT/'scripts/prepare-native-cockpit.py')],check=True)
         run(['xcodegen','generate'], build/'generate.log')
-        run(['xcodebuild','-project','Motuo.xcodeproj','-scheme','Motuo','-configuration','Release','-destination','generic/platform=iOS','-derivedDataPath',str(build/'ReleaseDerivedData'),'-archivePath',str(archive),'CURRENT_PROJECT_VERSION='+args.build_number,'archive'], build/'archive.log')
+        ready = profile_has_icloud(installed_profile('Motuo App Store'))
+        if args.icloud == 'on' and not ready: raise SystemExit('--icloud on, but the installed Motuo App Store profile has no '+CONTAINER+' (see docs/APPLE_RELEASE.md, Roadlog iCloud).')
+        cloud = args.icloud == 'on' or (args.icloud == 'auto' and ready)
+        overrides = [] if cloud else ['CODE_SIGN_ENTITLEMENTS=Motuo/Motuo-NoCloud.entitlements']
+        print('iCloud Drive entitlements: '+('signed' if cloud else 'omitted (local-only roadlog variant)'))
+        run(['xcodebuild','-project','Motuo.xcodeproj','-scheme','Motuo','-configuration','Release','-destination','generic/platform=iOS','-derivedDataPath',str(build/'ReleaseDerivedData'),'-archivePath',str(archive),'CURRENT_PROJECT_VERSION='+args.build_number,*overrides,'archive'], build/'archive.log')
         print('Signed archive: '+str(archive))
         verify_archive(archive, args.build_number)
     if args.export_:
@@ -118,6 +198,11 @@ def main():
         run(['xcodebuild','-exportArchive','-archivePath',str(archive),'-exportOptionsPlist',str(path),'-exportPath',str(exported)], build/'export.log')
         ipa = next(exported.glob('*.ipa'))
         print(json.dumps({'ipa':str(ipa),'bytes':ipa.stat().st_size,'sha256':hashlib.sha256(ipa.read_bytes()).hexdigest()}))
+    if args.check_icloud or args.refresh_profile:
+        for key in ['ASC_KEY_ID','ASC_ISSUER_ID','ASC_KEY_PATH']:
+            if not config.get(key): parser.error('Missing '+key)
+        if args.check_icloud: print(json.dumps(icloud_status(config), ensure_ascii=False))
+        if args.refresh_profile: print(json.dumps(refresh_profile(config, args.dry_run), ensure_ascii=False))
     if args.status or args.upload:
         for key in ['ASC_KEY_ID','ASC_ISSUER_ID','ASC_KEY_PATH']:
             if not config.get(key): parser.error('Missing '+key)

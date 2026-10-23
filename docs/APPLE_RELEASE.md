@@ -56,3 +56,18 @@ Apple Music 授权、订阅和实际播放，以及真实手机与 Watch 的安�
 分支 `feature/v3-comic-cockpit`（未合并 main）。签名 IPA 来自独立构建目录 `~/Library/Developer/MotuoBuilds/0.3.0-3-fix1/`（不覆盖 0.2.0 (2) 归档）：9,459,363 字节，SHA-256 `f871796cdf48b275a45b65120168b1bf453a80fcbf2c62a7d95b7fd8c8c28d44`。2026-10-21 07:50（北京时间）Apple 返回 `UPLOAD SUCCEEDED`，Delivery/Build ID `d395e002-a87b-4ff4-936a-695d36f2f965`；约 4 分钟后处理为 `VALID`，`usesNonExemptEncryption=false`，已写入简体中文测试说明，手动加入 `Motuo Internal` 后回读 `IN_BETA_TESTING`，组内构建 3/2/1。未创建外部测试或公开链接。
 
 包内含 C5913 GSX-R1000 近似 GLB（0.2.0 (2) 亦含），其再分发授权未核验，仅限本人内部测试；外部测试或公开发布前须取得授权或替换模型。真机安装、旋转手感、帧率、发热未验收。
+
+## 10 月 22 日：路谱 iCloud Drive 能力（`0.4.0 (4)`）
+
+路谱上传使用 iCloud Drive 文档容器 `iCloud.cn.yundongyl.motuo`（不用 CloudKit 数据库）。App 授权文件 `ios/Motuo/Motuo.entitlements` 声明了容器和 `CloudDocuments`；`Motuo-NoCloud.entitlements` 是空的，用来构建没有 iCloud 的版本。
+
+**现状（2026-10-22 通过 API 只读核查）：** App ID `cn.yundongyl.motuo` 只有 `IN_APP_PURCHASE`、`MUSIC_KIT` 两项能力，没有开 iCloud；已安装的 `Motuo App Store` 描述文件里也没有容器。App Store Connect API 不能创建 iCloud 容器，也不能把容器关联到 App ID。Xcode 自动签名需要开发证书，而本机这个团队只有分发证书；要走这条路就得在团队里新建证书，所以没有做。
+
+**需要本人在 developer.apple.com 上操作（只动 Motuo，不碰其他 App ID）：**
+1. Certificates, IDs & Profiles → Identifiers，右上角筛选选 **iCloud Containers**，点 ＋，选 iCloud Containers，Description 填 `Motuo`，Identifier 填 `iCloud.cn.yundongyl.motuo`，然后 Continue → Register。
+2. 回到 App IDs，打开 `cn.yundongyl.motuo`（不是 `.watchkitapp`），在 Capabilities 里勾选 **iCloud**，选带 CloudKit 支持的那一项（Xcode 6 及以后的方式），点 Configure / Edit，勾上 `iCloud.cn.yundongyl.motuo` → Continue → Save，在提示里确认修改。
+3. 回到本机运行 `python3 scripts/apple-release.py --refresh-profile --env <签名 env>`。它只删除并重建同名的 `Motuo App Store` 描述文件（使用现有分发证书）并安装；之后用 `--check-icloud` 确认 `profileHasICloud: true`。Watch 描述文件不需要改。
+
+**构建开关：** `apple-release.py --archive` 默认 `--icloud auto`：如果已安装的 `Motuo App Store` 描述文件包含这个容器，就签入 iCloud 授权；否则用 `CODE_SIGN_ENTITLEMENTS=Motuo/Motuo-NoCloud.entitlements` 构建“仅本地”版本，并在输出里说明。`--icloud on` 时缺少能力直接报错，`--icloud off` 时始终不带 iCloud。`archive-verification.json` 的每个目标都会记录 `iCloudDocuments` 是否真的签进去了。没有 iCloud 能力的版本，路谱照常保存在本机，在“文件”App 里可见、可分享导出，设置页会显示“仅本地”及原因，不会崩溃。
+
+**注意：** App 有了 iCloud 授权后，SwiftData 默认（`.automatic`）会尝试为本地库开启 CloudKit 同步，而现有模型不满足 CloudKit 的要求，启动时会直接崩溃（模拟器上已复现）。现在 `ModelConfiguration(cloudKitDatabase: .none)`，本地库的路径和内容都不变。

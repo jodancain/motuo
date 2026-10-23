@@ -356,6 +356,23 @@ private final class FakeCloud: RoadlogCloudProvider, @unchecked Sendable {
         XCTAssertEqual(queue.item("open")?.state, .placedInCloud)
         XCTAssertEqual(provider.placed, ["open"])
     }
+    /// The real iCloud Drive provider on this simulator: reports what it actually sees and must degrade, not crash.
+    func testRealICloudProviderOnThisDeviceDegradesToLocalOnly() async throws {
+        let root = tempRoot(); defer { try? FileManager.default.removeItem(at: root) }
+        let availability = await Task.detached { ICloudDriveProvider().availability() }.value
+        print("ROADLOG_ICLOUD_AVAILABILITY \(availability)")
+        let queue = RoadlogUploadQueue(localRoot: root, store: root.appendingPathComponent("q.json"), provider: ICloudDriveProvider())
+        let name = try sealedPackage(root); queue.enqueue(name, simulated: false)
+        await queue.process()
+        switch availability {
+        case .unavailable:
+            XCTAssertEqual(queue.item(name)?.state, .localOnly)
+            XCTAssertTrue(FileManager.default.fileExists(atPath: root.appendingPathComponent(name).appendingPathComponent("manifest.json").path))
+        case let .available(folder):
+            XCTAssertEqual(queue.item(name)?.state, .placedInCloud)
+            try? FileManager.default.removeItem(at: folder.appendingPathComponent(name))
+        }
+    }
     func testCleanupDeletesOnlyUploadedCopiesOutsideRetention() async throws {
         let root = tempRoot(), cloud = tempRoot(); defer { try? FileManager.default.removeItem(at: root); try? FileManager.default.removeItem(at: cloud) }
         let provider = FakeCloud(.available(cloud)); provider.uploaded = true

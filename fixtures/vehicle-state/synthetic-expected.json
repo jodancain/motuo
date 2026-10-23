@@ -1,0 +1,268 @@
+{
+ "about": "由 prototypes/motuo-v3/core/vehicle-state.js 在 synthetic-ride.json 上得到的关键状态序列；Swift 估计器必须一致（VehicleStateTests）。",
+ "generator": "tools/vehicle-state/make-synthetic.mjs",
+ "states": [
+  {
+   "t": 1.6,
+   "field": "engine",
+   "to": "idle"
+  },
+  {
+   "t": 4.5,
+   "field": "motion",
+   "to": "launching"
+  },
+  {
+   "t": 4.5,
+   "field": "engine",
+   "to": "running"
+  },
+  {
+   "t": 7.5,
+   "field": "motion",
+   "to": "accelerating"
+  },
+  {
+   "t": 33,
+   "field": "motion",
+   "to": "cruising"
+  },
+  {
+   "t": 39.1,
+   "field": "motion",
+   "to": "accelerating"
+  },
+  {
+   "t": 40.7,
+   "field": "motion",
+   "to": "braking"
+  },
+  {
+   "t": 42.4,
+   "field": "motion",
+   "to": "hardBraking"
+  },
+  {
+   "t": 46,
+   "field": "turn",
+   "to": "right"
+  },
+  {
+   "t": 46.3,
+   "field": "motion",
+   "to": "braking"
+  },
+  {
+   "t": 47.1,
+   "field": "motion",
+   "to": "cruising"
+  },
+  {
+   "t": 51.2,
+   "field": "turn",
+   "to": "none"
+  },
+  {
+   "t": 51.4,
+   "field": "motion",
+   "to": "accelerating"
+  },
+  {
+   "t": 58.7,
+   "field": "turn",
+   "to": "left"
+  },
+  {
+   "t": 59.2,
+   "field": "motion",
+   "to": "cruising"
+  },
+  {
+   "t": 62.2,
+   "field": "turn",
+   "to": "none"
+  },
+  {
+   "t": 77,
+   "field": "motion",
+   "to": "braking"
+  },
+  {
+   "t": 81.6,
+   "field": "motion",
+   "to": "hardBraking"
+  },
+  {
+   "t": 83.6,
+   "field": "motion",
+   "to": "braking"
+  },
+  {
+   "t": 84.8,
+   "field": "turn",
+   "to": "left"
+  },
+  {
+   "t": 85.7,
+   "field": "motion",
+   "to": "cruising"
+  },
+  {
+   "t": 87.7,
+   "field": "turn",
+   "to": "none"
+  },
+  {
+   "t": 88,
+   "field": "motion",
+   "to": "coasting"
+  },
+  {
+   "t": 88.4,
+   "field": "turn",
+   "to": "right"
+  },
+  {
+   "t": 90.2,
+   "field": "motion",
+   "to": "cruising"
+  },
+  {
+   "t": 91.2,
+   "field": "turn",
+   "to": "none"
+  },
+  {
+   "t": 91.6,
+   "field": "motion",
+   "to": "braking"
+  },
+  {
+   "t": 95.2,
+   "field": "motion",
+   "to": "stopped"
+  },
+  {
+   "t": 95.2,
+   "field": "engine",
+   "to": "idle"
+  },
+  {
+   "t": 101.2,
+   "field": "engine",
+   "to": "revving"
+  },
+  {
+   "t": 102.5,
+   "field": "engine",
+   "to": "idle"
+  },
+  {
+   "t": 104.7,
+   "field": "engine",
+   "to": "revving"
+  },
+  {
+   "t": 105.7,
+   "field": "engine",
+   "to": "idle"
+  },
+  {
+   "t": 111.5,
+   "field": "motion",
+   "to": "launching"
+  },
+  {
+   "t": 111.5,
+   "field": "engine",
+   "to": "running"
+  },
+  {
+   "t": 114,
+   "field": "motion",
+   "to": "accelerating"
+  },
+  {
+   "t": 118.8,
+   "field": "turn",
+   "to": "left"
+  },
+  {
+   "t": 118.9,
+   "field": "motion",
+   "to": "cruising"
+  },
+  {
+   "t": 122.1,
+   "field": "turn",
+   "to": "none"
+  },
+  {
+   "t": 123.2,
+   "field": "motion",
+   "to": "braking"
+  },
+  {
+   "t": 125.3,
+   "field": "motion",
+   "to": "hardBraking"
+  },
+  {
+   "t": 127.2,
+   "field": "motion",
+   "to": "stopped"
+  },
+  {
+   "t": 127.2,
+   "field": "engine",
+   "to": "idle"
+  },
+  {
+   "t": 138.1,
+   "field": "engine",
+   "to": "off"
+  },
+  {
+   "t": 147.6,
+   "field": "engine",
+   "to": "idle"
+  }
+ ],
+ "corners": [
+  {
+   "dir": "right",
+   "start": 45.3,
+   "end": 51.2,
+   "angleDeg": 67
+  },
+  {
+   "dir": "left",
+   "start": 57.3,
+   "end": 62.2,
+   "angleDeg": 46
+  },
+  {
+   "dir": "left",
+   "start": 84.3,
+   "end": 87.7,
+   "angleDeg": 45
+  },
+  {
+   "dir": "right",
+   "start": 87.7,
+   "end": 91.2,
+   "angleDeg": 43
+  },
+  {
+   "dir": "left",
+   "start": 117.9,
+   "end": 122.1,
+   "angleDeg": 46
+  }
+ ],
+ "shifts": [
+  22.6,
+  26.2,
+  113.8
+ ]
+}

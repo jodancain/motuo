@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>cn.yundongyl.motuo.roadlog.process</string>
+	</array>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -22,6 +26,8 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
 	<key>NSAppleMusicUsageDescription</key>
 	<string>访问你授权的 Apple Music 音乐，在骑行时播放。</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
@@ -33,19 +39,34 @@
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>连接你选择的 Wi-Fi HUD 与摩托配件。</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>在锁屏或切换应用后继续记录你开启的骑行。</string>
+	<string>在锁屏或切换应用后继续记录你开启的骑行；路谱只保存在本机和你自己的 iCloud。</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>记录骑行路线、速度并提供导航；仅在你开始骑行后采集。</string>
+	<string>记录骑行路线、速度并提供导航；仅在你开始骑行后采集。开启路谱采集时，完整定位记录只保存在本机和你自己的 iCloud，不发给第三方。</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>在你开启后用手机麦克风感受外界声浪，驱动仪表动效；仅本机分析，不保存或上传原音。</string>
+	<string>在你开启后用手机麦克风感受外界声浪，驱动仪表动效。默认只在本机计算声学特征；只有你另外打开“保存原始声音”时才录制原音，保存在本机和你自己的 iCloud，不发给第三方。</string>
 	<key>NSMotionUsageDescription</key>
-	<string>感知手机支架上的加速度与转动，生成骑行动态与复盘。</string>
+	<string>感知手机支架上的加速度、转动、磁场与气压，生成骑行动态、复盘和路谱；路谱只保存在本机和你自己的 iCloud。</string>
+	<key>NSUbiquitousContainers</key>
+	<dict>
+		<key>iCloud.cn.yundongyl.motuo</key>
+		<dict>
+			<key>NSUbiquitousContainerIsDocumentScopePublic</key>
+			<true/>
+			<key>NSUbiquitousContainerName</key>
+			<string>Motuo</string>
+			<key>NSUbiquitousContainerSupportedFolderLevels</key>
+			<string>Any</string>
+		</dict>
+	</dict>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>location</string>
 		<string>audio</string>
 		<string>bluetooth-central</string>
+		<string>processing</string>
 	</array>
+	<key>UIFileSharingEnabled</key>
+	<true/>
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIColorName</key>

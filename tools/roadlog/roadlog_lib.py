@@ -192,6 +192,10 @@ def verify(pkg):
         return {"package": pkg.name, "ok": False, "state": state, "problems": problems, "warnings": warnings}
     if m.get("schema") != SCHEMA or m.get("schemaVersion") != 1:
         problems.append("不是 schema v1 路谱包：%r/%r" % (m.get("schema"), m.get("schemaVersion")))
+    # 1.1 起有 schemaMinor；1.0 包没有该字段。任何 minor 都按 v1 读取。
+    for name, info in sorted((m.get("streams") or {}).items()):
+        if info.get("clockSuspect") or (name == "abs_altitude" and (info.get("tStart") or 0) > 1e8):
+            warnings.append("%s: 时间戳不在单调时钟上（schema 1.0 的 CMAbsoluteAltitude 用了 2001 参考日期），该流的 t_mono 不可与其他流对齐" % name)
     sha_file = pkg.path / "manifest.sha256"
     if not sha_file.exists():
         problems.append("缺少 manifest.sha256")
@@ -385,6 +389,21 @@ def summary(pkg):
         if e.get("type") == "signal_event":
             kinds[e.get("kind")] = kinds.get(e.get("kind"), 0) + 1
     out["events"] = {"byType": counts, "signalKinds": kinds}
+    out["schema"] = "%s %s.%s" % (m.get("schema"), m.get("schemaVersion"), m.get("schemaMinor", 0))
+    # 1.1：App 推断的车辆状态（vehicle_state 流，10 Hz）。占比按行数；均为推断，不是测量。
+    if (m.get("streams") or {}).get("vehicle_state", {}).get("rows"):
+        header, rows = pkg.read_stream("vehicle_state")
+        idx = {n: i for i, n in enumerate(header)}
+        names = {"engine": ["unknown", "off", "idle", "running", "revving"],
+                 "motion": ["stopped", "launching", "accelerating", "cruising", "braking", "hardBraking", "coasting"]}
+        share = {}
+        for field, labels in names.items():
+            values = [int(r[idx[field]]) for r in rows if r[idx[field]] is not None]
+            share[field] = {labels[v]: round(values.count(v) / len(values), 3) for v in sorted(set(values)) if 0 <= v < len(labels)} if values else {}
+        corners = [e for e in events if e.get("type") == "vehicle_corner"]
+        out["vehicleState"] = {"source": m["streams"]["vehicle_state"].get("source"), "rows": len(rows), "share": share,
+                               "corners": {"left": sum(1 for c in corners if c.get("dir") == "left"), "right": sum(1 for c in corners if c.get("dir") == "right")},
+                               "suspectedShift": sum(1 for e in events if e.get("type") == "vehicle_suspectedShift")}
     device = pkg.jsonl("device")
     battery = [d.get("battery_level") for d in device if isinstance(d.get("battery_level"), (int, float))]
     out["deviceLog"] = {"records": len(device), "battery": [battery[0], battery[-1]] if battery else None,

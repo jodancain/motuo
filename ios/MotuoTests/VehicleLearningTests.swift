@@ -99,13 +99,17 @@ final class VehicleLearningTests: XCTestCase {
         try service.invalidate(rideId: first.trainingRideIds[0], remove: true); XCTAssertTrue(service.versions.isEmpty)
         try service.eraseAll(); XCTAssertFalse(FileManager.default.fileExists(atPath: file.path)); XCTAssertTrue(service.versions.isEmpty)
     }
+    /// Rewritten 2026-10-23: the learned threshold now sets how deep an acceleration dip must be for VehicleStateEstimator's
+    /// suspected shift (lower threshold → shallower dips accepted); invalid values fall back to the default; reset keeps it.
     func testPersonalThresholdAffectsDetectorAndResetsSafely() {
-        func event(threshold: Double?) -> RideEvent? {
-            var processor = RideSignalProcessor(); processor.setThreshold(threshold); processor.reset()
-            _ = processor.process(acceleration: 0, rotation: 0, speed: 10, timestamp: Date(), monotonic: 0, simulated: false)
-            return processor.process(acceleration: 2, rotation: 0, speed: 10, timestamp: Date(), monotonic: 0.1, simulated: false)
-        }
-        XCTAssertNil(event(threshold: nil)); XCTAssertNotNil(event(threshold: 18)); XCTAssertNil(event(threshold: 40))
-        XCTAssertNil(event(threshold: .nan)); XCTAssertNil(event(threshold: 0))
+        func fraction(threshold: Double?) -> Double { var processor = RideSignalProcessor(); processor.setThreshold(threshold); processor.reset(); return processor.shiftDeepFraction }
+        XCTAssertEqual(fraction(threshold: nil), VS.shiftDeepFrac, accuracy: 1e-9)
+        XCTAssertGreaterThan(fraction(threshold: 18), fraction(threshold: nil), "more sensitive")
+        XCTAssertLessThan(fraction(threshold: 40), fraction(threshold: nil), "less sensitive")
+        XCTAssertEqual(fraction(threshold: .nan), VS.shiftDeepFrac, accuracy: 1e-9); XCTAssertEqual(fraction(threshold: 0), VS.shiftDeepFrac, accuracy: 1e-9)
+        var estimator = VehicleStateEstimator()
+        estimator.setShiftSensitivity(fraction(threshold: 18)); XCTAssertEqual(estimator.shiftDeepFraction, fraction(threshold: 18), accuracy: 1e-9)
+        estimator.setShiftSensitivity(.nan); XCTAssertEqual(estimator.shiftDeepFraction, VS.shiftDeepFrac, accuracy: 1e-9)
+        estimator.setShiftSensitivity(5); XCTAssertEqual(estimator.shiftDeepFraction, 0.6, accuracy: 1e-9)
     }
 }

@@ -21,6 +21,8 @@ struct CockpitSnapshotInput {
     var finishedRide: [String: Any]?
     /// Roadlog sticker data while a package is being recorded: {active, bytes, motionHz|null, degraded}.
     var roadlog: [String: Any]?
+    /// VehicleStateSnapshot.json() while riding (inferred / simulated); null otherwise. Lean drives visuals only.
+    var vehicle: [String: Any]?
 
     func json() -> [String: Any] {
         // Measured GPS wins; a short inertial estimate is shown only while GPS is missing (and is never recorded).
@@ -41,6 +43,7 @@ struct CockpitSnapshotInput {
         data["panel"] = panel.map { ["id": $0.id.uuidString, "name": $0.name] } as Any? ?? NSNull()
         if let finishedRide { data["finishedRide"] = finishedRide }
         data["roadlog"] = roadlog as Any? ?? NSNull()
+        data["vehicle"] = vehicle as Any? ?? NSNull()
         return data
     }
     func encoded() -> String {
@@ -229,10 +232,11 @@ struct NativeCockpitView:View {
         let estimate=engine.inertialPresentation
         let speed=engine.speedMPS ?? estimate?.speed
         let phase=engine.currentRide == nil ? "idle":engine.isPaused ? "paused":"riding"
-        let motion=phase=="idle" ? "ready":speed == nil ? "gps":speed!<0.2 ? "stop":engine.elapsedSeconds<4 ? "launch":abs(engine.turnDirection)>0.25 ? "turn":engine.longitudinalTrend>0 ? "accelerate":engine.longitudinalTrend<0 ? "brake":"cruise"
+        let vehicleState=phase=="riding" ? engine.vehicleState:nil
+        let motion=phase=="idle" ? "ready":speed == nil ? "gps":vehicleState.map(Self.motionWord) ?? (speed!<0.2 ? "stop":engine.elapsedSeconds<4 ? "launch":abs(engine.turnDirection)>0.25 ? "turn":engine.longitudinalTrend>0 ? "accelerate":engine.longitudinalTrend<0 ? "brake":"cruise")
         let live=sound.live && ProcessInfo.processInfo.systemUptime-sound.sampleUptime<1 && scenePhase == .active && !engine.isPaused
         var audio:[String:Any]=["live":live,"status":sound.status]
-        if live,let f=sound.features{audio.merge(["level":f.level,"db":f.db,"clipped":f.clipped,"spectrum":f.spectrum,"wave":f.wave]){_,new in new}}
+        if live,let f=sound.features{audio.merge(["level":f.level,"db":f.db,"clipped":f.clipped,"spectrum":f.spectrum,"wave":f.wave]){_,new in new};if let low=sound.lowBands{audio["low"]=low}}
         var appearance:[String:String]=[:]
         if let p=settings.cockpitPaint{appearance["paint"]=p};if let f=settings.cockpitFinish{appearance["finish"]=f};if let w=settings.cockpitWorld{appearance["world"]=w}
         var input=CockpitSnapshotInput()
@@ -248,8 +252,22 @@ struct NativeCockpitView:View {
         input.appearance=appearance.isEmpty ? nil:appearance;input.panel=settings.cockpitPanelRequest
         input.finishedRide=finishedRideSummary
         let roadlog=RoadlogRecorder.shared
+        input.vehicle=vehicleState?.json(now:ProcessInfo.processInfo.systemUptime)
         if roadlog.active{input.roadlog=["active":true,"bytes":roadlog.stats.bytes,"motionHz":roadlog.stats.motionHz.map{$0.rounded()} as Any? ?? NSNull(),"degraded":roadlog.stats.degradationLevel>0]}
         return input.encoded()
+    }
+}
+extension NativeCockpitView {
+    /// The v2-era `motion` word, now from the vehicle-state estimate (same vocabulary as native-adapter.js MOTIONS).
+    static func motionWord(_ v: VehicleStateSnapshot) -> String {
+        if v.turn != .none { return "turn" }
+        switch v.motion {
+        case .stopped: return "stop"
+        case .launching: return "launch"
+        case .accelerating: return "accelerate"
+        case .braking, .hardBraking: return "brake"
+        case .cruising, .coasting: return "cruise"
+        }
     }
 }
 private enum CockpitSheet:String,Identifiable{case garage,history,settings,music,navigation,fallback;var id:String{rawValue}}

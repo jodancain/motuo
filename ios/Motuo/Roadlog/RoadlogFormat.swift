@@ -6,6 +6,9 @@ import zlib
 enum Roadlog {
     static let schema = "motuo.roadlog"
     static let schemaVersion = 1
+    /// 1.1 (2026-10-23): vehicle_state and acoustic_lf streams, vehicle_* events, storagePolicy, trusted-clock end time.
+    /// Readers accept any minor of major 1; a missing schemaMinor means 1.0.
+    static let schemaMinor = 1
     static let chunkSpanS = 60.0
     static let chunkBytes = 4 * 1024 * 1024
     static let containerIdentifier = "iCloud.cn.yundongyl.motuo"
@@ -92,6 +95,11 @@ enum RoadlogStreams {
         RoadlogColumn("rms_dbfs", "dBFS", "帧 RMS"), RoadlogColumn("peak_dbfs", "dBFS", "帧峰值"), RoadlogColumn("clipped", "0/1", "是否削波（|x|>0.98）", integer: true)]
         + (0..<16).map { RoadlogColumn(String(format: "band_%02d", $0), "dBFS", "对数频带 \($0) 平均能量，边界见 manifest.streams.acoustic.bandEdgesHz") },
         frame: "手机麦克风混合环境声，非发动机转速", gapThresholdS: nil)
+    /// Low-frequency fine spectrum for later engine-order work: 20–500 Hz every 4 Hz (121 values), ≈4 frames/s.
+    static let acousticLFHz: [Double] = stride(from: 20.0, through: 500.0, by: 4.0).map { $0 }
+    static let acousticLF = RoadlogStreamSpec(name: "acoustic_lf", source: "measured", requestedHz: 4, columns: [t]
+        + acousticLFHz.map { RoadlogColumn(String(format: "f%03.0f", $0), "dB", "\(Int($0)) Hz 处的功率谱密度（dBFS/Hz，约 3.9 Hz 分辨率，线性插值到 4 Hz 网格）") },
+        frame: "手机麦克风混合环境声；降采样到 ≈4 kHz 后 1024 点 FFT（Hann）。只采集，不推断转速", gapThresholdS: nil)
     static let inferredIMUSpeed = RoadlogStreamSpec(name: "inferred_imu_speed", source: "inferred", requestedHz: nil, columns: [t,
         RoadlogColumn("speed_mps", "m/s", "GPS 锚定的短时 IMU 积分估速（推断，非测量）"), RoadlogColumn("uncertainty_mps", "m/s", "估计 1σ 误差"), RoadlogColumn("anchor_age_s", "s", "距离最近 GPS 锚点的时间")],
         frame: "InertialVelocityBridge，仅 GPS 缺失时有值", gapThresholdS: nil)
@@ -101,7 +109,33 @@ enum RoadlogStreams {
         RoadlogColumn("acceleration_intensity", "1", "仪表用加速度强度（0…1）"), RoadlogColumn("rotation_intensity", "1", "仪表用转动强度（0…1）")],
         frame: "RideEngine 每秒推断状态", gapThresholdS: nil)
 
-    static let all: [RoadlogStreamSpec] = [motion, accelRaw, gyroRaw, magRaw, batchedAccel, batchedMotion, altimeter, absAltitude, location, heading, acoustic, inferredIMUSpeed, inferredSignal]
+    /// Schema 1.1: VehicleStateEstimator output (inferred, 10 Hz). Integer codes are listed in each column description.
+    static let vehicleState = RoadlogStreamSpec(name: "vehicle_state", source: "inferred", requestedHz: 10, columns: [t,
+        RoadlogColumn("engine", "int", "发动机推断：0 未知，1 熄火，2 怠速，3 运转，4 原地轰油门", integer: true),
+        RoadlogColumn("motion", "int", "运动推断：0 静止，1 起步，2 加速，3 巡航，4 刹车，5 急刹，6 滑行", integer: true),
+        RoadlogColumn("long_g", "g", "纵向加速度（GPS 斜率 + 安装轴收敛后的 IMU 高频补充；推断）"),
+        RoadlogColumn("accel_intensity", "1", "加速强度 0…1（画面用）"), RoadlogColumn("brake_intensity", "1", "刹车强度 0…1（画面用）"),
+        RoadlogColumn("turn", "int", "转弯推断：1 左，-1 右，0 无", integer: true),
+        RoadlogColumn("yaw_deg_s", "deg/s", "绕真实竖直轴（-gravity）的偏航角速度，二级低通；左正"),
+        RoadlogColumn("lean_visual_deg", "deg", "atan(v·ω/g) 视觉倾斜驱动量；推断，不是倾角测量，不在界面显示数字"),
+        RoadlogColumn("corner_phase", "int", "过弯阶段：0 无，1 入弯，2 弯心，3 出弯", integer: true),
+        RoadlogColumn("speed_mps", "m/s", "估计器使用的速度（GPS 或惯导短时估计）"),
+        RoadlogColumn("mount_status", "int", "自动安装估计：0 学习中，1 人工校准初值，2 已收敛", integer: true),
+        RoadlogColumn("mount_conf", "1", "安装估计置信度"), RoadlogColumn("engine_conf", "1", "发动机推断置信度"),
+        RoadlogColumn("motion_conf", "1", "运动推断置信度"), RoadlogColumn("turn_conf", "1", "转弯推断置信度"),
+        RoadlogColumn("vibration_g", "g", "用户加速度 25 Hz 差分振动均方根"), RoadlogColumn("sound_db", "dBFS", "估计器使用的麦克风声级（0.5 s 平滑）")],
+        frame: "VehicleStateEstimator（ios/Motuo/Services/VehicleStateEstimator.swift）；状态切换另记在 events.jsonl 的 vehicle_state / vehicle_corner / vehicle_suspectedShift", gapThresholdS: nil)
+    static func vehicleStateRow(_ s: VehicleStateSnapshot) -> [Double?] {
+        let engine: [VehicleEngine: Double] = [.unknown: 0, .off: 1, .idle: 2, .running: 3, .revving: 4]
+        let motion: [VehicleMotion: Double] = [.stopped: 0, .launching: 1, .accelerating: 2, .cruising: 3, .braking: 4, .hardBraking: 5, .coasting: 6]
+        let phase: [CornerPhase: Double] = [.none: 0, .entry: 1, .apex: 2, .exit: 3]
+        let mount: [MountStatus: Double] = [.learning: 0, .calibrated: 1, .converged: 2]
+        return [s.t, engine[s.engine], motion[s.motion], s.longitudinalG, s.accelIntensity, s.brakeIntensity,
+                s.turn == .left ? 1 : s.turn == .right ? -1 : 0, s.yawRateDegS, s.leanEstimateDeg, phase[s.cornerPhase], s.speedMps,
+                mount[s.mount.status], s.mount.confidence, s.engineConfidence, s.motionConfidence, s.turnConfidence, s.vibrationG, s.soundLevelDb]
+    }
+
+    static let all: [RoadlogStreamSpec] = [motion, accelRaw, gyroRaw, magRaw, batchedAccel, batchedMotion, altimeter, absAltitude, location, heading, acoustic, acousticLF, inferredIMUSpeed, inferredSignal, vehicleState]
     static func spec(_ name: String) -> RoadlogStreamSpec? { all.first { $0.name == name } }
 }
 

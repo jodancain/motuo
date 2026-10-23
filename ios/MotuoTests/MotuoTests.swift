@@ -1,4 +1,5 @@
 import XCTest
+import simd
 @testable import Motuo
 
 final class MotuoTests:XCTestCase {
@@ -105,13 +106,35 @@ final class MotuoTests:XCTestCase {
         XCTAssertFalse(gate.accept(inactive,now:now.addingTimeInterval(6),isActive:true))
         XCTAssertTrue(gate.accept(.init(kind:.finish,now:now.addingTimeInterval(10)),now:now.addingTimeInterval(10),isActive:true))
     }
+    /// Rewritten 2026-10-23: the old magnitude-jerk rule this test pinned is the saturating heuristic that was removed.
+    /// Candidates now come from VehicleStateEstimator; standstill and data gaps still never produce a gear candidate.
     func testCandidateDetectorDoesNotInferGearAtStandstillOrAcrossDataGaps() {
-        let now=Date();var processor=RideSignalProcessor()
-        XCTAssertNil(processor.process(acceleration:0,rotation:0,speed:0,timestamp:now,monotonic:0,simulated:false))
-        XCTAssertNil(processor.process(acceleration:5,rotation:0,speed:0,timestamp:now,monotonic:0.02,simulated:false))
-        XCTAssertNil(processor.process(acceleration:0,rotation:0,speed:10,timestamp:now,monotonic:1,simulated:false))
-        let event=processor.process(acceleration:2,rotation:0,speed:10,timestamp:now,monotonic:1.02,simulated:false)
-        XCTAssertEqual(event?.kind,"suspectedShift");XCTAssertEqual(event?.source,"inferred");XCTAssertNil(event?.feedback)
-        XCTAssertNil(processor.process(acceleration:5,rotation:0,speed:10,timestamp:now,monotonic:5,simulated:false))
+        var estimator = VehicleStateEstimator()
+        let up = SIMD3<Double>(0.2, 0.74, 0.64) / simd_length(SIMD3<Double>(0.2, 0.74, 0.64))
+        var rng = SeededRNG(7)
+        // 30 s standstill with violent vibration and rotation (phone handled / engine shaking) and a loud microphone.
+        for i in 0..<1500 {
+            let t = Double(i) * 0.02, n = { Double.random(in: -1...1, using: &rng) }
+            estimator.motion(t: t, userAcceleration: SIMD3(n(), n(), n()) * 0.6, gravity: -up, rotation: SIMD3(n(), n(), n()) * 1.5)
+            if i % 50 == 0 { estimator.gps(t: t, speed: 0, accuracy: 0.3, horizontalAccuracy: 4) }
+            if i % 2 == 0 { estimator.acoustic(t: t, rmsDbfs: -10 + 8 * n()) }
+        }
+        let events = estimator.drainEvents()
+        XCTAssertFalse(events.contains { $0.kind == .suspectedShift || $0.kind == .corner }, "no candidates at standstill")
+        XCTAssertFalse(events.contains { $0.field == "motion" && $0.to != "stopped" }, "standstill stays stopped")
+        XCTAssertFalse(events.contains { $0.field == "turn" && $0.to != "none" })
+        // The adapter drops candidates below 3 m/s and windows that cannot be placed on the ride clock (data gap).
+        let processor = RideSignalProcessor(), now = Date()
+        let shift = VehicleStateEvent(t: 10, kind: .suspectedShift, confidence: 0.45, source: "inferred")
+        XCTAssertNil(processor.rideEvent(shift, wall: { now.addingTimeInterval($0) }, speed: 0, simulated: false))
+        XCTAssertNil(processor.rideEvent(shift, wall: { _ in nil }, speed: 10, simulated: false))
+        let event = processor.rideEvent(shift, wall: { now.addingTimeInterval($0) }, speed: 10, simulated: false)
+        XCTAssertEqual(event?.kind, "suspectedShift"); XCTAssertEqual(event?.source, "inferred"); XCTAssertNil(event?.feedback)
+        XCTAssertEqual(event?.confidence, 0.45)
+        let corner = VehicleStateEvent(t: 14, kind: .corner, confidence: 0.6, dir: "left", start: 10, end: 14, angleDeg: 60, source: "inferred")
+        let turn = processor.rideEvent(corner, wall: { now.addingTimeInterval($0) }, speed: 8, simulated: true)
+        XCTAssertEqual(turn?.kind, "turn"); XCTAssertEqual(turn?.source, "simulated")
+        XCTAssertEqual(turn?.windowStart, now.addingTimeInterval(10)); XCTAssertEqual(turn?.windowEnd, now.addingTimeInterval(14))
+        XCTAssertNil(processor.rideEvent(.init(t: 1, kind: .state, field: "motion", to: "braking", source: "inferred"), wall: { now.addingTimeInterval($0) }, speed: 10, simulated: false), "state changes are not ride events")
     }
 }

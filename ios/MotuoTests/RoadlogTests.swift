@@ -1,5 +1,6 @@
 import XCTest
 import CoreLocation
+import CoreMotion
 import SwiftData
 @testable import Motuo
 
@@ -186,25 +187,32 @@ final class RoadlogWriterTests: XCTestCase {
     func testStorageDegradesInThreeStepsAndFinallySealsWithoutTouchingBaseRecording() async throws {
         let root = tempRoot(); defer { try? FileManager.default.removeItem(at: root) }
         let recorder = RoadlogRecorder(root: root)
-        recorder.freeBytes = { 100 << 20 }
-        XCTAssertFalse(recorder.begin(.init(rideId: UUID(), simulated: true)), "below 300 MiB: no roadlog at all")
+        // Thresholds are remaining recording hours (2026-10-23; was fixed 2 GiB / 1 GiB / 300 MiB): (60 MB/h roadlog + 65 MB/h
+        // legacy journal) × 1.5 above a 200 MB reserve → raw audio stops < 3 h (762 MB), IMU thins < 1.5 h (481 MB), stop < 0.5 h (294 MB).
+        recorder.freeBytes = { 150_000_000 }
+        XCTAssertFalse(recorder.begin(.init(rideId: UUID(), simulated: true)), "inside the reserve: no roadlog at all")
         XCTAssertNotNil(recorder.lastError)
         recorder.freeBytes = { 50 << 30 }
         XCTAssertTrue(recorder.begin(.init(rideId: UUID(), simulated: true)))
         let sink = try XCTUnwrap(recorder.sink), name = try XCTUnwrap(recorder.packageId)
-        recorder.applyStorage(free: 1536 << 20)                 // < 2 GiB
+        recorder.applyStorage(free: 1_070_000_000)              // the real ride's 1.07 GB: ≈4.6 h left → no degradation
+        XCTAssertEqual(sink.level, 0)
+        recorder.applyStorage(free: 700_000_000)                // ≈2.7 h
         XCTAssertEqual(sink.level, 1)
         recorder.applyStorage(free: 3 << 30)                    // never goes back up during a ride
         XCTAssertEqual(sink.level, 1)
-        recorder.applyStorage(free: 512 << 20)                  // < 1 GiB
+        recorder.applyStorage(free: 450_000_000)                // ≈1.3 h
         XCTAssertEqual(sink.level, 2)
         for i in 0..<100 { sink.feed("motion", motionRow(10 + Double(i) * 0.01)); sink.feed("accel_raw", [10 + Double(i) * 0.01, 0, 0, 1]) }
-        recorder.applyStorage(free: 100 << 20)                  // < 300 MiB → roadlog stopped and sealed
+        recorder.applyStorage(free: 280_000_000)                // ≈0.4 h → roadlog stopped and sealed
         XCTAssertFalse(recorder.active)
         await recorder.waitForSeal(name)
         let manifest = RoadlogJSON.object(try Data(contentsOf: root.appendingPathComponent(name).appendingPathComponent("manifest.json")))!
         let degradations = manifest["degradations"] as! [[String: Any]]
         XCTAssertEqual(degradations.map { $0["action"] as! String }, ["raw_audio_stopped", "imu_rate_reduced", "roadlog_stopped"])
+        XCTAssertEqual(degradations[0]["remainingHours"] as! Double, 2.67, accuracy: 0.01)
+        let policy = try XCTUnwrap(manifest["storagePolicy"] as? [String: Any], "policy written into the manifest")
+        XCTAssertEqual((policy["hours"] as? [String: Any])?["stopRoadlog"] as? Double, 0.5)
         XCTAssertEqual(streams(manifest)["accel_raw"]!["status"] as? String, "degraded")
         XCTAssertEqual(streams(manifest)["accel_raw"]!["rows"] as? Int, 0)
         XCTAssertEqual(streams(manifest)["motion"]!["rows"] as? Int, 25, "100 Hz input thinned to 25 Hz")
@@ -392,5 +400,84 @@ private final class FakeCloud: RoadlogCloudProvider, @unchecked Sendable {
         XCTAssertFalse(FileManager.default.fileExists(atPath: root.appendingPathComponent(older).path))
         XCTAssertTrue(FileManager.default.fileExists(atPath: root.appendingPathComponent(newer).path))
         XCTAssertTrue(FileManager.default.fileExists(atPath: root.appendingPathComponent(pending).path), "never deletes unconfirmed packages")
+    }
+}
+
+/// Schema 1.1 and the 2026-10-23 roadlog fixes (D1 clock, D2 storage, D3 bands, D4 status).
+@MainActor final class RoadlogVehicleStateTests: XCTestCase {
+    /// D1: CMAbsoluteAltitudeData timestamps (seconds since 2001, ≈8.14e8) are mapped onto the uptime clock, and a 1.0
+    /// package that still has them no longer pushes endedAtUTC decades ahead.
+    func testAbsoluteAltitudeClockAndTrustedManifestEnd() throws {
+        let root = tempRoot(); defer { try? FileManager.default.removeItem(at: root) }
+        let mapping = RoadlogClockMapping(mono: 1000, unix: 1_792_000_000)
+        let writer = try RoadlogPackageWriter(root: root, session: session(), packageId: "clock", mapping: mapping)
+        let sink = RoadlogSink(writer: writer, mapping: mapping, rawAudio: false)
+        let reference = mapping.unix(forMono: 1010) - Date.timeIntervalBetween1970AndReferenceDate   // ≈8.14e8
+        XCTAssertEqual(sink.monotonic(reference, now: 1012), 1010, accuracy: 1e-6, "reference-date timestamp → uptime")
+        XCTAssertEqual(sink.monotonic(1011.5, now: 1012), 1011.5, "uptime timestamps pass unchanged")
+        XCTAssertEqual(sink.monotonic(-5, now: 1012), 1012, "implausible → receipt time")
+        for i in 0..<30 { writer.append("motion", motionRow(1000 + Double(i))) }
+        writer.append("abs_altitude", [reference + 20, 12, 4, 0.5])        // a schema-1.0 style row on the wrong clock
+        let manifest = try writer.seal(end: .init(mono: 1030, unix: 1_792_000_030))
+        XCTAssertEqual(manifest["durationS"] as! Double, 30, accuracy: 1, "end time from the trusted clock only")
+        XCTAssertTrue((manifest["endedAtUTC"] as! String).hasPrefix("2026"), manifest["endedAtUTC"] as! String)
+        XCTAssertEqual(streams(manifest)["abs_altitude"]?["clockSuspect"] as? Bool, true)
+        XCTAssertTrue(((manifest["integrity"] as! [String: Any])["problems"] as! [String]).contains { $0.contains("abs_altitude") })
+        XCTAssertEqual(manifest["schemaMinor"] as? Int, 0, "old session without schemaMinor reads as 1.0")
+    }
+    /// D3: band_01 (47.7–72.2 Hz) is never empty any more; the 20–500 Hz fine spectrum peaks at the tone.
+    func testAcousticLowBandsAndFineSpectrum() throws {
+        let root = tempRoot(); defer { try? FileManager.default.removeItem(at: root) }
+        let writer = try RoadlogPackageWriter(root: root, session: session(), packageId: "lf", mapping: .init(mono: 0, unix: 0))
+        let processor = RoadlogAudioProcessor(writer: writer, rawAudio: false)
+        let tone = { (f: Double, n: Int) in (0..<n).map { Float(0.5 * sin(2 * Double.pi * f * Double($0) / 48000)) } }
+        let row = processor.features(tone(60, 1024), sampleRate: 48000, t: 1)
+        let bands = row[4...].map { $0 }
+        XCTAssertTrue(bands.allSatisfy { $0 != nil }, "every band has a value")
+        let values = bands.map { $0! }
+        // A 21 ms frame holds 1.3 periods of 60 Hz: the 1024-point bands cannot separate 31–109 Hz, they only must not be
+        // empty. band_01 sits with the low bands, far above the rest; fine resolution is acoustic_lf's job (below).
+        XCTAssertGreaterThan(values[1], values[0...2].max()! - 6)
+        XCTAssertGreaterThan(values[1], values[8...].max()! + 30)
+        let lf = LowFrequencySpectrum()
+        let frames = lf.push(tone(87, 48000), sampleRate: 48000, endUptime: 10)
+        XCTAssertGreaterThanOrEqual(frames.count, 3, "≈4 frames per second")
+        let db = try XCTUnwrap(frames.last).db, grid = RoadlogStreams.acousticLFHz
+        XCTAssertEqual(db.count, grid.count); XCTAssertEqual(grid.first, 20); XCTAssertEqual(grid.last, 500)
+        XCTAssertEqual(grid[db.firstIndex(of: db.max()!)!], 88, accuracy: 4.1, "peak within one grid step of 87 Hz")
+        XCTAssertGreaterThan(db.max()! - db[grid.firstIndex(of: 300)!], 30)
+        XCTAssertEqual(SoundFeatures.lowBands(frames.last!).count, 24)
+    }
+    /// D4 + schema 1.1: a recorder with a motion manager does not claim "未接入运动管理器"; vehicle_state rows and
+    /// vehicle_* events land in the package with documented columns.
+    func testVehicleStateStreamAndNoFalseMotionManagerStatus() async throws {
+        let root = tempRoot(); defer { try? FileManager.default.removeItem(at: root) }
+        let recorder = RoadlogRecorder(root: root); recorder.freeBytes = { 50 << 30 }
+        let manager = CMMotionManager()
+        XCTAssertTrue(recorder.begin(.init(rideId: UUID(), simulated: true), motionManager: manager))
+        let name = try XCTUnwrap(recorder.packageId)
+        var estimator = VehicleStateEstimator(simulated: true)
+        let (replay, _) = try VehicleStateTests.synthetic()
+        for sample in replay.samples where sample.t < 60 {
+            VehicleReplay.feed(sample, into: &estimator)
+            for e in estimator.drainEvents() { recorder.vehicleEvent(e) }
+            if case .gps = sample { recorder.vehicleState(estimator.snapshot()) }
+        }
+        recorder.finish(); await recorder.waitForSeal(name)
+        let directory = root.appendingPathComponent(name)
+        let manifest = RoadlogJSON.object(try Data(contentsOf: directory.appendingPathComponent("manifest.json")))!
+        XCTAssertEqual(manifest["schemaMinor"] as? Int, Roadlog.schemaMinor)
+        let vs = try XCTUnwrap(streams(manifest)["vehicle_state"])
+        XCTAssertEqual(vs["source"] as? String, "simulated"); XCTAssertGreaterThan(vs["rows"] as! Int, 50)
+        XCTAssertEqual((vs["columns"] as! [[String: Any]]).map { $0["name"] as! String }, RoadlogStreams.vehicleState.columns.map(\.name))
+        let lines = try csv(directory, (vs["chunks"] as! [[String: Any]])[0])
+        XCTAssertEqual(lines[0], RoadlogStreams.vehicleState.header)
+        XCTAssertEqual(streams(manifest)["acoustic_lf"]?["frequenciesHz"] as? [Double], RoadlogStreams.acousticLFHz)
+        let events = RoadlogJSON.lines(directory.appendingPathComponent("events.jsonl"))
+        XCTAssertTrue(events.contains { $0["type"] as? String == "vehicle_state" && $0["field"] as? String == "motion" })
+        XCTAssertTrue(events.contains { $0["type"] as? String == "vehicle_corner" && $0["dir"] as? String == "right" })
+        XCTAssertFalse(events.contains { $0["type"] as? String == "stream_status" && $0["stream"] as? String == "accel_raw" && ($0["reason"] as? String)?.contains("未接入") == true },
+                       "accel_raw must not be reported as missing a motion manager")
+        XCTAssertEqual(RoadlogVerifier.problems(directory), [])
     }
 }

@@ -6,6 +6,7 @@ struct SettingsView:View {
     @Environment(RideEngine.self) private var engine
     @Query(sort: \Vehicle.createdAt) private var vehicles: [Vehicle]
     @State private var calibrationVehicle: Vehicle?
+    @State private var mountNote: String?
     private var selectedVehicle: Vehicle? { vehicles.first { $0.id.uuidString == settings.selectedVehicleID } ?? vehicles.first }
     private var mountStatus: String {
         guard let vehicle = selectedVehicle, let profile = SensorCalibrationService.shared.profile(for: vehicle.id) else { return "尚未采样安装校准" }
@@ -49,6 +50,15 @@ struct SettingsView:View {
                             Divider()
                             HStack { settingLabel("支架安装",detail:mountStatus,symbol:"gyroscope");Spacer();Button("安装校准") { calibrationVehicle=selectedVehicle }.font(.system(size:12)).disabled(engine.currentRide != nil || selectedVehicle == nil) }
                             Text("结束骑行后，熄火扶正车辆并固定支架，再采样安装方向。更换支架位置请重新采样；动态倾角准确度仍待独立参考验证。").font(.system(size:11)).foregroundStyle(Cyber.muted).lineSpacing(5)
+                            Divider()
+                            HStack {
+                                settingLabel("自动安装估计",detail:engine.mountStatusLabel,symbol:"scope")
+                                Spacer()
+                                Button("重新校准") { mountNote = engine.recalibrateMount() ? "已重新开始估计：骑行中几段直线加减速后收敛" : "请先停车再重新校准" }
+                                    .font(.system(size:12)).disabled(engine.vehicleState.map { $0.motion != .stopped } ?? false)
+                                    .accessibilityIdentifier("settings.mountRecalibrate")
+                            }
+                            Text(mountNote ?? "骑行中用直线加减速自动估计手机在支架上的前进方向，用于加速/刹车与座舱交互。只在停车时可重新校准；结果是推断，不显示倾角数字。").font(.system(size:11)).foregroundStyle(Cyber.muted).lineSpacing(5)
                         }
                     }
                     Button { showAccessories=true } label:{ Panel { HStack { settingLabel("配件实验室",detail:"BLE / Wi-Fi · HUD、胎压、外置 IMU",symbol:"dot.radiowaves.left.and.right");Spacer();Image(systemName:"chevron.right").font(.system(size:12)) } } }.buttonStyle(.plain)

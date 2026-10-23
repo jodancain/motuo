@@ -47,8 +47,18 @@ final class RoadlogSink: @unchecked Sendable {
     func accelerometer(_ d: CMAccelerometerData) { feed("accel_raw", [d.timestamp, d.acceleration.x, d.acceleration.y, d.acceleration.z]) }
     func gyro(_ d: CMGyroData) { feed("gyro_raw", [d.timestamp, d.rotationRate.x, d.rotationRate.y, d.rotationRate.z]) }
     func magnetometer(_ d: CMMagnetometerData) { feed("mag_raw", [d.timestamp, d.magneticField.x, d.magneticField.y, d.magneticField.z]) }
-    func altitude(_ d: CMAltitudeData) { feed("altimeter", [d.timestamp, d.relativeAltitude.doubleValue, d.pressure.doubleValue]) }
-    func absoluteAltitude(_ d: CMAbsoluteAltitudeData) { feed("abs_altitude", [d.timestamp, d.altitude, d.accuracy, d.precision]) }
+    func altitude(_ d: CMAltitudeData) { feed("altimeter", [monotonic(d.timestamp), d.relativeAltitude.doubleValue, d.pressure.doubleValue]) }
+    func absoluteAltitude(_ d: CMAbsoluteAltitudeData) { feed("abs_altitude", [monotonic(d.timestamp), d.altitude, d.accuracy, d.precision]) }
+    /// CMAbsoluteAltitudeData.timestamp is not on the uptime clock (observed ≈8.14e8 s on iOS 26 = seconds since 2001, the
+    /// NSDate reference date), unlike other CMLogItems. Map such values through the wall clock; anything else implausible
+    /// falls back to the receipt time. Plausible uptime values pass unchanged.
+    func monotonic(_ timestamp: Double, now: Double = ProcessInfo.processInfo.systemUptime) -> Double {
+        if timestamp.isFinite, timestamp >= 0, timestamp <= now + 60, timestamp >= now - 86_400 { return timestamp }
+        let unix = timestamp + Date.timeIntervalBetween1970AndReferenceDate
+        let map = mapping
+        if timestamp.isFinite, abs(unix - map.unix(forMono: now)) <= 86_400 { return map.mono(forUnix: unix) }
+        return now
+    }
     func location(_ l: CLLocation) {
         let unix = l.timestamp.timeIntervalSince1970, t = mapping.mono(forUnix: unix)
         lock.lock(); lastLocationUptime = ProcessInfo.processInfo.systemUptime; lock.unlock()
@@ -82,11 +92,33 @@ final class MotionDecimator: @unchecked Sendable {
     }
 }
 
+/// Storage degradation by remaining recording time, not fixed byte limits (the old 2 GiB / 1 GiB rule degraded a ride
+/// with 1.07 GB free although a package grows ≈60 MB/h). remaining = (free − reserve) / (rate × margin).
 struct RoadlogThresholds: Sendable {
-    var stopRawAudio: Int64 = 2 << 30
-    var reduceIMU: Int64 = 1 << 30
-    var stopRoadlog: Int64 = 300 << 20
-    func level(free: Int64) -> Int { free < stopRoadlog ? 3 : free < reduceIMU ? 2 : free < stopRawAudio ? 1 : 0 }
+    /// Package growth with all raw sensors (≈60 MB/h measured on iPhone 15 Pro, 2026-10); raw AAC adds 32 kbit/s ≈ 15 MB/h.
+    var bytesPerHour: Int64 = 60_000_000
+    var rawAudioBytesPerHour: Int64 = 15_000_000
+    /// The legacy TelemetryJournal (50 Hz JSONL) writes alongside: ≈65 MB/h measured (RideStorageBudgetTests).
+    var legacyJournalBytesPerHour: Int64 = 65_000_000
+    var margin = 1.5
+    /// Never write into the last 200 MB, whatever the rate.
+    var reserveBytes: Int64 = 200_000_000
+    var stopRawAudioHours = 3.0, reduceIMUHours = 1.5, stopRoadlogHours = 0.5
+    func hoursRemaining(free: Int64, rawAudio: Bool, measuredBytesPerHour: Double? = nil) -> Double {
+        let rate = (max(Double(bytesPerHour + (rawAudio ? rawAudioBytesPerHour : 0)), measuredBytesPerHour ?? 0) + Double(legacyJournalBytesPerHour)) * margin
+        return max(0, Double(free - reserveBytes)) / max(1, rate)
+    }
+    func level(free: Int64, rawAudio: Bool = false, measuredBytesPerHour: Double? = nil) -> Int {
+        if free <= reserveBytes { return 3 }
+        let h = hoursRemaining(free: free, rawAudio: rawAudio, measuredBytesPerHour: measuredBytesPerHour)
+        return h < stopRoadlogHours ? 3 : h < reduceIMUHours ? 2 : h < stopRawAudioHours ? 1 : 0
+    }
+    var manifest: [String: Any] {
+        ["basis": "剩余可录时长 = (可用空间 − 保留) / ((路谱速率 + 旧遥测速率) × 余量)；路谱速率取默认值与本包实测速率的较大者",
+         "bytesPerHour": bytesPerHour, "rawAudioBytesPerHour": rawAudioBytesPerHour, "legacyJournalBytesPerHour": legacyJournalBytesPerHour,
+         "margin": margin, "reserveBytes": reserveBytes,
+         "hours": ["stopRawAudio": stopRawAudioHours, "reduceIMU": reduceIMUHours, "stopRoadlog": stopRoadlogHours]]
+    }
 }
 
 struct RoadlogStartInfo {
@@ -125,6 +157,7 @@ struct RoadlogStartInfo {
     @ObservationIgnored private let altimeter = CMAltimeter()
     @ObservationIgnored private let sensorQueue: OperationQueue = { let q = OperationQueue(); q.name = "motuo.roadlog.sensors"; q.maxConcurrentOperationCount = 1; q.qualityOfService = .userInitiated; return q }()
     @ObservationIgnored private var sealing: [String: Task<Void, Never>] = [:]
+    @ObservationIgnored private var startedUptime = 0.0
 
     init(root: URL = Roadlog.localRoot) { self.root = root }
 
@@ -139,19 +172,23 @@ struct RoadlogStartInfo {
         guard sink == nil else { return true }
         lastError = nil
         let free = freeBytes()
-        if let free, thresholds.level(free: free) >= 3 { lastError = "存储空间不足，本次未采集路谱（基础记录照常）"; return false }
+        if let free, thresholds.level(free: free, rawAudio: info.rawAudio) >= 3 { lastError = "存储空间不足，本次未采集路谱（基础记录照常）"; return false }
         let mapping = RoadlogClockMapping.now()
         let name = Roadlog.packageName(start: info.startedAt, rideId: info.rideId)
         do {
-            let writer = try RoadlogPackageWriter(root: root, session: Self.session(info, packageId: name, mapping: mapping), packageId: name, mapping: mapping)
+            var session = Self.session(info, packageId: name, mapping: mapping); session["storagePolicy"] = thresholds.manifest
+            let writer = try RoadlogPackageWriter(root: root, session: session, packageId: name, mapping: mapping)
             let sink = RoadlogSink(writer: writer, mapping: mapping, rawAudio: info.rawAudio)
             self.sink = sink; packageId = name; active = true; stats = RoadlogLiveStats(); tickCount = 0; gpsLost = false; paused = false
             upload?.enqueue(name, simulated: info.simulated, state: .pendingSeal)
             sink.event("ride_start", ["rideId": info.rideId.uuidString])
+            startedUptime = mapping.mono
+            // Managers first: the static stream statuses depend on them (they were nil here, so accel_raw was falsely
+            // marked "未接入运动管理器" at every start).
+            self.motionManager = motionManager; self.locationManager = locationManager
             recordStaticStatuses(sink)
             recordAccessoryState(sink)
             if let free { applyStorage(free: free) }
-            self.motionManager = motionManager; self.locationManager = locationManager
             startSensors()
             startMonitoring()
             return true
@@ -213,6 +250,20 @@ struct RoadlogStartInfo {
     }
     func inferredSignal(trend: Int, turn: Double, acceleration: Double, rotation: Double) {
         sink?.feed("inferred_signal", [ProcessInfo.processInfo.systemUptime, Double(trend), turn, acceleration, rotation])
+    }
+    /// VehicleStateEstimator snapshot (10 Hz, inferred) and its events (state changes, corners, suspected shifts).
+    func vehicleState(_ snapshot: VehicleStateSnapshot) {
+        guard let sink, snapshot.t != nil else { return }
+        sink.feed("vehicle_state", RoadlogStreams.vehicleStateRow(snapshot))
+    }
+    func vehicleEvent(_ e: VehicleStateEvent) {
+        guard let sink else { return }
+        var fields: [String: Any] = ["confidence": e.confidence]
+        if let v = e.field { fields["field"] = v }; if let v = e.from { fields["from"] = v }; if let v = e.to { fields["to"] = v }
+        if let v = e.dir { fields["dir"] = v }; if let v = e.start { fields["t_start"] = v }; if let v = e.end { fields["t_end"] = v }
+        if let v = e.angleDeg { fields["angle_deg"] = v }; if let v = e.peakDegS { fields["peak_deg_s"] = v }
+        if let v = e.dipG { fields["dip_g"] = v }; if let v = e.soundDipDb { fields["sound_dip_db"] = v }
+        sink.event("vehicle_" + e.kind.rawValue, source: e.source, t: e.t, fields)
     }
     func inferredSpeed(_ estimate: (speed: Double, uncertainty: Double)?, anchorAge: Double?) {
         guard let estimate else { return }
@@ -333,14 +384,22 @@ struct RoadlogStartInfo {
         stats = sink.writer.stats
     }
     func checkStorage() { if let free = freeBytes() { applyStorage(free: free) } }
+    /// Package growth so far (bytes/hour), once 5 minutes are recorded; nil before.
+    var measuredBytesPerHour: Double? {
+        guard let sink else { return nil }
+        let elapsed = ProcessInfo.processInfo.systemUptime - startedUptime
+        return elapsed >= 300 ? Double(sink.writer.stats.bytes) / elapsed * 3600 : nil
+    }
     /// Levels only increase during a ride (no flapping). Level 3 seals the package; the base recording continues.
     func applyStorage(free: Int64) {
         guard let sink else { return }
-        let target = thresholds.level(free: free)
+        let raw = sink.audio.rawEnabled, measured = measuredBytesPerHour
+        let target = thresholds.level(free: free, rawAudio: raw, measuredBytesPerHour: measured)
         guard target > sink.level else { return }
+        let hours = (thresholds.hoursRemaining(free: free, rawAudio: raw, measuredBytesPerHour: measured) * 100).rounded() / 100
         let actions = [1: "raw_audio_stopped", 2: "imu_rate_reduced", 3: "roadlog_stopped"]
         for level in (sink.level + 1)...target {
-            sink.event("degradation", ["level": level, "action": actions[level]!, "freeBytes": free, "reason": "low_storage"])
+            sink.event("degradation", ["level": level, "action": actions[level]!, "freeBytes": free, "remainingHours": hours, "reason": "low_storage"])
         }
         sink.setLevel(target)
         if target >= 1, sink.audio.rawEnabled { sink.writer.streamStatus("acoustic", "degraded", reason: "存储不足，已停止原始声音（声学特征继续）") }
@@ -392,7 +451,7 @@ struct RoadlogStartInfo {
         #endif
         let frame = referenceFrame == .xMagneticNorthZVertical ? "xMagneticNorthZVertical" : "xArbitraryCorrectedZVertical"
         return [
-            "schema": Roadlog.schema, "schemaVersion": Roadlog.schemaVersion, "packageId": packageId, "rideId": info.rideId.uuidString,
+            "schema": Roadlog.schema, "schemaVersion": Roadlog.schemaVersion, "schemaMinor": Roadlog.schemaMinor, "packageId": packageId, "rideId": info.rideId.uuidString,
             "provenance": info.simulated ? "simulated" : "measured", "startedAtUnix": mapping.unix,
             "app": ["bundleId": bundle.bundleIdentifier ?? "cn.yundongyl.motuo",
                     "version": bundle.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?", "build": bundle.infoDictionary?["CFBundleVersion"] as? String ?? "?"],
@@ -400,7 +459,7 @@ struct RoadlogStartInfo {
                        "isSimulator": simulator, "idiom": "phone"],
             "vehicle": info.vehicle ?? NSNull(), "calibration": info.calibration ?? NSNull(),
             "settings": ["roadlogEnabled": true, "rawAudioEnabled": info.rawAudio,
-                         "requestedRatesHz": ["motion": motionHz, "accel_raw": motionHz, "gyro_raw": motionHz, "mag_raw": 50, "inferred_signal": 1, "location": 1],
+                         "requestedRatesHz": ["motion": motionHz, "accel_raw": motionHz, "gyro_raw": motionHz, "mag_raw": 50, "inferred_signal": 1, "location": 1, "vehicle_state": 10, "acoustic_lf": 4],
                          "locationAccuracy": "kCLLocationAccuracyBestForNavigation", "activityType": "automotiveNavigation", "distanceFilter": "none",
                          "pausesAutomatically": false, "headingFilter": "none", "attitudeReferenceFrame": frame,
                          "legacyTelemetry": "TelemetryJournal 仍按 50 Hz 记录 deviceMotion（从 100 Hz 降采样），与路谱独立"],

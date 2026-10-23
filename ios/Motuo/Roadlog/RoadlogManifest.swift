@@ -3,6 +3,8 @@ import Foundation
 /// Builds manifest.json purely from what is on disk (session.json, index.jsonl, events/clock JSONL, files), so the
 /// normal seal and crash recovery share one code path and a manifest can always be rebuilt.
 enum RoadlogManifestBuilder {
+    /// Data may outlive the last clock sample by this much (clock samples are every 10 s; recovery after termination).
+    static let recoveryMarginS = 3600.0
     static func build(directory: URL, status: String, rebuilt: Bool = false, verify: Bool) throws -> [String: Any] {
         let fm = FileManager.default
         guard let sessionData = try? Data(contentsOf: directory.appendingPathComponent("session.json")),
@@ -21,8 +23,14 @@ enum RoadlogManifestBuilder {
         let first = clocks.first, last = clocks.last
         let startUnix = first?["t_unix"] as? Double ?? (session["startedAtUnix"] as? Double ?? 0)
         var endUnix = last?["t_unix"] as? Double ?? startUnix
-        // After a crash the newest clock sample can be older than the newest data; use the latest observed time.
-        let lastMono = max(index.map(\.tEnd).max() ?? 0, events.compactMap { $0["t_mono"] as? Double }.max() ?? 0)
+        // After a crash the newest clock sample can be older than the newest data; use the latest observed time — but only
+        // times on the trusted monotonic clock (within the clock samples' range plus a recovery margin). Schema 1.0 packages
+        // recorded abs_altitude on another clock (t ≈ 8e8 s), which once pushed endedAtUTC to 2052.
+        let monos = clocks.compactMap { $0["t_mono"] as? Double }
+        let trusted = { (t: Double) -> Bool in guard let lo = monos.min(), let hi = monos.max() else { return true }; return t >= lo - 60 && t <= hi + RoadlogManifestBuilder.recoveryMarginS }
+        let untrusted = index.filter { $0.type == "chunk" && !(trusted($0.tStart) && trusted($0.tEnd)) }.compactMap(\.stream)
+        if !untrusted.isEmpty { problems.append("时钟可疑的流（时间戳不在单调时钟范围内，已不用于结束时间）：\(Set(untrusted).sorted().joined(separator: ", "))") }
+        let lastMono = max(index.map(\.tEnd).filter(trusted).max() ?? 0, events.compactMap { $0["t_mono"] as? Double }.filter(trusted).max() ?? 0)
         if let last, let lm = last["t_mono"] as? Double, let lu = last["t_unix"] as? Double, lastMono > lm { endUnix = max(endUnix, lu + (lastMono - lm)) }
 
         var latestStatus: [String: [String: Any]] = [:]
@@ -49,6 +57,8 @@ enum RoadlogManifestBuilder {
                 "chunks": chunks.map(chunkObject),
             ]
             if spec.name == "acoustic" { entry["bandEdgesHz"] = RoadlogStreams.acousticBandEdgesHz }
+            if spec.name == "acoustic_lf" { entry["frequenciesHz"] = RoadlogStreams.acousticLFHz }
+            if let a = tStart, let b = tEnd, !(trusted(a) && trusted(b)) { entry["clockSuspect"] = true }
             streams[spec.name] = entry
         }
         var files: [String: Any] = [:]
@@ -70,7 +80,7 @@ enum RoadlogManifestBuilder {
             ["stream": event["stream"] ?? "*", "tStart": event["t_start"] ?? NSNull(), "tEnd": event["t_end"] ?? NSNull(), "reason": event["reason"] ?? "unknown"]
         }
         let degradations = events.filter { $0["type"] as? String == "degradation" }.map { event -> [String: Any] in
-            ["t_mono": event["t_mono"] ?? NSNull(), "level": event["level"] ?? 0, "action": event["action"] ?? "", "freeBytes": event["freeBytes"] ?? NSNull(), "reason": event["reason"] ?? "low_storage"]
+            ["t_mono": event["t_mono"] ?? NSNull(), "level": event["level"] ?? 0, "action": event["action"] ?? "", "freeBytes": event["freeBytes"] ?? NSNull(), "remainingHours": event["remainingHours"] ?? NSNull(), "reason": event["reason"] ?? "low_storage"]
         }
         var totalBytes = 0, uncompressed = 0
         if let enumerator = fm.enumerator(at: directory, includingPropertiesForKeys: [.fileSizeKey, .isRegularFileKey]) {
@@ -83,7 +93,7 @@ enum RoadlogManifestBuilder {
         let duration: Double = max(0, endUnix - startUnix)
         let perHour: Any = duration > 1 ? Double(totalBytes) / duration * 3600.0 : NSNull()
         return [
-            "schema": Roadlog.schema, "schemaVersion": Roadlog.schemaVersion,
+            "schema": Roadlog.schema, "schemaVersion": Roadlog.schemaVersion, "schemaMinor": session["schemaMinor"] ?? 0,
             "packageId": directory.lastPathComponent, "rideId": session["rideId"] ?? NSNull(),
             "status": status, "provenance": simulated ? "simulated" : "measured", "simulated": simulated,
             "startedAtUTC": Roadlog.iso(Date(timeIntervalSince1970: startUnix)), "endedAtUTC": Roadlog.iso(Date(timeIntervalSince1970: endUnix)),
@@ -95,7 +105,7 @@ enum RoadlogManifestBuilder {
             "streams": streams, "files": files,
             "audio": ["rawEnabled": settings["rawAudioEnabled"] ?? false, "codec": "AAC-LC mono", "bitrate": 32000, "sampleRate": 16000,
                       "segments": audio.map(chunkObject)],
-            "gaps": gaps, "degradations": degradations,
+            "gaps": gaps, "degradations": degradations, "storagePolicy": session["storagePolicy"] ?? NSNull(),
             "integrity": ["algorithm": "SHA-256", "chunksVerified": verify && problems.isEmpty, "problems": problems],
             "manifestRebuilt": rebuilt,
             "dataVolume": ["totalBytes": totalBytes, "uncompressedBytes": uncompressed,
@@ -183,7 +193,7 @@ enum RoadlogRecovery {
 
 enum RoadlogReadme {
     static let text = """
-    # Motuo 路谱包（schema v1）
+    # Motuo 路谱包（schema v1.1）
 
     一次真实骑行的手机传感器全量记录。完整规格见仓库 `docs/ROADLOG_FORMAT.md`；Mac 端工具 `tools/roadlog/roadlog.py`（list / verify / summary / export）。
 
@@ -196,6 +206,7 @@ enum RoadlogReadme {
     - `streams/<流>/<序号>.csv.gz`：按 60 秒或 4 MiB 切块的 gzip CSV，第一行表头，第一列 `t_mono`。空字段 = 无数据（绝不用 0 代替）。
     - `events.jsonl` 骑行状态/推断事件/缺口/降级；`device.jsonl` 电池、热状态、前后台、存储；`clock.jsonl` 时钟映射；`accessory.jsonl` 配件原始帧。
     - `audio/NNNN.m4a`：仅在“保存原始声音”开启时存在（AAC 单声道 16 kHz）。
+    - v1.1 新增：`streams/vehicle_state`（App 推断的车辆状态，10 Hz，整数编码见列说明）与 `streams/acoustic_lf`（20–500 Hz 低频细分谱，约 4 帧/秒，只采集）。
 
     ## 时间
     `t_mono` = iPhone `ProcessInfo.systemUptime` 秒（与 CoreMotion 时间戳同一时基）。换算 UTC：取 `clock.jsonl` 中最近一条 `{t_mono, t_unix}`，`t_unix = t_unix0 + (t_mono - t_mono0)`。定位与航向另存原始 `t_unix`。

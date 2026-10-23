@@ -37,12 +37,15 @@ import simd
     var thermalState = "nominal"
     var lowPowerMode = false
     var recentEvents: [RideEvent] = []
+    /// 10 Hz vehicle-state estimate while recording (inferred; simulated for DEMO rides). Never measured truth.
+    var vehicleState: VehicleStateSnapshot?
     var isRecording: Bool { currentRide?.status == "recording" }
     var isPaused: Bool { currentRide?.status == "paused" || currentRide?.status == "interrupted" }
     var isSimulated: Bool { currentRide?.isSimulated ?? settings?.demoMode ?? false }
     var stateLabel: String {
         if currentRide == nil { return "准备出发" }
         if isPaused { return currentRide?.status == "interrupted" ? "记录已恢复 · 待继续" : "骑行已暂停" }
+        if let v = vehicleState, let label = Self.vehicleLabel(v, speed: speedMPS) { return label }
         guard let speedMPS else { return "信号待确认" }
         if speedMPS < 1.1 { return "临时停车" }
         if abs(turnDirection) > 0.25 { return turnDirection > 0 ? "右转趋势" : "左转趋势" }
@@ -64,12 +67,16 @@ import simd
     @ObservationIgnored private var lastAcceptedLocation: CLLocation?
     @ObservationIgnored private var lastCourse: Double?
     @ObservationIgnored private var signalProcessor = RideSignalProcessor()
+    @ObservationIgnored private var vehicleEstimator = VehicleStateEstimator()
+    @ObservationIgnored private var demoReplay: VehicleReplayCursor?
+    @ObservationIgnored private var lastSoundUptime = 0.0
     @ObservationIgnored private var gpsTrend = GPSSpeedTrend()
     @ObservationIgnored private var telemetryClock = TelemetrySegmentClock()
     @ObservationIgnored private var lastMotionElapsed: Double?
     @ObservationIgnored private var tickNumber = 0
     @ObservationIgnored private var demoProgress: Double = 0
     @ObservationIgnored private var demoSecond = -1
+    @ObservationIgnored private var demoWallStart: Date?
     @ObservationIgnored private var lastSavedAt = Date()
     @ObservationIgnored private var lastMotionUI: TimeInterval = 0
     @ObservationIgnored private var lastMilestoneKM = 0
@@ -111,7 +118,7 @@ import simd
     }
     func clearWatchSummary() {
         watchSummary = nil; lastFinishedRide = nil; wrappedPending = false; wrappedAcknowledged = false; recentEvents = []; calibrationId = nil
-        speedMPS = nil; elapsedSeconds = 0; accelerationIntensity = 0; rotationIntensity = 0; turnDirection = 0; longitudinalTrend = 0
+        speedMPS = nil; elapsedSeconds = 0; accelerationIntensity = 0; rotationIntensity = 0; turnDirection = 0; longitudinalTrend = 0; vehicleState = nil
         UserDefaults.standard.removeObject(forKey: "motuo.watch.lastSummary")
         NavigationService.shared.clear(); WatchBridge.shared.clear()
     }
@@ -128,8 +135,9 @@ import simd
             journal = try TelemetryJournal(rideId: ride.id)
             context.insert(ride); try saveChanges(context); currentRide = ride
             UserDefaults.standard.set(ride.id.uuidString, forKey: "activeRideID")
-            elapsedSeconds = 0; recentEvents = []; demoProgress = 0; demoSecond = -1; lastMilestoneKM = 0
+            elapsedSeconds = 0; recentEvents = []; demoProgress = 0; demoSecond = -1; lastMilestoneKM = 0; demoWallStart = Date()
             watchSummary = nil; UserDefaults.standard.removeObject(forKey: "motuo.watch.lastSummary")
+            resetVehicleEstimator(ride, profile: profile)
             resetSegment(); beginRoadlog(ride, vehicle: vehicle); startSensors()
             if settings.watchHaptics { WatchBridge.shared.sendHaptic(.start) }
         } catch {
@@ -140,7 +148,7 @@ import simd
     func pause() {
         guard let ride = currentRide, isRecording else { return }
         checkpointDuration(); ride.status = "paused"; ride.segmentStartedAt = nil
-        stopSensors(); roadlog.pause(); speedMPS = nil; turnDirection = 0; longitudinalTrend = 0; gpsTrend.reset()
+        stopSensors(); roadlog.pause(); speedMPS = nil; turnDirection = 0; longitudinalTrend = 0; gpsTrend.reset(); vehicleState = nil
         do { try journal?.flush(); try context?.save() } catch { errorMessage = error.localizedDescription }
         if settings?.watchHaptics == true { WatchBridge.shared.sendHaptic(.pause) }
         sendWatchContext()
@@ -155,6 +163,9 @@ import simd
             ride.status = "recording"; ride.segmentStartedAt = Date()
             try persistChanges()
             resetSegment()
+            if vehicleEstimator.source != (ride.isSimulated ? "simulated" : "inferred") || (ride.isSimulated && demoReplay == nil) {
+                resetVehicleEstimator(ride, profile: SensorCalibrationService.shared.profile(for: ride.vehicleId))
+            }
             if roadlog.active { roadlog.resume() } else { beginRoadlog(ride, vehicle: nil) }
             startSensors(); errorMessage = nil
         } catch {
@@ -199,7 +210,7 @@ import simd
         watchSummary = WatchRideContext(isRiding: false, isSimulated: ride.isSimulated, speedKPH: nil, distanceKM: ride.distanceM / 1000, elapsedSeconds: ride.durationS, status: "骑行完成", updatedAt: Date(), isSummary: true)
         if let data = try? JSONEncoder().encode(watchSummary) { UserDefaults.standard.set(data, forKey: "motuo.watch.lastSummary") }
         roadlog.finish()
-        lastFinishedRide = ride; currentRide = nil; journal = nil; speedMPS = nil
+        lastFinishedRide = ride; currentRide = nil; journal = nil; speedMPS = nil; vehicleState = nil; demoReplay = nil
         accelerationIntensity = 0; rotationIntensity = 0; turnDirection = 0; longitudinalTrend = 0; gpsTrend.reset(); elapsedSeconds = 0
         UserDefaults.standard.removeObject(forKey: "activeRideID"); sendWatchContext()
     }
@@ -246,6 +257,7 @@ import simd
         segmentMonotonicStart = uptime; lastMotionElapsed = nil; lastMotionUI = 0
         lastSavedAt = Date(); speedMPS = nil
         if let ride = currentRide { signalProcessor.setThreshold(ride.isSimulated ? nil : VehicleLearningService.shared.versions.first { $0.id == ride.learningVersionId && $0.vehicleId == ride.vehicleId && $0.calibrationId == ride.calibrationId && !$0.invalidated }?.jerkThreshold) }
+        vehicleEstimator.setShiftSensitivity(signalProcessor.shiftDeepFraction)
     }
     @objc private func wallClockDidChange() {
         guard isRecording else { return }
@@ -270,7 +282,8 @@ import simd
                 guard legacy.accept(data.timestamp) else { return }
                 let sample = MotionValues(segmentId: motionSegmentID, timestamp: data.timestamp, ax: data.userAcceleration.x * 9.80665,
                     ay: data.userAcceleration.y * 9.80665, az: data.userAcceleration.z * 9.80665,
-                    rx: data.rotationRate.x, ry: data.rotationRate.y, rz: data.rotationRate.z)
+                    rx: data.rotationRate.x, ry: data.rotationRate.y, rz: data.rotationRate.z,
+                    gx: data.gravity.x, gy: data.gravity.y, gz: data.gravity.z)
                 Task { @MainActor in self?.receiveMotion(sample) }
             }
             motionStatus = "动态采集中"
@@ -302,16 +315,73 @@ import simd
             accelerationX: value.ax, accelerationY: value.ay, accelerationZ: value.az,
             rotationX: value.rx, rotationY: value.ry, rotationZ: value.rz,
             quality: "valid", calibrationId: calibrationId?.uuidString))
-        if let event = signalProcessor.process(acceleration: acceleration, rotation: rotation,
-                                               speed: speedMPS, timestamp: timestamp, monotonic: point.elapsed, simulated: false) {
-            addEvent(event)
-        }
+        vehicleEstimator.motion(t: value.timestamp, userAcceleration: SIMD3(value.ax, value.ay, value.az) / 9.80665,
+                                gravity: SIMD3(value.gx, value.gy, value.gz), rotation: SIMD3(value.rx, value.ry, value.rz))
+        handleVehicleEvents()
     }
     private func addEvent(_ event: RideEvent) {
         guard let ride = currentRide else { return }
         roadlog.signalEvent(event)
         var events = ride.events; events.append(event); ride.events = events
         recentEvents = Array(events.suffix(10).reversed())
+    }
+    private func resetVehicleEstimator(_ ride: Ride, profile: CalibrationProfile?) {
+        vehicleEstimator = VehicleStateEstimator(simulated: ride.isSimulated, calibrationForward: ride.isSimulated ? nil : profile?.forward.vector)
+        vehicleEstimator.setShiftSensitivity(signalProcessor.shiftDeepFraction)
+        vehicleState = nil; lastSoundUptime = 0
+        demoReplay = ride.isSimulated ? VehicleReplay.bundledSynthetic.map(VehicleReplayCursor.init) : nil
+    }
+    /// Recalibrate the automatic mount estimate (控制中心, only while stopped). Returns false while moving.
+    @discardableResult func recalibrateMount() -> Bool {
+        guard vehicleState.map({ $0.motion == .stopped }) ?? true else { return false }
+        vehicleEstimator.recalibrateMount(); vehicleState = vehicleEstimator.snapshot()
+        if let sink = roadlog.sink { sink.event("vehicle_mount_recalibrate", source: "user") }
+        return true
+    }
+    var mountStatusLabel: String {
+        guard let m = vehicleState?.mount else { return "骑行中自动估计（停车时可重新校准）" }
+        switch m.status {
+        case .converged: return "已自动收敛 · 置信度 \(Int((m.confidence * 100).rounded()))%"
+        case .calibrated: return "使用人工安装校准作初值 · 自动估计中"
+        case .learning: return "自动估计中 · 需要几段直线加减速"
+        }
+    }
+    /// 10 Hz: microphone features and the inertial speed into the estimator, then publish the snapshot.
+    private func feedVehicleTick() {
+        let now = ProcessInfo.processInfo.systemUptime
+        if isSimulated {
+            if demoReplay != nil { demoReplay!.advance(to: demoProgress, estimator: &vehicleEstimator) }
+        } else {
+            let sound = EngineSoundService.shared
+            if sound.live, let f = sound.features, sound.sampleUptime > lastSoundUptime { lastSoundUptime = sound.sampleUptime; vehicleEstimator.acoustic(t: sound.sampleUptime, rmsDbfs: f.db) }
+            if speedMPS == nil, let estimate = inertialPresentation { vehicleEstimator.imuSpeed(t: now, speed: estimate.speed) }
+            vehicleEstimator.advance(now)
+        }
+        handleVehicleEvents()
+        guard tickNumber % 3 == 0 else { return }
+        let snapshot = vehicleEstimator.snapshot()
+        vehicleState = isSimulated && demoReplay == nil ? nil : snapshot
+        if roadlog.active, vehicleState != nil { roadlog.vehicleState(snapshot) }
+    }
+    private func handleVehicleEvents() {
+        for event in vehicleEstimator.drainEvents() {
+            if roadlog.active { roadlog.vehicleEvent(event) }
+            let demoStart = demoWallStart, clock = telemetryClock, simulated = isSimulated
+            let wall: (Double) -> Date? = { t in simulated ? demoStart?.addingTimeInterval(t) : clock.motion(uptime: t)?.timestamp }
+            if let ride = signalProcessor.rideEvent(event, wall: wall, speed: speedMPS, simulated: isSimulated) { addEvent(ride) }
+        }
+    }
+    static func vehicleLabel(_ v: VehicleStateSnapshot, speed: Double?) -> String? {
+        if v.turn != .none { return v.turn == .left ? "左转趋势" : "右转趋势" }
+        switch v.motion {
+        case .stopped: return v.engine == .revving ? "临时停车 · 轰油门" : v.engine == .idle ? "临时停车 · 怠速" : v.engine == .off ? "临时停车 · 熄火" : "临时停车"
+        case .launching: return "起步"
+        case .accelerating: return "加速趋势"
+        case .braking: return "减速趋势"
+        case .hardBraking: return "急减速"
+        case .coasting: return "滑行"
+        case .cruising: return speed == nil ? nil : "行驶中"
+        }
     }
     private func tick() {
         tickNumber += 1
@@ -322,6 +392,7 @@ import simd
             lowPowerMode = info.isLowPowerModeEnabled
         }
         guard let ride = currentRide else { return }
+        if isRecording { feedVehicleTick() }
         if isRecording, roadlog.active {
             let now = ProcessInfo.processInfo.systemUptime
             if tickNumber % 3 == 0 { roadlog.inferredSpeed(inertialPresentation, anchorAge: velocityBridge.anchorAge(at: now)) }
@@ -366,9 +437,11 @@ import simd
         // Like GPS, the demo produces one discrete reading per second; the cockpit shows it unchanged until the next one.
         if second != demoSecond {
             demoSecond = second
-            let kph = Self.demoSpeedKmh(at: Double(second))
-            speedMPS = kph / 3.6; speedSampleTime = ProcessInfo.processInfo.systemUptime; speedSampleElapsed = elapsedSeconds
-            ride.maxSpeedMPS = max(ride.maxSpeedMPS, kph / 3.6); ride.validSpeedSamples += 1
+            // DEMO speed: the bundled synthetic replay's 1 Hz GPS (its GPS outage shows as no reading); profile fallback.
+            let reading: Double? = if let cursor = demoReplay { cursor.speed(at: Double(second)) } else { Self.demoSpeedKmh(at: Double(second)) / 3.6 }
+            let kph = (reading ?? 0) * 3.6
+            speedMPS = reading; speedSampleTime = ProcessInfo.processInfo.systemUptime; speedSampleElapsed = elapsedSeconds
+            if reading != nil { ride.maxSpeedMPS = max(ride.maxSpeedMPS, kph / 3.6); ride.validSpeedSamples += 1 }
             longitudinalTrend = gpsTrend.update(speed: speedMPS, accuracy: 0.1, timestamp: Date(), now: Date())
             let a = t / 200
             if let point = telemetryClock.motion(uptime: ProcessInfo.processInfo.systemUptime) {
@@ -377,14 +450,19 @@ import simd
                     longitude: 121.4737 + (1 - cos(a)) * 0.021, horizontalAccuracyM: 5, speedAccuracyMPS: 0.5,
                     accelerationX: accelerationIntensity * 5, rotationZ: turnDirection * 0.3, quality: "valid"))
             }
-            if second > 0, second % 22 == 0 {
+            if demoReplay == nil, second > 0, second % 22 == 0 {
                 addEvent(.init(kind: "turn", timestamp: Date(), windowStart: Date().addingTimeInterval(-2), windowEnd: Date().addingTimeInterval(2), confidence: 0.45, source: "simulated"))
             }
         }
         let speed = speedMPS ?? 0
-        turnDirection = sin(t / 5) * 0.7
-        accelerationIntensity = 0.14 + min(0.5, abs(Double(longitudinalTrend)) * 0.3)
-        rotationIntensity = abs(turnDirection) * 0.6
+        if let v = vehicleState {
+            turnDirection = v.turn == .left ? -min(1, abs(v.yawRateDegS) / 25) : v.turn == .right ? min(1, abs(v.yawRateDegS) / 25) : 0
+            accelerationIntensity = max(v.accelIntensity, v.brakeIntensity); rotationIntensity = abs(turnDirection) * 0.6
+        } else {
+            turnDirection = sin(t / 5) * 0.7
+            accelerationIntensity = 0.14 + min(0.5, abs(Double(longitudinalTrend)) * 0.3)
+            rotationIntensity = abs(turnDirection) * 0.6
+        }
         ride.distanceM += speed / 30
     }
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
@@ -404,6 +482,9 @@ import simd
                   let sampleElapsed = telemetryClock.location(timestamp: location.timestamp),
                   lastLocation == nil || location.timestamp > lastLocation!.timestamp else { continue }
             lastLocation = location; locationAccuracy = location.horizontalAccuracy
+            // Same monotonic base as CoreMotion: uptime now minus the fix's age.
+            vehicleEstimator.gps(t: ProcessInfo.processInfo.systemUptime - now.timeIntervalSince(location.timestamp), speed: location.speed >= 0 ? location.speed : nil,
+                                 accuracy: location.speedAccuracy >= 0 ? location.speedAccuracy : 99, horizontalAccuracy: location.horizontalAccuracy)
             speedMPS = SpeedQuality.accepted(speed: location.speed, accuracy: location.speedAccuracy, timestamp: location.timestamp, now: now)
             if speedMPS != nil {
                 let uptime = ProcessInfo.processInfo.systemUptime
@@ -475,4 +556,5 @@ private struct MotionValues: Sendable {
     var segmentId: UUID
     var timestamp: Double; var ax: Double; var ay: Double; var az: Double
     var rx: Double; var ry: Double; var rz: Double
+    var gx: Double; var gy: Double; var gz: Double
 }

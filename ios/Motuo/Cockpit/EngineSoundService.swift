@@ -19,6 +19,10 @@ struct SoundFeatures: Sendable {
         }
         return .init(level:max(0,min(1,(db+60)/50)),db:db,clipped:samples.contains{abs($0)>0.98},spectrum:spectrum,wave:(0..<64).map{Double(samples[min(n-1,$0*n/64)])})
     }
+    /// 121 low-frequency PSD values (dBFS/Hz, 20–500 Hz every 4 Hz) → 24 display bands 0…1 (−110…−40 dB/Hz).
+    static func lowBands(_ frame:LowFrequencySpectrum.Frame)->[Double]{
+        (0..<24).map{i in let slice=frame.db[(i*5)..<min(frame.db.count,i*5+5)];let mean=slice.reduce(0,+)/Double(max(1,slice.count));return ((max(0,min(1,(mean+110)/70)))*1000).rounded()/1000}
+    }
 }
 
 @MainActor @Observable final class EngineSoundService {
@@ -27,6 +31,8 @@ struct SoundFeatures: Sendable {
     private(set) var live=false
     private(set) var features:SoundFeatures?
     private(set) var sampleUptime=0.0
+    /// 24 low-frequency bands (20–500 Hz, 0…1) for the cockpit's "声浪" ripple, ≈4 per second. Not RPM.
+    private(set) var lowBands:[Double]?
     var isCapturing:Bool { engine != nil }
     private var engine:AVAudioEngine?
     private var revision=UUID()
@@ -58,19 +64,22 @@ struct SoundFeatures: Sendable {
             try session.setActive(true)
             let audio=AVAudioEngine(),input=audio.inputNode,format=audio.inputNode.outputFormat(forBus:0)
             guard format.sampleRate>0,format.channelCount>0 else{throw NSError(domain:"MotuoAudio",code:1,userInfo:[NSLocalizedDescriptionKey:"手机麦克风暂不可用"])}
+            let low=LowFrequencySpectrum()
             input.installTap(onBus:0,bufferSize:1024,format:format){[weak self] buffer,_ in
                 guard let values=buffer.floatChannelData?[0] else{return}
                 RoadlogAudioTap.shared.deliver(buffer,uptime:ProcessInfo.processInfo.systemUptime)
-                let samples=Array(UnsafeBufferPointer(start:values,count:min(Int(buffer.frameLength),2048)))
+                let all=Array(UnsafeBufferPointer(start:values,count:Int(buffer.frameLength)))
+                let samples=Array(all.prefix(2048))
                 let features=SoundFeatures.analyze(samples,sampleRate:buffer.format.sampleRate),time=ProcessInfo.processInfo.systemUptime
-                Task{@MainActor in guard let self,self.revision==current else{return};self.features=features;self.sampleUptime=time;self.live=true;self.status="正在聆听 · 手机麦克风"}
+                let bands=low.push(all,sampleRate:buffer.format.sampleRate,endUptime:time).last.map(SoundFeatures.lowBands)
+                Task{@MainActor in guard let self,self.revision==current else{return};self.features=features;if let bands{self.lowBands=bands};self.sampleUptime=time;self.live=true;self.status="正在聆听 · 手机麦克风"}
             }
             engine=audio;audio.prepare();try audio.start();status="正在聆听 · 手机麦克风"
         }catch{stop("声音输入不可用：\(error.localizedDescription)")}
     }
     func stop(_ message:String="麦克风关闭"){
         revision=UUID();let wasRunning=engine != nil
-        engine?.inputNode.removeTap(onBus:0);engine?.stop();engine=nil;if wasRunning{RoadlogAudioTap.shared.inputStopped()};live=false;features=nil;sampleUptime=0;status=message
+        engine?.inputNode.removeTap(onBus:0);engine?.stop();engine=nil;if wasRunning{RoadlogAudioTap.shared.inputStopped()};live=false;features=nil;lowBands=nil;sampleUptime=0;status=message
         if wasRunning {try? AVAudioSession.sharedInstance().setCategory(.playback,mode:.default,options:[])}
     }
 }

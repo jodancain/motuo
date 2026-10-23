@@ -23,6 +23,9 @@ targets:
       - path: Motuo/Resources/Cockpit
         type: folder
         buildPhase: resources
+      # Parameter-generated synthetic replay (tools/vehicle-state/make-synthetic.mjs): DEMO rides loop it. Never real data.
+      - path: ../fixtures/vehicle-state/synthetic-ride.json
+        buildPhase: resources
     info:
       path: Motuo/Info.plist
       properties:
@@ -94,7 +97,10 @@ targets:
   MotuoTests:
     type: bundle.unit-test
     platform: iOS
-    sources: [MotuoTests]
+    sources:
+      - path: MotuoTests
+      - path: ../fixtures/vehicle-state/synthetic-expected.json
+        buildPhase: resources
     dependencies:
       - target: Motuo
     settings:

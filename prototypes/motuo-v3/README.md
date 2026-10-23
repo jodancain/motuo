@@ -132,3 +132,12 @@ python3 -m http.server 8766 --bind 127.0.0.1 --directory prototypes/motuo-v3
 - **启动**：页面内联深色背景；原生按钮在首份快照后才显示。
 
 验证：node **91/91**；`native-rotation.pw.mjs` Chromium / WebKit 各 64/64；`gallery-portrait.pw.mjs` 20/20（先 `python3 -m http.server 8766 --bind 127.0.0.1 --directory prototypes/motuo-v3`）。注意：`data/speed-comparisons.js` 被仓库 `.gitignore` 的 `data/` 规则忽略，全新检出缺这个文件，见 docs/STATUS.md。
+
+## 车辆状态交互（2026-10-23）
+
+转弯 / 刹车 / 加速 / 发动机状态全部由车辆状态估计器驱动（原生：快照 `vehicle`；浏览器：`core/vehicle-state.js` 跑回放）。参数映射与一次性效果在 `core/vehicle-fx.js`（纯函数，`tests/vehicle-fx.test.mjs`），上屏在 `app.js` 的 `vehicleFrame` / `applyVehicleEffect` / `drawWarp` / `drawVehicleOverlay`，路面与速度线弯曲在 `render/scene.js`。设计见 DESIGN.md §10。
+
+- **浏览器回放入口：** 设置 → “车辆状态回放”：`合成回放`（`core/vehicle-synth.js` 按参数生成，非真实数据）或 `回放真实骑行（选本机文件）`（文件选择器，只在本机浏览器里读，不上传、不进仓库、不打包进 App）。也可 `index.html?replay=synthetic` 或 `?replay=<本机 URL>&from=120&to=200&speed=1`。屏幕标“回放”。
+- **特效强度：** 设置 → 关 / 弱 / 标准 / 强（倾斜、震动、镜头）；减少动态时不倾斜、不震动、不缩放，只在左下角用文字图标（← 左弯 / 刹车 / 加速 / 怠速 / 轰油门 / 熄火）示意。
+- **报告与录屏：** `node tools/vehicle-state/replay-report.mjs <回放.json>` 出指标表（真实回放结果见 docs/STATUS.md），`tools/vehicle-state/plot-replay.py` 画图；录屏脚本与产物在 `artifacts/vehicle-state-20261023/`（gitignore）。
+- **测试：** `vehicle-state.test.mjs`（估计器各状态、滞回、GPS 丢失、换挡不饱和、合成产物确定性、仓库无真实数据、可选真实回放）与 `vehicle-fx.test.mjs`（方向、强度梯度、强度档、减少动态、低置信度、速度区避让、闪光 ≤3 次/秒、剧场让位、原生字段）。

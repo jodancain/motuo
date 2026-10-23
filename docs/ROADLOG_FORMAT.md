@@ -91,19 +91,19 @@ App 每次启动（以及 BG 任务里）会检查所有没有 manifest 或者 m
 
 ## manifest.json
 
-顶层字段：`schema`（`"motuo.roadlog"`）、`schemaVersion`（1）、`packageId`、`rideId`、`status`（`sealed` / `recovered` / `recording`）、`provenance`（`measured` / `simulated`）、`simulated`、`startedAtUTC`、`endedAtUTC`、`durationS`、`clock`（`monotonicBase`、`mappingFile`、`samples`、`start`、`end`）、`app`（`bundleId`、`version`、`build`）、`device`（`model` 即 hw.machine、`systemName`、`systemVersion`、`isSimulator`）、`vehicle`（档案与最近 10 条保养摘要：日期、里程、类别；**不含车牌**）、`settings`（请求的采样率、定位精度 BestForNavigation、`activityType`（automotiveNavigation，与原记录一致）、不自动暂停、`headingFilter`、姿态参考系、`rawAudioEnabled`、旧遥测说明）、`calibration`、`capabilities`、`streams`、`files`（各 JSONL 和 session 的行数、字节数、SHA-256）、`audio`、`gaps`、`degradations`、`integrity`（`algorithm`、`chunksVerified`、`problems`）、`manifestRebuilt`、`dataVolume`（`totalBytes`、`uncompressedBytes`、`bytesPerHourEstimate`）、`upload`（说明上传状态只记录在手机上，不进入校验和）。
+顶层字段：`schema`（`"motuo.roadlog"`）、`schemaVersion`（1）、`schemaMinor`（1.1 起为 1；1.0 包没有该字段，按 0 读）、`packageId`、`rideId`、`status`（`sealed` / `recovered` / `recording`）、`provenance`（`measured` / `simulated`）、`simulated`、`startedAtUTC`、`endedAtUTC`、`durationS`、`clock`（`monotonicBase`、`mappingFile`、`samples`、`start`、`end`）、`app`（`bundleId`、`version`、`build`）、`device`（`model` 即 hw.machine、`systemName`、`systemVersion`、`isSimulator`）、`vehicle`（档案与最近 10 条保养摘要：日期、里程、类别；**不含车牌**）、`settings`（请求的采样率、定位精度 BestForNavigation、`activityType`（automotiveNavigation，与原记录一致）、不自动暂停、`headingFilter`、姿态参考系、`rawAudioEnabled`、旧遥测说明）、`calibration`、`capabilities`、`streams`、`files`（各 JSONL 和 session 的行数、字节数、SHA-256）、`audio`、`gaps`、`degradations`、`storagePolicy`（1.1：降级依据与阈值）、`integrity`（`algorithm`、`chunksVerified`、`problems`）、`manifestRebuilt`、`dataVolume`（`totalBytes`、`uncompressedBytes`、`bytesPerHourEstimate`）、`upload`（说明上传状态只记录在手机上，不进入校验和）。
 
-`streams.<名称>`：`source`、`status`（`recorded` / `unsupported` / `unavailable` / `disabled` / `degraded`）、`reason`、`requestedHz`、`measuredHz`（(rows-1)/(tEnd-tStart)）、`rows`、`tStart`、`tEnd`、`columns[{name,unit,description}]`、`frame`、`chunks[…]`；`acoustic` 另有 `bandEdgesHz`。每个流都会出现，即使这次没有数据，也会写明原因。
+`streams.<名称>`：`source`、`status`（`recorded` / `unsupported` / `unavailable` / `disabled` / `degraded`）、`reason`、`requestedHz`、`measuredHz`（(rows-1)/(tEnd-tStart)）、`rows`、`tStart`、`tEnd`、`columns[{name,unit,description}]`、`frame`、`chunks[…]`；`acoustic` 另有 `bandEdgesHz`，`acoustic_lf` 另有 `frequenciesHz`；时间戳不在单调时钟上的流标 `clockSuspect: true`（见 1.1 修复）。每个流都会出现，即使这次没有数据，也会写明原因。
 
 ## 缺口、降级与事件
 
 - **缺口：** IMU 流相邻样本间隔超过该流阈值（0.5 s）记为 `sensor_stall`，定位超过 3 s 记为 `gps_lost`；暂停期间整段记一条 `{"stream":"*","reason":"paused"}`，继续后的第一个样本不再算缺口。另外有 `gps_lost` / `gps_recovered` 事件（超过 4 s 没有定位回调）。
-- **存储不足降级**（依据 `volumeAvailableCapacityForImportantUsage`，开始时和每 30 s 检查一次；一次骑行内级别只升不降）：
-  1. 低于 2 GiB：停止原始声音（`raw_audio_stopped`）。
-  2. 低于 1 GiB：`motion` 降到 25 Hz，停止 `accel_raw` / `gyro_raw` / `mag_raw`（`imu_rate_reduced`）。
-  3. 低于 300 MiB：停止路谱并立即封包（`roadlog_stopped`）；原有的基础骑行记录照常继续。开始时就低于 300 MiB 的话，这次骑行不生成路谱，并在设置页说明原因。
-  每一级都写进 `degradations` 和事件，受影响的流状态改为 `degraded`。
-- **events.jsonl 的 `type`：** `ride_start`、`ride_pause`、`ride_resume`、`ride_finish`、`roadlog_stopped_low_storage`、`gps_lost`、`gps_recovered`、`location_error`、`app_background`、`app_foreground`、`memory_warning`、`degradation`、`stream_status`、`gap`、`signal_event`（source inferred；`kind` 为 turn / suspectedShift 等，附带 confidence、eventId、windowStart/End）、`microphone_on` / `microphone_off`、`raw_audio_segment` / `raw_audio_stopped` / `raw_audio_error`、`recovered_after_termination`。
+- **存储不足降级**（依据 `volumeAvailableCapacityForImportantUsage`，开始时和每 30 s 检查一次；一次骑行内级别只升不降）。1.1 起按**剩余可录时长**而不是固定字节数：剩余时长 = (可用空间 − 200 MB 保留) / ((路谱速率 + 旧遥测 65 MB/h) × 1.5 余量)，路谱速率取 60 MB/h（开原始声音再加 15 MB/h）与本包实测速率（录满 5 分钟后）的较大者：
+  1. 剩余 < 3 小时：停止原始声音（`raw_audio_stopped`）。
+  2. 剩余 < 1.5 小时：`motion` 降到 25 Hz，停止 `accel_raw` / `gyro_raw` / `mag_raw`（`imu_rate_reduced`）。
+  3. 剩余 < 0.5 小时（或可用空间进入 200 MB 保留）：停止路谱并立即封包（`roadlog_stopped`）；原有的基础骑行记录照常继续。开始时就到这一级的话，这次骑行不生成路谱，并在设置页说明原因。
+  每一级都写进 `degradations`（含 `freeBytes`、`remainingHours`）和事件，受影响的流状态改为 `degraded`；阈值写在 `storagePolicy`。按旧规则，剩 1.07 GB 的骑行一开始就停了原始声音、30 s 后降到 25 Hz；按新规则约 4.6 小时可录，不降级。
+- **events.jsonl 的 `type`：** `ride_start`、`ride_pause`、`ride_resume`、`ride_finish`、`roadlog_stopped_low_storage`、`gps_lost`、`gps_recovered`、`location_error`、`app_background`、`app_foreground`、`memory_warning`、`degradation`、`stream_status`、`gap`、`signal_event`（source inferred；`kind` 为 turn / suspectedShift 等，附带 confidence、eventId、windowStart/End）、`microphone_on` / `microphone_off`、1.1 起的 `vehicle_state`（`field` motion/engine/turn、`from`、`to`、`confidence`）/ `vehicle_corner`（`dir`、`t_start`、`t_end`、`angle_deg`、`peak_deg_s`）/ `vehicle_suspectedShift`（`dip_g`、`sound_dip_db`）/ `vehicle_mountReset` / `vehicle_mount_recalibrate`（source 为 inferred，用户操作为 user）、`raw_audio_segment` / `raw_audio_stopped` / `raw_audio_error`、`recovered_after_termination`。
 - **用户标注：** 骑后在 App 里确认或否定事件，结果保存在 App 的骑行记录里（`eventId` 与 `signal_event` 对应）。已封好的路谱不再改写，用 `rideId` / `eventId` 关联。
 
 ## 测量、推断、模拟
@@ -123,3 +123,13 @@ App 每次启动（以及 BG 任务里）会检查所有没有 manifest 或者 m
 - **后台：** App 在后台时，CoreMotion 能否持续取决于 App 是否在运行（有定位后台模式时通常会持续），需要真机确认；声学特征和原始声音在后台不采集（麦克风按原有规则停止）。
 - **轴向：** 轴向取决于手机安装方向，换算前先看 `calibration`。手机的运动信号推断不出挡位、转速、油门或倾角真值；`suspectedShift` 只是候选事件。
 - **iCloud：** 上传由系统在后台完成，没有完成时间保证。只有 App 签名包含 iCloud Documents 能力时才会上传；否则仅保存在本机，可在“文件”App 查看或分享导出（见 docs/APPLE_RELEASE.md）。
+
+## schema 1.1（2026-10-23）
+
+读取规则：`schemaVersion` 仍为 1；`schemaMinor` 缺省视为 0。1.0 读者遇到 1.1 包只会多看到两个流和几类事件，不受影响；`tools/roadlog` 两种都读。
+
+- **`vehicle_state`（inferred，10 Hz）：** `VehicleStateEstimator` 的输出——`engine`（0 未知 1 熄火 2 怠速 3 运转 4 原地轰油门）、`motion`（0 静止 1 起步 2 加速 3 巡航 4 刹车 5 急刹 6 滑行）、`long_g`、`accel_intensity`、`brake_intensity`、`turn`（1 左 −1 右 0 无）、`yaw_deg_s`（绕真实竖直轴，左正）、`lean_visual_deg`（atan(v·ω/g)，**只用于驱动画面，不是倾角测量，App 不显示数字**）、`corner_phase`（0 无 1 入弯 2 弯心 3 出弯）、`speed_mps`、`mount_status`（0 学习中 1 人工校准初值 2 已收敛）与各置信度、`vibration_g`、`sound_db`。状态切换另记在 events。算法与真实回放验证见 docs/STATUS.md。
+- **`acoustic_lf`（measured，约 4 帧/秒）：** 手机麦克风 20–500 Hz 低频细分谱，每 4 Hz 一列（121 列，dBFS/Hz）。降采样到约 4 kHz 后做 1024 点 Hann FFT，分辨率约 3.9 Hz，再线性插值到 4 Hz 网格。供以后研究发动机阶次；本版本只采集和在座舱里显示“声浪”，**不推断、不显示转速**。
+- **`acoustic` 频带修复：** 1024 点帧的频点间隔约 46.9 Hz，1.0 里 band_01（47.7–72.2 Hz）一个频点都没有，恒为空。1.1 起宽度不足两个频点的频带（band_00…band_04）取频带几何中心处插值后的功率 × 频带宽度（以频点计），不再为空；更细的低频看 `acoustic_lf`。
+- **绝对高度时钟修复：** iOS 26 上 `CMAbsoluteAltitudeData.timestamp` 不是开机时钟，而是以 2001-01-01 为起点的秒数（约 8.14e8）。1.0 里它被原样写进 `t_mono`，manifest 再把它当作最新数据时间，于是 `endedAtUTC` 变成 2052 年、`durationS` 错。1.1 起这类时间戳经墙钟映射换回单调时钟（其他不可信值退回接收时刻）；manifest 的结束时间只取落在时钟样本范围内（+1 小时恢复余量）的时间，范围外的流标 `clockSuspect` 并写入 `integrity.problems`。
+- **`accel_raw` 误报修复：** 1.0 每次开头都写一条 `accel_raw` “未接入运动管理器”，原因是写静态状态时还没接上运动管理器；1.1 先接管理器再写。

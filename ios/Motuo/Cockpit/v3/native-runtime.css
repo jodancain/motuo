@@ -43,3 +43,5 @@ html.native-host .comic-actions .sticker{min-height:44px}
 html.native-host .app[data-phase=paused] .panel{background:var(--ink) radial-gradient(circle,rgba(255,228,92,.16) 28%,transparent 31%) 0 0/9px 9px}
 /* 模块脚本把按钮文案换成原生版（开始骑行 / 配色 / 完成）之前不显示按钮，首帧不闪浏览器预览的文字 */
 html.native-host .app:not(.ready) .stickers,html.native-host .app:not(.ready) .hint{visibility:hidden}
+/* 路谱采集小贴纸：左上角页角下方一条细墨条，只显示状态，不可点、不挡速度巨字（速度在右侧/下方） */
+html.native-host .roadlog-badge{position:fixed;z-index:45;left:var(--sal);top:calc(var(--sat) + 20px);font:600 9px/1 var(--font-num);letter-spacing:.02em;color:var(--yellow);background:var(--ink);padding:3px 7px 2px;pointer-events:none;white-space:nowrap;max-width:60vw;overflow:hidden;transform:rotate(-1deg);transform-origin:0 0}

@@ -19,6 +19,8 @@ struct CockpitSnapshotInput {
     var appearance: [String: String]?
     var panel: (id: UUID, name: String)?
     var finishedRide: [String: Any]?
+    /// Roadlog sticker data while a package is being recorded: {active, bytes, motionHz|null, degraded}.
+    var roadlog: [String: Any]?
 
     func json() -> [String: Any] {
         // Measured GPS wins; a short inertial estimate is shown only while GPS is missing (and is never recorded).
@@ -38,6 +40,7 @@ struct CockpitSnapshotInput {
         data["appearance"] = appearance as Any? ?? NSNull()
         data["panel"] = panel.map { ["id": $0.id.uuidString, "name": $0.name] } as Any? ?? NSNull()
         if let finishedRide { data["finishedRide"] = finishedRide }
+        data["roadlog"] = roadlog as Any? ?? NSNull()
         return data
     }
     func encoded() -> String {
@@ -244,6 +247,8 @@ struct NativeCockpitView:View {
         input.musicTitle=music.currentTitle;input.musicArtist=music.currentArtist;input.musicPlaying=music.isPlaying
         input.appearance=appearance.isEmpty ? nil:appearance;input.panel=settings.cockpitPanelRequest
         input.finishedRide=finishedRideSummary
+        let roadlog=RoadlogRecorder.shared
+        if roadlog.active{input.roadlog=["active":true,"bytes":roadlog.stats.bytes,"motionHz":roadlog.stats.motionHz.map{$0.rounded()} as Any? ?? NSNull(),"degraded":roadlog.stats.degradationLevel>0]}
         return input.encoded()
     }
 }

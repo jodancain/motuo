@@ -105,3 +105,36 @@ test('浏览器预览（没有 webkit 桥）：不注册发送，不发任何消
   const a = installNativeAdapter({}, win);
   assert.equal(a.native, false); assert.equal(a.send('primary'), false); assert.equal(typeof win.MotuoNativeReceive, 'function');
 });
+
+import {roadlogLabel} from '../native-adapter.js';
+test('路谱贴纸：只在采集中显示，数值来自原生快照，缺测不显示', () => {
+  assert.equal(roadlogLabel(null), null);
+  assert.equal(roadlogLabel({active: false, bytes: 5e6}), null);
+  assert.equal(roadlogLabel({active: true, bytes: 12_345_678, motionHz: 99.6, degraded: false}), '路谱采集中 · 已记录 12.3 MB · 100Hz');
+  assert.equal(roadlogLabel({active: true, bytes: 0, motionHz: null}), '路谱采集中 · 已记录 0.0 MB');
+  assert.equal(roadlogLabel({active: true, bytes: 2e6, motionHz: 25, degraded: true}, {compact: true}), '路谱 · 2.0MB · 25Hz · 降级');
+  const m = mapSnapshot({phase: 'riding', speedKmh: 10, speedSource: 'gps', seconds: 1, roadlog: {active: true, bytes: 1e6, motionHz: 100}}, {});
+  assert.equal(m.roadlog, '路谱采集中 · 已记录 1.0 MB · 100Hz');
+  assert.equal(mapSnapshot({phase: 'idle', roadlog: null}, {}).roadlog, null);
+});
+
+test('路谱贴纸：适配层建一个不可点的元素，竖屏用短文字，停止采集后隐藏', () => {
+  const made = [];
+  const el = () => ({attrs: {}, hidden: false, textContent: '', setAttribute(k, v) { this.attrs[k] = v; }});
+  const win = {innerWidth: 390, innerHeight: 844, performance: {now: () => 0}, setInterval() {},
+    webkit: {messageHandlers: {motuo: {postMessage() {}}}},
+    document: {createElement: () => { const e = el(); made.push(e); return e; }, body: {appendChild() {}}}};
+  const app = {nativeFlags() {}, nativePhase() {}, nativeReading() {}, nativeFinished() {}, nativeStale() {}};
+  const bridge = installNativeAdapter(app, win);
+  win.MotuoNativeReceive({phase: 'riding', speedKmh: 20, speedSource: 'gps', seconds: 2, roadlog: {active: true, bytes: 3e6, motionHz: 100}});
+  assert.equal(made.length, 1);
+  assert.equal(made[0].className, 'roadlog-badge');
+  assert.equal(made[0].textContent, '路谱 · 3.0MB · 100Hz');
+  assert.equal(bridge.roadlogBadge, '路谱 · 3.0MB · 100Hz');
+  win.innerWidth = 844; win.innerHeight = 390;
+  win.MotuoNativeReceive({phase: 'riding', speedKmh: 20, speedSource: 'gps', seconds: 3, roadlog: {active: true, bytes: 3e6, motionHz: 100}});
+  assert.equal(made[0].textContent, '路谱采集中 · 已记录 3.0 MB · 100Hz');
+  win.MotuoNativeReceive({phase: 'idle', roadlog: null});
+  assert.equal(made[0].hidden, true);
+  assert.equal(made.length, 1);
+});

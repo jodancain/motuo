@@ -7,7 +7,8 @@
  *   uncertaintyKmh，motion，simulated，demoMode，reduced，thermal，thermalState 'nominal'|'fair'|'serious'|'critical'，lowPower，
  *   modal，active（驾驶舱 tab 可见且 App 前台），locationStatus，stateLabel，
  *   sound {live,status,level,db,spectrum[32],wave[64],clipped}，appearance {paint,finish,world}|null，panel {id,name}|null，
- *   finishedRide {id,distanceM,durationS,maxSpeedKmh,simulated,validSpeedSamples,timeline:[{t,v}],events:[{t,kind}]}
+ *   finishedRide {id,distanceM,durationS,maxSpeedKmh,simulated,validSpeedSamples,timeline:[{t,v}],events:[{t,kind}]}，
+ *   roadlog {active,bytes,motionHz,degraded}|null（路谱采集中时；只用于左上角小贴纸）
  * 动作（全部在 CockpitWebView.swift Coordinator.commands 白名单里，有测试扫描本目录源码核对）：见 NATIVE_ACTIONS。 */
 export const NATIVE_STALE_MS = 1500;
 const MOTIONS = new Set(['ready', 'launch', 'accelerate', 'cruise', 'load', 'turn', 'brake', 'stop', 'gps']);
@@ -23,6 +24,15 @@ export function tierCap({thermalState = null, thermal = false, lowPower = false}
   if (lowPower || thermalState === 'serious' || thermalState === 'critical') return 'low';
   if (!thermalState && thermal) return 'low';
   return null;
+}
+
+/* 路谱采集小贴纸文字：“路谱采集中 · 已记录 12.3 MB · 100Hz”；未采集返回 null。compact 用于竖屏窄宽。 */
+export function roadlogLabel(r, {compact = false} = {}) {
+  if (!r || typeof r !== 'object' || r.active !== true) return null;
+  const mb = Number.isFinite(r.bytes) && r.bytes >= 0 ? (r.bytes / 1e6).toFixed(1) : null;
+  const hz = Number.isFinite(r.motionHz) && r.motionHz > 0 ? `${Math.round(r.motionHz)}Hz` : null;
+  const parts = compact ? ['路谱', mb && `${mb}MB`, hz] : ['路谱采集中', mb && `已记录 ${mb} MB`, hz];
+  return parts.filter(Boolean).join(' · ') + (r.degraded ? (compact ? ' · 降级' : ' · 存储不足已降级') : '');
 }
 
 function cleanAppearance(a) {
@@ -57,6 +67,7 @@ export function mapSnapshot(s, {receivedAt = 0, now = receivedAt} = {}) {
     cap: tierCap(s), modal: !!s.modal, active: s.active !== false, simulated: !!s.simulated, demoMode: !!s.demoMode,
     locationStatus: s.locationStatus || '', stateLabel: s.stateLabel || '', title: rideTitle(s.phase),
     appearance: cleanAppearance(s.appearance),
+    roadlog: roadlogLabel(s.roadlog), roadlogCompact: roadlogLabel(s.roadlog, {compact: true}),
     panel: s.panel && typeof s.panel.id === 'string' && ['garage', 'world', 'sound', 'settings'].includes(s.panel.name) ? {id: s.panel.id, name: s.panel.name} : null,
     finishedRide: fr ? {
       id: fr.id, distanceM: Math.max(0, fr.distanceM || 0), durationS: Math.max(0, fr.durationS || 0),
@@ -92,12 +103,29 @@ export function installNativeAdapter(app, win = globalThis) {
   let receivedAt = 0, lastKey = null, lastPhase = 'idle', finishedId = null, lastPanel = null, active = true, lastAppearance = null;
   const send = (action, payload) => { const msg = nativeMessage(action, payload); if (host && msg) host.postMessage(msg); return !!(host && msg); };
   const perfNow = () => (win.performance || globalThis.performance).now();
+  // 路谱贴纸：原生独有的一个小元素，不参与场景/剧场排版（pointer-events:none，见 native-runtime.css）。
+  let badge = null, badgeText = null;
+  const showRoadlog = (full, compact) => {
+    const doc = win.document;
+    if (!doc?.createElement || !doc.body) return;
+    const portrait = (win.innerWidth || 0) < (win.innerHeight || 0);
+    const text = portrait ? compact : full;
+    if (text === badgeText) return;
+    badgeText = text;
+    if (!badge && text) {
+      badge = doc.createElement('div'); badge.id = 'roadlog-badge'; badge.className = 'roadlog-badge';
+      badge.setAttribute?.('role', 'status'); doc.body.appendChild(badge);
+    }
+    if (!badge) return;
+    badge.textContent = text || ''; badge.hidden = !text;
+  };
   win.MotuoNativeReceive = snapshot => {
     receivedAt = perfNow();
     const m = mapSnapshot(snapshot, {receivedAt, now: receivedAt});
     if (!m) return;
     if (m.active !== active) { active = m.active; app.nativeActive?.(active); }
     app.nativeFlags(m);
+    showRoadlog(m.roadlog, m.roadlogCompact);
     if (m.appearance && JSON.stringify(m.appearance) !== lastAppearance) { lastAppearance = JSON.stringify(m.appearance); app.nativeAppearance?.(m.appearance); }
     if (m.phase !== lastPhase) { const old = lastPhase; lastPhase = m.phase; if (m.phase !== 'riding') lastKey = null; app.nativePhase(m.phase, old, m); }
     if (m.frame && m.sampleKey !== lastKey) { lastKey = m.sampleKey; app.nativeReading(m.frame, m); }
@@ -112,5 +140,5 @@ export function installNativeAdapter(app, win = globalThis) {
   // 原生快照超过 1.5s 未到：速度显示 “—”。
   const watchdog = () => (host && lastPhase === 'riding' && perfNow() - receivedAt > NATIVE_STALE_MS ? app.nativeStale() : null);
   if (host) { win.setInterval?.(watchdog, 500); }
-  return {native: !!host, send, ready: () => send('ready'), get active() { return active; }};
+  return {native: !!host, send, ready: () => send('ready'), get active() { return active; }, get roadlogBadge() { return badgeText; }};
 }

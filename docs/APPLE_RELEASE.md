@@ -75,3 +75,7 @@ Apple Music 授权、订阅和实际播放，以及真实手机与 Watch 的安�
 ## 10 月 22 日：`0.4.0 (4)` 路谱采集模式（仅本地版）
 
 分支 `feature/roadlog`。签名 IPA 来自 `~/Library/Developer/MotuoBuilds/0.4.0-4/`：9,890,223 字节，SHA-256 `c6e905221a370c557ee215c80a0df91e344eee2f3489ce4642a613dcb6b8bf34`，授权中不含 iCloud（App ID 尚未启用 iCloud、容器未创建）。Apple 返回 `UPLOAD SUCCEEDED`，Delivery/Build ID `19bb618f-cf52-4749-81cf-db8ef5284aaf`，处理为 `VALID`，已写简体中文测试说明并加入 `Motuo Internal`，回读 `IN_BETA_TESTING`，组内构建 4/3/2/1。路谱仅保存在手机并可在“文件”App 查看；iCloud 自动上传需用户在 developer.apple.com 创建 `iCloud.cn.yundongyl.motuo` 并关联 App ID 后，`--refresh-profile` 重建描述文件再发下一版。
+
+## 10 月 23 日：`0.5.0 (5)` 车辆状态感知与座舱交互（仅本地路谱）
+
+分支 `feature/vehicle-state`。签名 IPA 来自 `~/Library/Developer/MotuoBuilds/0.5.0-5/`：10,280,661 字节，SHA-256 `07c30adb00dca29df87b5d802d8c31e6bd6ef416302379f28724c44e735eab1b`，不含 iCloud 授权。Apple 返回 `UPLOAD SUCCEEDED`，Delivery/Build ID `c8dba4f3-a7f8-470c-9776-75b055df9f3c`，处理为 `VALID`，已写简体中文测试说明并加入 `Motuo Internal`，回读 `IN_BETA_TESTING`，组内构建 5/4/3/2/1。包内仅含合成回放，不含真实骑行数据。

@@ -6,6 +6,8 @@
 
 **10/21 原生已接入 v3 漫画 MV 座舱（分支 `feature/v3-comic-cockpit`，`0.3.0 (3)` 仅本地签名、未上传）：** 横竖屏旋转（竖屏、横屏左/右）全状态适配，单一原生 TabBar，倒计时后才开始记录，结束先播“今日骑行漫画”再进原生复盘，漫画可经系统分享面板保存为 PNG。v2 可用 `python3 scripts/prepare-native-cockpit.py --variant v2` 回退。C5913 GLB 分发授权未核验，公开发布前必须解决。见 [STATUS](docs/STATUS.md) 与 [v3 README](prototypes/motuo-v3/README.md)。
 
+**10/22 路谱采集模式（分支 `feature/roadlog`，`0.4.0 (4)` 仅本地签名、未上传）：** 每次真实骑行（DEMO 除外）默认自动全量采集 iPhone 传感器，写成自描述的路谱包（gzip CSV 分块、SHA-256、可从强杀中恢复），结束后放进你自己的 iCloud Drive（`iCloud.cn.yundongyl.motuo`），自动同步到 Mac 后可用 `python3 tools/roadlog/roadlog.py list|verify|summary|export` 分析。原始声音单独开关、默认关闭。当前 App ID 还没有 iCloud 能力（需要在网页上建容器，见 [APPLE_RELEASE](docs/APPLE_RELEASE.md)），没有能力时只保存在本机，并可在“文件”App 中查看、分享导出。格式见 [ROADLOG_FORMAT](docs/ROADLOG_FORMAT.md)，验证见 [STATUS](docs/STATUS.md)。
+
 **下一版先评审 HTML 效果：** [交互原型](prototypes/motuo-v2/index.html) · [启动方式与验收](prototypes/motuo-v2/README.md)。以 YU7 仪表布局为基础：日常模式保留持续起伏的蓝色波面和独立音乐，运动模式提供四种无地图主题；声浪趋势与正负加速度突出显示，没有数字 RPM。开始骑行后进入页面沉浸，暂停保持，结束复盘并恢复导航。10/20 按用户要求改为游戏／MV 级夸张特效：自写 WebGL 全屏世界、追尾 3D 车、可跳过的电影化出发、游戏事件巨字与连击游戏分（明示非测量）、子弹时间暂停、Wrapped 复盘，特效强度默认“夸张”，仍保留单一 rAF、60／30fps 档位、闪光限流与速度始终可读；已同步进原生并通过模拟器测试，真机未验收，见 [动效调研](docs/research/remotion-motion-20261020.md)。见 [仪表参考](docs/research/yu7-reference-20260920.md)、[动效世界](docs/research/motion-worlds-20260920.md) 和 [声音／惯导边界](docs/design/vehicle-sound-transition-20260920.md)。
 
 **实时 3D 已换用用户确认的 C5913 近似模型。** `Suzuki 550 GSX R1000` 已转换接入车库、待机与共享画布出发，支持旋转、缩放、视角、分区改色及外观保存；熊猫方案为白色车身与黑色辅色。展示明确标为 **GSX-R1000，非准确 GSX250R**，GSX250R 车辆档案保持独立。52,432 三角面、17 网格、9 材质与18张原始 JPEG 保留，原素材和 GLB 仅本机使用、不进入 Git；有原始包时运行 `python3 scripts/prepare-suzuki-model.py` 可重建。见 [模型接入与验证](docs/research/c5913-model-selection-20260920.md)。手机持续性能、法线绿通道约定和分发授权仍待核验；本轮未变更原生 App、TestFlight 或 NAS。
@@ -34,6 +36,7 @@
 | `worker/` | Python PDF 排版抽取、中文分词、OCR、任务恢复 |
 | `deploy/` | 独立 NAS Compose、Nginx 模板、备份恢复及回滚验证 |
 | `scripts/` | Apple 发布、NAS 部署、手册验收与 HUD 模拟器 |
+| `tools/roadlog/` | Mac 端路谱工具：列出、校验、摘要、导出 Parquet/CSV、对齐示例与合成包 |
 | `fixtures/` | 41 个手册证据问题及实时状态边界问题 |
 | `docs/` | API 契约、协议、平台接续和分层验收记录 |
 

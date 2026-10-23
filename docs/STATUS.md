@@ -1,10 +1,43 @@
 # Motuo 实施状态
 
-更新：2026-10-20。源码、模拟器、本机真实 HTTP、NAS、公网、Apple 分发和实车是独立验收层。已形成完整本机工程与主要交互；**0.2.0 (2) 已分发至TestFlight内部组，本人可接受邀请安装；实际iPhone/Watch安装和实车内测尚未验收。**
+更新：2026-10-22。源码、模拟器、本机真实 HTTP、NAS、公网、Apple 分发和实车是独立验收层。已形成完整本机工程与主要交互；**0.2.0 (2) 已分发至TestFlight内部组，本人可接受邀请安装；实际iPhone/Watch安装和实车内测尚未验收。**
 
 **2026-10-21：`0.3.0 (3)`（v3 漫画 MV 座舱，竖屏/横屏左右旋转）已上传并处理为 VALID，已加入 Motuo Internal 内部测试（IN_BETA_TESTING）。** 真机安装与实车验收仍待本人完成；GLB 分发授权未核验，仅限内部测试。详见 [APPLE_RELEASE](APPLE_RELEASE.md)。
 
 > 2026-10-21 追加：原生座舱已换用 v3 漫画 MV 并适配横竖屏旋转，版本 **0.3.0 (3) 仅本地签名归档/导出，未上传 TestFlight**；上方 0.2.0 (2) 的分发状态不变。详见下一节。同日审核返工 fix1 见其后一节。
+
+## 10/22 路谱采集模式（分支 `feature/roadlog`，模拟器 ＋ 本地签名 `0.4.0 (4)`，未推送、未上传）
+
+用户要求“每次自动采集尽量全的路谱，结束后自动后台上传 iCloud；后面根据这些车辆运行信息定制化开发”。格式规范见 [ROADLOG_FORMAT](ROADLOG_FORMAT.md)，Mac 工具见 [tools/roadlog](../tools/roadlog/README.md)。
+
+- **采集：** 控制中心新增“路谱采集模式”，默认开启。每次真实骑行自动生成一个自描述的路谱包；**DEMO 骑行不生成**，上传队列也会拒绝 simulated 包。各流如下：
+  - motion（deviceMotion 全字段，100 Hz）、原始加速度和陀螺（100 Hz）、磁力计（50 Hz）。
+  - 气压相对高度和绝对高度、CLLocation 全字段（含椭球高、航向精度、模拟/配件来源）、CLHeading。
+  - 声学特征（RMS、峰值、16 个频带，约 47 Hz；只在用户已开麦克风时）。“保存原始声音”是单独的开关，默认关闭，打开前会弹出明确确认。
+  - 设备与环境（device.jsonl）、推断事件和推断估速（`inferred_*`）、配件原始帧、车辆档案（不含车牌）、安装标定。
+  - 所有流统一用 `systemUptime` 时基，并记录与 UTC 的映射。
+  - `CMBatchedSensorManager` 在 iOS SDK 26.5 中只标注 watchOS 10+，iPhone 无法使用，manifest 里如实写为 `unsupported`。
+- **不影响原有记录：** 共用的 CMMotionManager 改为 100 Hz，旧链路按时间戳降采样回 50 Hz，所以 TelemetryJournal、事件启发式、惯导估速、NAS 同步与原有强杀恢复的行为都不变（有单测）。
+- **写入与恢复：**
+  - 写入在后台串行队列上批量进行：未封的块是明文 `.part`，每 60 s 或 4 MiB 封成 gzip CSV，并记录 SHA-256，index.jsonl 每行后 fsync。
+  - 启动时把被终止的包截断半行、封好、并从磁盘重建 manifest。
+  - 存储不足时分三级降级（2 GiB 停原始声音 / 1 GiB IMU 降到 25 Hz / 300 MiB 停路谱），并记入 manifest。
+- **iCloud：**
+  - 骑行结束后封包、校验，用 NSFileCoordinator 把包复制到容器 `iCloud.cn.yundongyl.motuo` 的 `Documents/Roadlog/`（manifest 最后写入），之后由系统上传；回读 `ubiquitousItemIsUploaded` 后才标记为已上传。
+  - 状态机为：待封包 → 已封包 → 已放入 iCloud → 已上传；失败按指数退避重试（1 分钟起，最长 6 小时）。iCloud 不可用时为“仅本地”并显示原因；账号变化、网络恢复、回到前台和 BG 处理任务（`cn.yundongyl.motuo.roadlog.process`）都会让队列自动继续。
+  - 本地副本只在确认上传后才清理（默认保留最近 10 次或 7 天内）。
+  - `UIFileSharingEnabled` 打开后，本地包在“文件”App 中可见，设置页也可以分享导出 zip。
+- **座舱：** v3 左上页角下方加了一条小贴纸“路谱采集中 · 已记录 X MB · 100Hz”（竖屏为短格式，只读，不挡速度巨字；WebKit 截图在 `artifacts/roadlog-20261022/`）。快照新增 `roadlog` 字段（见 CONTRACT）。
+- **新发现并修复：** App 有了 iCloud 授权后，SwiftData 默认 `.automatic` 会尝试为本地库开启 CloudKit，在模拟器上启动即崩溃。现在固定为 `cloudKitDatabase: .none`，本地库的路径和内容都不变。
+- **验证（本机）：**
+  - iPhone 17 模拟器（iOS 26.5）：**65 单测（新增 21 项；1 项实时测试默认跳过，已单独运行通过）＋ 4 UI 测试**全部通过，原有 44＋4 项无回归。
+  - v3 node **93/93**（新增 2 项贴纸测试）。
+  - tools/roadlog **15/15**，在系统 Python 3.9（有 pyarrow，无 matplotlib）、venv（有 matplotlib/pyarrow）、`-S`（无可选依赖，跳过 1 项）三种环境下各跑一次。
+  - **合成 10 分钟骑行：** 按目标频率生成带噪声的合成传感器输入（快于实时），走真实的 recorder/writer/FFT 管线，生成 9.0 MB 的包。Swift 端校验通过，Mac 端 `roadlog.py verify` OK、`summary` 结果正确：motion/accel/gyro 100.0 Hz，mag 50.0 Hz，声学 46.9 Hz，location 590 行，并识别出 11 s 的隧道缺口。推算**约 54 MB/小时**（不含原始声音；原始声音约再加 14 MB/小时）。
+  - **CPU：** 写入加声学特征约每小时数据 47 CPU 秒（Mac CPU，约占单核 1.3%）。60 s 实时节奏下 motion 实测 100.0 Hz，测试进程（含座舱 WebView 和数据生成）约占单核 11%，主线程最大延迟 37 ms。报告在 `artifacts/roadlog-20261022/synthetic/`。
+  - 模拟器**没有登录 iCloud**：真实的 iCloud provider 返回“不可用”，包按设计进入“仅本地”，没有崩溃。
+- **签名：** App ID 还没有 iCloud 能力，ASC API 也不能创建容器（用户网页操作步骤见 [APPLE_RELEASE](APPLE_RELEASE.md)）。`apple-release.py --archive --export --build-number 4 --build-dir ~/Library/Developer/MotuoBuilds/0.4.0-4`（`--icloud auto`）在没有 iCloud 授权的情况下签名成功：iPhone/Watch 0.4.0 / 4，codesign 严格校验通过；IPA 9,890,223 字节，SHA-256 `c6e905221a370c557ee215c80a0df91e344eee2f3489ce4642a613dcb6b8bf34`。强制带 iCloud 授权归档时报错：`Provisioning profile "Motuo App Store" doesn't include the iCloud capability … doesn't support the iCloud.cn.yundongyl.motuo iCloud Container`。**未上传 TestFlight。**
+- **仍待：** 用户在网页上完成三步并重建描述文件后，重新签带 iCloud 的包；真机验证包括：iCloud 实际上传和 Mac 同步、后台/锁屏下 CoreMotion 的持续性与实测采样率、真实麦克风声学特征和原始声音录制、真机 CPU/发热/续航与每小时数据量、BG 任务执行、配件帧、“文件”App 可见性。
 
 ## 10/21 审核返工 fix1：全出血、竖屏剧场让车、横屏漫画页、启动不闪白（模拟器 ＋ 本地签名）
 

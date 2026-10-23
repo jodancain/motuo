@@ -60,6 +60,7 @@ struct SoundFeatures: Sendable {
             guard format.sampleRate>0,format.channelCount>0 else{throw NSError(domain:"MotuoAudio",code:1,userInfo:[NSLocalizedDescriptionKey:"手机麦克风暂不可用"])}
             input.installTap(onBus:0,bufferSize:1024,format:format){[weak self] buffer,_ in
                 guard let values=buffer.floatChannelData?[0] else{return}
+                RoadlogAudioTap.shared.deliver(buffer,uptime:ProcessInfo.processInfo.systemUptime)
                 let samples=Array(UnsafeBufferPointer(start:values,count:min(Int(buffer.frameLength),2048)))
                 let features=SoundFeatures.analyze(samples,sampleRate:buffer.format.sampleRate),time=ProcessInfo.processInfo.systemUptime
                 Task{@MainActor in guard let self,self.revision==current else{return};self.features=features;self.sampleUptime=time;self.live=true;self.status="正在聆听 · 手机麦克风"}
@@ -69,7 +70,7 @@ struct SoundFeatures: Sendable {
     }
     func stop(_ message:String="麦克风关闭"){
         revision=UUID();let wasRunning=engine != nil
-        engine?.inputNode.removeTap(onBus:0);engine?.stop();engine=nil;live=false;features=nil;sampleUptime=0;status=message
+        engine?.inputNode.removeTap(onBus:0);engine?.stop();engine=nil;if wasRunning{RoadlogAudioTap.shared.inputStopped()};live=false;features=nil;sampleUptime=0;status=message
         if wasRunning {try? AVAudioSession.sharedInstance().setCategory(.playback,mode:.default,options:[])}
     }
 }

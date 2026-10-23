@@ -15,6 +15,12 @@ import Observation
     var cockpitPaint: String? { didSet { UserDefaults.standard.set(cockpitPaint, forKey: "cockpitPaint") } }
     var cockpitFinish: String? { didSet { UserDefaults.standard.set(cockpitFinish, forKey: "cockpitFinish") } }
     var cockpitWorld: String? { didSet { UserDefaults.standard.set(cockpitWorld, forKey: "cockpitWorld") } }
+    /// Roadlog (路谱) capture: on by default for every real ride; raw audio is a separate, default-off switch.
+    var roadlogEnabled: Bool { didSet { UserDefaults.standard.set(roadlogEnabled, forKey: "roadlogEnabled") } }
+    var roadlogRawAudio: Bool { didSet { UserDefaults.standard.set(roadlogRawAudio, forKey: "roadlogRawAudio") } }
+    /// Local copies of uploaded packages are kept when among the newest N or younger than D days.
+    var roadlogKeepCount: Int { didSet { UserDefaults.standard.set(roadlogKeepCount, forKey: "roadlogKeepCount") } }
+    var roadlogKeepDays: Int { didSet { UserDefaults.standard.set(roadlogKeepDays, forKey: "roadlogKeepDays") } }
     /// One-shot request for the cockpit to open a scene panel (e.g. the garage's “外观与配色” entry). Not persisted.
     var cockpitPanelRequest: (id: UUID, name: String)?
     func requestCockpitPanel(_ name: String) { cockpitPanelRequest = (UUID(), name) }
@@ -27,6 +33,8 @@ import Observation
         watchMilestoneHaptics = d.object(forKey: "watchMilestoneHaptics") as? Bool ?? true
         reducedEffects = d.bool(forKey: "reducedEffects"); autoSync = d.object(forKey: "autoSync") as? Bool ?? true
         selectedVehicleID = d.string(forKey: "selectedVehicleID") ?? ""
+        roadlogEnabled = d.object(forKey: "roadlogEnabled") as? Bool ?? true; roadlogRawAudio = d.object(forKey: "roadlogRawAudio") as? Bool ?? false
+        roadlogKeepCount = d.object(forKey: "roadlogKeepCount") as? Int ?? 10; roadlogKeepDays = d.object(forKey: "roadlogKeepDays") as? Int ?? 7
         cockpitPaint = d.string(forKey: "cockpitPaint"); cockpitFinish = d.string(forKey: "cockpitFinish"); cockpitWorld = d.string(forKey: "cockpitWorld")
     }
 }

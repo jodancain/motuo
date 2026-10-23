@@ -28,6 +28,7 @@ struct InertialVelocityBridge {
         guard value.isFinite,value<=100,uncertaintyMPS*3.6<=25 else{invalid=true;self.speedMPS=nil;return}
         self.speedMPS=max(0,value)
     }
+    func anchorAge(at time:Double)->Double?{anchorTime.map{time-$0}}
     func estimate(at time:Double)->(speed:Double,uncertainty:Double)?{
         guard !invalid,let speedMPS,let anchorTime,let lastMotionTime,time.isFinite,
               time>=lastMotionTime,time-lastMotionTime<=0.5,time-anchorTime<=15 else{return nil}

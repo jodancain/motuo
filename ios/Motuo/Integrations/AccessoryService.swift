@@ -19,6 +19,8 @@ struct APIAccessoryDevice: Identifiable {
     private(set) var capabilities: [String] = []
     private(set) var lastMeasurement = "暂无配件实测数据"
     private(set) var connectedName = "未连接"
+    /// Read-only observer for raw newline-delimited frames (roadlog); does not change protocol handling.
+    @ObservationIgnored var onFrame: ((Data, String) -> Void)?
     @ObservationIgnored private var central: CBCentralManager?
     @ObservationIgnored private var peers: [UUID:CBPeripheral] = [:]
     @ObservationIgnored private var endpoints: [UUID:NWEndpoint] = [:]
@@ -138,6 +140,7 @@ struct APIAccessoryDevice: Identifiable {
         guard input.count <= 16384 else { input = Data(); statusMessage = "已拒绝过大的配件数据包"; return }
         while let newline = input.firstIndex(of:10) {
             let frame = input.prefix(upTo:newline); input.removeSubrange(...newline)
+            onFrame?(Data(frame), connection != nil ? "Wi-Fi" : "BLE")
             guard let object = try? JSONSerialization.jsonObject(with:frame) as? [String:Any], object["v"] as? Int == 1 else { continue }
             if object["type"] as? String == "capabilities" {
                 let allowed = Set(["hud","tyrePressure","imu","rpm","gear"])

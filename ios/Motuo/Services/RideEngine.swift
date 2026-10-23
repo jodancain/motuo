@@ -75,10 +75,12 @@ import simd
     @ObservationIgnored private var lastMilestoneKM = 0
     @ObservationIgnored private var calibrationId: UUID?
     @ObservationIgnored private var segmentMonotonicStart = ProcessInfo.processInfo.systemUptime
+    /// Full-sensor roadlog for real rides (DEMO rides never start one). Independent of TelemetryJournal.
+    @ObservationIgnored let roadlog: RoadlogRecorder
 
     override convenience init() { self.init(saveChanges: { try $0.save() }) }
-    init(saveChanges: @escaping (ModelContext) throws -> Void, flushJournal: @escaping (TelemetryJournal) throws -> Void = { try $0.flushRecoveringAfterFailure() }) {
-        self.saveChanges = saveChanges; self.flushJournal = flushJournal
+    init(saveChanges: @escaping (ModelContext) throws -> Void, flushJournal: @escaping (TelemetryJournal) throws -> Void = { try $0.flushRecoveringAfterFailure() }, roadlog: RoadlogRecorder? = nil) {
+        self.saveChanges = saveChanges; self.flushJournal = flushJournal; self.roadlog = roadlog ?? .shared
         super.init(); locationManager.delegate = self
         NotificationCenter.default.addObserver(self, selector: #selector(wallClockDidChange), name: UIApplication.significantTimeChangeNotification, object: nil)
         locationManager.desiredAccuracy = kCLLocationAccuracyBestForNavigation
@@ -128,7 +130,7 @@ import simd
             UserDefaults.standard.set(ride.id.uuidString, forKey: "activeRideID")
             elapsedSeconds = 0; recentEvents = []; demoProgress = 0; demoSecond = -1; lastMilestoneKM = 0
             watchSummary = nil; UserDefaults.standard.removeObject(forKey: "motuo.watch.lastSummary")
-            resetSegment(); startSensors()
+            resetSegment(); beginRoadlog(ride, vehicle: vehicle); startSensors()
             if settings.watchHaptics { WatchBridge.shared.sendHaptic(.start) }
         } catch {
             context.delete(ride); journal = nil
@@ -138,7 +140,7 @@ import simd
     func pause() {
         guard let ride = currentRide, isRecording else { return }
         checkpointDuration(); ride.status = "paused"; ride.segmentStartedAt = nil
-        stopSensors(); speedMPS = nil; turnDirection = 0; longitudinalTrend = 0; gpsTrend.reset()
+        stopSensors(); roadlog.pause(); speedMPS = nil; turnDirection = 0; longitudinalTrend = 0; gpsTrend.reset()
         do { try journal?.flush(); try context?.save() } catch { errorMessage = error.localizedDescription }
         if settings?.watchHaptics == true { WatchBridge.shared.sendHaptic(.pause) }
         sendWatchContext()
@@ -152,7 +154,9 @@ import simd
             try flushJournal(activeJournal)
             ride.status = "recording"; ride.segmentStartedAt = Date()
             try persistChanges()
-            resetSegment(); startSensors(); errorMessage = nil
+            resetSegment()
+            if roadlog.active { roadlog.resume() } else { beginRoadlog(ride, vehicle: nil) }
+            startSensors(); errorMessage = nil
         } catch {
             ride.status = "interrupted"; ride.segmentStartedAt = nil; stopSensors(); speedMPS = nil
             errorMessage = "继续记录未保存，请释放存储空间后重试：\(error.localizedDescription)"
@@ -165,7 +169,7 @@ import simd
         }
         errorMessage = nil
         if isRecording { checkpointDuration() }
-        stopSensors(); ride.segmentStartedAt = nil
+        stopSensors(); roadlog.pause(); ride.segmentStartedAt = nil
         do {
             if journal?.errorMessage != nil { recordStorageGap(ride) }
             guard let journal else { throw APIClientError(message: "遥测文件尚未恢复，请重试") }
@@ -194,6 +198,7 @@ import simd
         if settings?.watchHaptics == true { WatchBridge.shared.sendHaptic(.finish) }
         watchSummary = WatchRideContext(isRiding: false, isSimulated: ride.isSimulated, speedKPH: nil, distanceKM: ride.distanceM / 1000, elapsedSeconds: ride.durationS, status: "骑行完成", updatedAt: Date(), isSummary: true)
         if let data = try? JSONEncoder().encode(watchSummary) { UserDefaults.standard.set(data, forKey: "motuo.watch.lastSummary") }
+        roadlog.finish()
         lastFinishedRide = ride; currentRide = nil; journal = nil; speedMPS = nil
         accelerationIntensity = 0; rotationIntensity = 0; turnDirection = 0; longitudinalTrend = 0; gpsTrend.reset(); elapsedSeconds = 0
         UserDefaults.standard.removeObject(forKey: "activeRideID"); sendWatchContext()
@@ -206,6 +211,19 @@ import simd
         ride.events = events; ride.dataVersion += 1; ride.syncStatus = "local"
         ride.summaryText = Self.localSummary(for: ride); ride.aiText = ""; ride.reportStatus = "local"
         do { try context?.save(); try VehicleLearningService.shared.invalidate(rideId: ride.id) } catch { errorMessage = error.localizedDescription }
+    }
+    /// Starts the roadlog for a real ride when the mode is on. A resumed ride after termination gets a new package
+    /// (same rideId); the earlier one was recovered and sealed at launch.
+    private func beginRoadlog(_ ride: Ride, vehicle: Vehicle?) {
+        guard !ride.isSimulated, settings?.roadlogEnabled == true, let context else { return }
+        let vehicleId = ride.vehicleId
+        let vehicle = vehicle ?? (try? context.fetch(FetchDescriptor<Vehicle>(predicate: #Predicate { $0.id == vehicleId })))?.first
+        let maintenance = (try? context.fetch(FetchDescriptor<MaintenanceEntry>(predicate: #Predicate { $0.vehicleId == vehicleId }))) ?? []
+        roadlog.begin(.init(rideId: ride.id, startedAt: Date(), simulated: false,
+                            vehicle: vehicle.map { RoadlogRecorder.vehicleMetadata($0, maintenance: maintenance) },
+                            calibration: RoadlogRecorder.calibrationMetadata(SensorCalibrationService.shared.profile(for: vehicleId)),
+                            rawAudio: settings?.roadlogRawAudio == true),
+                      motionManager: motionManager, locationManager: locationManager)
     }
     private func recordStorageGap(_ ride: Ride) {
         let note = "记录链路发生写入中断；恢复保留已提交数据块和完整尾行，未写完的尾行可能缺测。请核对记录完整性。"
@@ -241,9 +259,15 @@ import simd
         locationManager.allowsBackgroundLocationUpdates = true; locationManager.startUpdatingLocation()
         if motionManager.isDeviceMotionAvailable {
             let motionSegmentID = telemetryClock.id
-            motionManager.deviceMotionUpdateInterval = 1 / 50
-            motionManager.startDeviceMotionUpdates(using: .xArbitraryZVertical, to: motionQueue) { [weak self] data, error in
+            // With a roadlog the shared manager runs at 100 Hz; the legacy path is decimated back to 50 Hz so
+            // TelemetryJournal, the signal heuristics and the inertial bridge see the same rate as before.
+            let sink = roadlog.sink, rate = sink == nil ? 50.0 : RoadlogRecorder.motionHz
+            let legacy = MotionDecimator(sourceHz: rate, targetHz: 50)
+            motionManager.deviceMotionUpdateInterval = 1 / rate
+            motionManager.startDeviceMotionUpdates(using: sink == nil ? .xArbitraryZVertical : RoadlogRecorder.referenceFrame, to: motionQueue) { [weak self] data, error in
                 guard let data else { return }
+                sink?.motion(data)
+                guard legacy.accept(data.timestamp) else { return }
                 let sample = MotionValues(segmentId: motionSegmentID, timestamp: data.timestamp, ax: data.userAcceleration.x * 9.80665,
                     ay: data.userAcceleration.y * 9.80665, az: data.userAcceleration.z * 9.80665,
                     rx: data.rotationRate.x, ry: data.rotationRate.y, rz: data.rotationRate.z)
@@ -285,6 +309,7 @@ import simd
     }
     private func addEvent(_ event: RideEvent) {
         guard let ride = currentRide else { return }
+        roadlog.signalEvent(event)
         var events = ride.events; events.append(event); ride.events = events
         recentEvents = Array(events.suffix(10).reversed())
     }
@@ -297,6 +322,11 @@ import simd
             lowPowerMode = info.isLowPowerModeEnabled
         }
         guard let ride = currentRide else { return }
+        if isRecording, roadlog.active {
+            let now = ProcessInfo.processInfo.systemUptime
+            if tickNumber % 3 == 0 { roadlog.inferredSpeed(inertialPresentation, anchorAge: velocityBridge.anchorAge(at: now)) }
+            if tickNumber % 30 == 0 { roadlog.inferredSignal(trend: longitudinalTrend, turn: turnDirection, acceleration: accelerationIntensity, rotation: rotationIntensity) }
+        }
         if isRecording {
             elapsedSeconds = ride.durationS + max(0,ProcessInfo.processInfo.systemUptime-segmentMonotonicStart)
             if isSimulated { demoTick() }
@@ -366,6 +396,7 @@ import simd
     }
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard isRecording, !isSimulated, let ride = currentRide else { return }
+        roadlog.location(locations)
         for location in locations.sorted(by: { $0.timestamp < $1.timestamp }) {
             let now = Date()
             guard location.horizontalAccuracy >= 0, location.horizontalAccuracy <= 100,
@@ -411,7 +442,9 @@ import simd
             if km > lastMilestoneKM { lastMilestoneKM = km; if settings?.watchHaptics == true { WatchBridge.shared.sendHaptic(.milestone) } }
         }
     }
-    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) { locationStatus = "定位暂不可用"; speedMPS = nil; longitudinalTrend = 0; gpsTrend.reset() }
+    func locationManager(_ manager: CLLocationManager, didUpdateHeading newHeading: CLHeading) { if isRecording, !isSimulated { roadlog.heading(newHeading) } }
+    func locationManagerShouldDisplayHeadingCalibration(_ manager: CLLocationManager) -> Bool { false }
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) { roadlog.locationError(error); locationStatus = "定位暂不可用"; speedMPS = nil; longitudinalTrend = 0; gpsTrend.reset() }
     private func sendWatchContext() {
         let navigation = NavigationService.shared
         var watchContext = WatchRideContext(isRiding: isRecording, isSimulated: isSimulated, speedKPH: speedMPS.map { $0 * 3.6 },

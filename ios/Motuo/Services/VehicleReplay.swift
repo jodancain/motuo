@@ -81,14 +81,14 @@ struct VehicleReplayCursor {
             VehicleReplay.feed(s, into: &estimator, offset: offset); index += 1
         }
     }
-    /// Latest replay GPS speed at or before t (looped), for the DEMO ride's 1 Hz readings; nil inside the replay's GPS gap.
+    /// Latest replay GPS speed at or before t (looped), for the DEMO ride's 1 Hz readings.
     func speed(at t: Double) -> Double? {
         guard replay.duration > 0 else { return nil }
         let local = t.truncatingRemainder(dividingBy: replay.duration)
         var lo = 0, hi = replay.gpsSpeeds.count - 1, best: (t: Double, speed: Double)?
         while lo <= hi { let mid = (lo + hi) / 2; if replay.gpsSpeeds[mid].t <= local { best = replay.gpsSpeeds[mid]; lo = mid + 1 } else { hi = mid - 1 } }
-        // The replay's GPS outage stays an outage (no reading) instead of holding the last value.
-        guard let best else { return replay.gpsSpeeds.first?.speed }
-        return local - best.t <= VS.gpsMaxAgeS ? best.speed : nil
+        // Inside the replay's GPS outage the DEMO keeps showing the last reading (like the real cockpit's short inertial
+        // bridge, the number stays readable); the estimator itself still sees the outage and falls back to IMU only.
+        return best?.speed ?? replay.gpsSpeeds.first?.speed
     }
 }

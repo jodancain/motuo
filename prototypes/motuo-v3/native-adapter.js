@@ -9,6 +9,8 @@
  *   sound {live,status,level,db,spectrum[32],wave[64],clipped}，appearance {paint,finish,world}|null，panel {id,name}|null，
  *   finishedRide {id,distanceM,durationS,maxSpeedKmh,simulated,validSpeedSamples,timeline:[{t,v}],events:[{t,kind}]}，
  *   roadlog {active,bytes,motionHz,degraded}|null（路谱采集中时；只用于左上角小贴纸）
+ *   vehicle {source,engine,engineConf,motion,motionConf,longG,accel,brake,turn,yawDegS,lean,leanSource,phase,turnConf,mount,mountConf,shiftAgo?,shiftConf?}|null
+ *     （VehicleStateEstimator 推断，演示骑行为 simulated；驱动转弯 / 刹车 / 加速 / 发动机交互，见 core/vehicle-fx.js；不显示倾角与转速数字）
  * 动作（全部在 CockpitWebView.swift Coordinator.commands 白名单里，有测试扫描本目录源码核对）：见 NATIVE_ACTIONS。 */
 export const NATIVE_STALE_MS = 1500;
 const MOTIONS = new Set(['ready', 'launch', 'accelerate', 'cruise', 'load', 'turn', 'brake', 'stop', 'gps']);
@@ -67,6 +69,8 @@ export function mapSnapshot(s, {receivedAt = 0, now = receivedAt} = {}) {
     cap: tierCap(s), modal: !!s.modal, active: s.active !== false, simulated: !!s.simulated, demoMode: !!s.demoMode,
     locationStatus: s.locationStatus || '', stateLabel: s.stateLabel || '', title: rideTitle(s.phase),
     appearance: cleanAppearance(s.appearance),
+    // 车辆状态估计（推断 / 演示为模拟），只在骑行中且快照新鲜时转发；倾角只驱动画面。
+    vehicle: riding && !stale && s.vehicle && typeof s.vehicle === 'object' ? s.vehicle : null,
     roadlog: roadlogLabel(s.roadlog), roadlogCompact: roadlogLabel(s.roadlog, {compact: true}),
     panel: s.panel && typeof s.panel.id === 'string' && ['garage', 'world', 'sound', 'settings'].includes(s.panel.name) ? {id: s.panel.id, name: s.panel.name} : null,
     finishedRide: fr ? {
@@ -129,6 +133,7 @@ export function installNativeAdapter(app, win = globalThis) {
     if (m.appearance && JSON.stringify(m.appearance) !== lastAppearance) { lastAppearance = JSON.stringify(m.appearance); app.nativeAppearance?.(m.appearance); }
     if (m.phase !== lastPhase) { const old = lastPhase; lastPhase = m.phase; if (m.phase !== 'riding') lastKey = null; app.nativePhase(m.phase, old, m); }
     if (m.frame && m.sampleKey !== lastKey) { lastKey = m.sampleKey; app.nativeReading(m.frame, m); }
+    app.nativeVehicle?.(m.vehicle);
     if (m.panel && m.panel.id !== lastPanel) { lastPanel = m.panel.id; app.nativePanel?.(m.panel.name); }
     if (m.finishedRide && m.finishedRide.id !== finishedId) {
       finishedId = m.finishedRide.id;

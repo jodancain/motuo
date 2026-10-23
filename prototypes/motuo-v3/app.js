@@ -24,6 +24,9 @@ import {createResizeController} from './core/resize.js';
 import {createMilestoneDirector, ACTS as MILESTONE_ACTS} from './core/milestone-director.js';
 import {createMilestonePlayer} from './render/milestone-player.js';
 import {GALLERY_ITEMS, GALLERY_TIERS, galleryPlan} from './core/milestone-gallery.js';
+import {vehicleVisuals, createVehicleDirector, placeWord, reducedHint, normalizeVehicle, FX_LEVELS} from './core/vehicle-fx.js';
+import {createReplayPlayer} from './core/vehicle-replay.js';
+import {generateSynthetic} from './core/vehicle-synth.js';
 
 const $ = id => document.getElementById(id);
 // 脚本错误计数（屏幕阅读器可读、原生 UI 测试断言为 0）；渲染任务出错会被主时钟移除，这里让它不再静默。
@@ -46,10 +49,11 @@ const PRESETS = Object.freeze({ // 与 v2 vehicle-garage.js 预设一致
   ember: {name: '熔岩红', bodyColor: '#c93241', accentColor: '#191c24'},
   violet: {name: '电光紫', bodyColor: '#7854ba', accentColor: '#191a28'},
 });
-let prefs = {world: 'neon', paint: 'ember', finish: 'gloss', tier: 'auto', sfx: true, reduce: 'system'};
+let prefs = {world: 'neon', paint: 'ember', finish: 'gloss', tier: 'auto', sfx: true, reduce: 'system', fx: 'std'};
 try { prefs = {...prefs, ...JSON.parse(localStorage.getItem(PREF_KEY) || '{}')}; } catch { /* 默认值 */ }
 prefs.world = normalizeWorld(prefs.world);
 if (!PRESETS[prefs.paint]) prefs.paint = 'ember';
+if (!(prefs.fx in FX_LEVELS)) prefs.fx = 'std';
 const savePrefs = () => { try { localStorage.setItem(PREF_KEY, JSON.stringify(prefs)); } catch { /* 预览不保存 */ } };
 
 /* ---------- 子系统 ---------- */
@@ -59,6 +63,8 @@ const limiter = createFlashLimiter({maxPerSecond: 2});
 const sysReduced = matchMedia('(prefers-reduced-motion: reduce)');
 const isReduced = () => prefs.reduce === 'on' || sysReduced.matches || S.nativeReduced;
 const director = createDirector({limiter, reduced: isReduced});
+const vdirector = createVehicleDirector({requestFlash: (t, kind) => director.requestFlash(t, kind)});
+const VIS_REST = vehicleVisuals(null);
 const ride = createRideModel({signals: Signals, game: Game});
 const painter = createWorldPainter();
 const fx = createFx();
@@ -79,6 +85,8 @@ const S = {
   wheelieUntil: 0, wheeliePitch: -.3, brakeUntil: 0, cornerUntil: 0, revUntil: 0, burn: null, dash: null, drag: null, drift: null,
   cut: null, cutStep: -1, countdownLabel: '', goUntil: 0, demoSoundRestore: null, lastSmoke: 0, lastSoundT: 0, comic: null,
   eventsLog: [], sound: {valid: false},
+  // 车辆状态（估计器快照，原生或浏览器回放）与平滑后的画面参数。
+  vs: null, vsAt: 0, vis: null, roll: 0, lungeKick: 0, nextFlame: 0, nextPuff: 0, nextRipple: 0, nextRev: 0, joltUntil: 0, vsWords: [],
 };
 const st = {x: 0, t: 0, speed: 0, accel: null, eq: null, misprint: true, particles: 1, weather: [], lines: [], focus: 0, focusX: 0, focusY: 0, dt: 0};
 const springs = {pitch: {x: 0, v: 0}, yaw: {x: 0, v: 0}, squash: {x: 1, v: 0}};
@@ -173,7 +181,7 @@ function renderSpeed() {
   if ($('speed-est').hidden === d.estimated) $('speed-est').hidden = !d.estimated;
   if ((d.text === '—') !== S.unknownShown) { S.unknownShown = d.text === '—'; speedEl.classList.toggle('unknown', S.unknownShown); }
   const r = ride.reading;
-  const stampText = S.phase === 'gallery' ? '预览 · 非骑行数据' : 'DEMO';
+  const stampText = S.phase === 'gallery' ? '预览 · 非骑行数据' : S.mode === 'replay' ? '回放' : 'DEMO';
   if ($('speed-stamp').textContent !== stampText) $('speed-stamp').textContent = stampText;
   const stampHidden = S.phase !== 'gallery' && !(S.phase !== 'idle' && r?.simulated) && !(S.mode === 'demo' && S.phase !== 'idle');
   if ($('speed-stamp').hidden !== stampHidden) $('speed-stamp').hidden = stampHidden;
@@ -188,7 +196,7 @@ function renderHud() {
   const riding = S.phase === 'riding' || S.phase === 'paused' || S.phase === 'finishing';
   setText('clock', riding ? formatClock(S.mode === 'native' ? S.nativeElapsed : ride.rideT) : '00:00');
   setText('dist', riding ? formatKm(S.mode === 'native' ? S.nativeDistance : ride.distanceM) : '0.00');
-  setText('source', S.phase === 'countdown' ? (S.mode === 'native' ? '倒计时 · 出发后开始记录' : '倒计时 · DEMO') : riding ? sourceLabel(ride.reading, S.phase) : S.mode === 'native' ? '原生待机 · 未在记录' : '待机 · 未在记录');
+  setText('source', S.phase === 'countdown' ? (S.mode === 'native' ? '倒计时 · 出发后开始记录' : S.mode === 'replay' ? `倒计时 · ${S.replayLabel}` : '倒计时 · DEMO') : riding ? (S.mode === 'replay' ? S.replayLabel : sourceLabel(ride.reading, S.phase)) : S.mode === 'native' ? '原生待机 · 未在记录' : '待机 · 未在记录');
   setText('sound-status', S.sound.valid ? (S.sound.demo ? '声浪 DEMO' : '麦克风声浪') : S.mode === 'native' && sound.mode !== 'demo' ? (S.nativeSoundStatus || '麦克风关闭') : sound.status);
   if (S.mode === 'native') setText('ride-title', S.nativeTitle || '准备出发');
   const sec = riding ? Math.floor(S.mode === 'native' ? S.nativeElapsed || 0 : ride.rideT) : 0;
@@ -404,7 +412,7 @@ async function buildComic(record) {
 function restoreDemoSound() { if (S.demoSoundRestore !== null) { sound.setMode(S.demoSoundRestore); S.demoSoundRestore = null; } }
 function backToIdle() {
   $('comic').hidden = true;
-  ride.reset(); player = null; S.mode = native.native ? 'native' : null;
+  ride.reset(); player = null; replay = null; S.replayCountdown = null; setVehicle(null); S.mode = native.native ? 'native' : null;
   restoreDemoSound();
   setPhase('idle');
   clearCountdown();
@@ -439,6 +447,8 @@ function reactTo(ev) {
   if (ev.kind === 'rhythm') return;
   // 速度里程碑交给“突破剧场”，不再走单一的分镜 cut-in（游戏分照常累计）。
   if (ev.kind === 'milestone') return;
+  // 有车辆状态时，起步 / 加速 / 刹车 / 过弯的画面由车辆状态导演负责（core/vehicle-fx.js），这里只记游戏分。
+  if (vsLive() && ['launch', 'boost', 'brake', 'corner'].includes(ev.kind)) return;
   const plan = director.event(ev, t);
   if (plan?.type === 'caption') showCaption(plan);
   if (reduced) return;
@@ -522,6 +532,181 @@ function renderGallery() {
   document.querySelectorAll('[data-gtier]').forEach(b => b.setAttribute('aria-pressed', String(Number(b.dataset.gtier) === g.tier)));
 }
 
+/* ---------- 车辆状态交互（core/vehicle-fx.js 决定参数，这里只上屏）---------- */
+function setVehicle(raw) {
+  const v = raw ? normalizeVehicle(raw) : null;
+  S.vs = v; S.vsAt = v ? now() : 0;
+  if (!v) { vdirector.reset(); }
+}
+const vsLive = () => !!S.vs && S.phase === 'riding' && now() - S.vsAt < 1500;
+function vehicleFrame(t, dt) {
+  const reduced = isReduced(), live = vsLive();
+  const theatre = mplayer.active || !!director.active;
+  const target = live ? vehicleVisuals(S.vs, {level: prefs.fx, reduced, theatre, aspect: S.W / S.H}) : VIS_REST;
+  // 平滑：倾斜 / 弯曲 0.3 s，其余 0.18 s；刹车与换挡要“快进快出”。
+  const prev = S.vis || VIS_REST, out = {...target};
+  for (const [key, tau] of [['tiltDeg', .3], ['zoom', .3], ['bikeRollDeg', .3], ['bend', .35], ['innerFocus', .25], ['accel', .2], ['fov', .35], ['warp', .2], ['parallax', .4], ['speedSkewDeg', .2], ['speedStretch', .2], ['flameLen', .15], ['edgeLines', .25], ['dive', .08], ['lunge', .1], ['brakeGlow', .08], ['reverseLines', .15], ['dim', .6], ['wheelie', .25], ['idleJitter', .3], ['calm', .6], ['bikeYaw', .3]]) {
+    out[key] = prev[key] + (target[key] - prev[key]) * (1 - Math.exp(-dt / tau));
+  }
+  S.vis = out;
+  // 一次性效果：拟声字、冲击帧、小分镜、粒子。
+  if (live) for (const e of vdirector.step(S.vs, t, {reduced, theatre: mplayer.active, level: prefs.fx})) applyVehicleEffect(e, t, reduced);
+  else if (!S.vs) vdirector.reset();
+  // 持续粒子：排气火焰随加速强度、怠速排气小烟与低频波纹、轰油门火焰与声浪圈。
+  if (S.phase === 'riding' && !reduced && prefs.fx !== 'off') {
+    const ex = () => bike.point('exhaust'), p = ex(), world = WORLDS[S.world];
+    if (out.flameLen > .22 && t > S.nextFlame) { fx.emit('flame', p.x, p.y, {len: 36 + 170 * out.flameLen * FX_LEVELS[prefs.fx], life: .2, follow: ex}); S.nextFlame = t + 150 - 70 * out.flameLen; }
+    if (target.puff > 0 && t > S.nextPuff) { fx.emit('smoke', p.x, p.y, {count: 1, vx: -50, scale: .45 + .3 * target.puff, particles: tier().particles}); S.nextPuff = t + 1100 - 500 * target.puff; }
+    if (target.ripple > 0 && t > S.nextRipple) { fx.emit('ring', p.x, p.y, {color: world.c, vr: 140 + 220 * target.ripple, life: .9}); S.nextRipple = t + 1000 - 450 * target.ripple; }
+    if (target.revFlame > 0 && t > S.nextRev) { fx.emit('flame', p.x, p.y, {len: 90, life: .25, follow: ex}); S.nextRev = t + 260; }
+  }
+  // 漫画车压弯：在车轮接地点处旋转车图层（场景层另有整体倾斜）。
+  const roll = S.phase === 'riding' && !reduced ? out.bikeRollDeg : 0;
+  if (Math.abs(roll - S.roll) > .05 || (roll === 0 && S.roll !== 0)) {
+    S.roll = Math.abs(roll) < .05 ? 0 : roll;
+    const rc = bike.point('rearContact'), fc = bike.point('frontContact'), ox = ((rc.x + fc.x) / 2).toFixed(0), oy = rc.y.toFixed(0);
+    for (const c of [$('bike-gl'), $('bike-vec')]) { c.style.transformOrigin = `${ox}px ${oy}px`; c.style.transform = S.roll ? `rotate(${S.roll.toFixed(2)}deg)` : ''; }
+  }
+  // 速度巨字：加速时被拉伸 / 更倾斜（最多 1.22 倍、−20°，始终可读）。
+  let skew = S.phase === 'riding' ? out.speedSkewDeg : -8, stretch = S.phase === 'riding' ? out.speedStretch : 1;
+  if (S.H > S.W) skew = Math.max(skew, -14);   // 竖屏速度巨字接近满宽：倾斜过大左下角会出画
+  if (stretch > 1) {
+    // 拉伸以右上角为原点向左长：不许长出画面（竖屏里速度巨字本来就接近满宽）。
+    const r = speedEl.getBoundingClientRect(), p = panel.getBoundingClientRect(), cur = Number(app.style.getPropertyValue('--speed-stretch')) || 1;
+    const base = r.width / cur, room = (r.right - p.left - 10) / Math.max(1, base);
+    stretch = Math.max(1, Math.min(stretch, room));
+  }
+  const key = `${skew.toFixed(1)}|${stretch.toFixed(3)}`;
+  if (key !== S.speedKey) { S.speedKey = key; app.style.setProperty('--speed-skew', skew.toFixed(1) + 'deg'); app.style.setProperty('--speed-stretch', stretch.toFixed(3)); }
+  // 熄火时场景变暗；减少动态 / 特效关时用文字图标示意。
+  const dim = S.phase === 'riding' ? out.dim : 0;
+  if (Math.abs(dim - (S.dimShown ?? 0)) > .01) { S.dimShown = dim; $('vs-dim').style.opacity = (dim * .8).toFixed(2); }
+  const hint = live && (reduced || prefs.fx === 'off') ? reducedHint(target) : '';
+  if (hint !== S.hintShown) { S.hintShown = hint; const el = $('vs-hint'); el.textContent = hint; el.hidden = !hint; el.style.borderColor = target.tint || ''; }
+  app.dataset.vehicle = live ? `${S.vs.motion}|${S.vs.turn}|${S.vs.engine}` : '';
+}
+function applyVehicleEffect(e, t, reduced) {
+  const fr = () => bike.point('frontContact'), rc = () => bike.point('rearContact'), ex = () => bike.point('exhaust');
+  S.vsWords.push({...e, t}); if (S.vsWords.length > 120) S.vsWords.shift();
+  S.eventsLog.push({kind: 'vehicle-' + (e.kind || e.type), t, rideT: ride.rideT, text: e.text || null});
+  if (e.type === 'word') {
+    if (reduced) { showCaption({text: e.text, at: 0, until: 1200}); return; }
+    const size = Math.min(S.W, S.H) * .12 * (e.size || 1) * Math.min(1.2, FX_LEVELS[prefs.fx] || 1);
+    const bp = bike.point('tank');
+    const at = placeWord({W: S.W, H: S.H, speed: speedRect(), side: e.side, size, bike: bp});
+    if (at) { word(e.text, at.x, at.y, size, {rot: at.rot, ms: e.kind === 'hard' ? 820 : 640}); e.box = at.box; }
+    if (e.kind === 'cornerIn') sfx.play('whoosh');
+    if (e.kind === 'hard' || e.kind === 'brake') sfx.play('screech');
+    if (e.kind === 'launch' || e.kind === 'boost' || e.kind === 'rev') sfx.play('rev');
+    return;
+  }
+  if (e.type === 'impact') {
+    // 急刹冲击帧（已过闪光限流）：集中线反相一拍 + 镜头前冲急停 + 震动。
+    const p = fr(), el = $('impact'); el.style.setProperty('--ix', p.x + 'px'); el.style.setProperty('--iy', p.y + 'px');
+    el.animate([{opacity: 1}, {opacity: 1, offset: .5}, {opacity: 0}], {duration: 130, easing: 'steps(2,end)'});
+    S.lungeKick = 1; S.shake = Math.max(S.shake, 1.5); S.focusKick = 1.4;
+    return;
+  }
+  if (reduced) return;
+  if (e.type === 'cutin') director.event({kind: e.kind, word: e.side === 'left' ? '左弯' : e.side === 'right' ? '右弯' : ''}, t);
+  else if (e.type === 'sparks') fx.emit('sparks', fr().x, fr().y, {len: 95, follow: fr});
+  else if (e.type === 'smoke') { fx.emit('smoke', fr().x, fr().y, {count: e.count || 3, vx: 160, particles: tier().particles}); fx.emit('skid', fr().x, fr().y, {vx: -220}); }
+  else if (e.type === 'flame') fx.emit('flame', ex().x, ex().y, {len: 60 + 70 * (e.len || 1), follow: ex});
+  else if (e.type === 'ring') fx.emit('ring', ex().x, ex().y, {color: WORLDS[S.world].y, vr: 700, life: .4});
+  else if (e.type === 'jolt' && e.strength > 0) { S.joltUntil = t + 110; S.shake = Math.max(S.shake, .5 * e.strength); }
+}
+// fx 画布上的车辆状态叠层：刹车灯光晕、画面边缘速度线（曲速在世界层，见 drawWarp）。
+function drawVehicleOverlay(g, t, world, m) {
+  const vis = S.vis, reduced = isReduced();
+  if (vis.brakeGlow > .03) {
+    const r = bike.point('rearAxle'), k = bike.point('tank'), x = r.x + (k.x - r.x) * .08, y = k.y + (r.y - k.y) * .12, R = m.ppu * (.28 + .5 * vis.brakeGlow);
+    const grad = g.createRadialGradient(x, y, 0, x, y, R);
+    grad.addColorStop(0, `rgba(255,60,60,${(.85 * vis.brakeGlow).toFixed(2)})`); grad.addColorStop(.35, `rgba(255,40,40,${(.45 * vis.brakeGlow).toFixed(2)})`); grad.addColorStop(1, 'rgba(255,0,0,0)');
+    g.save(); g.fillStyle = grad; g.fillRect(x - R, y - R, R * 2, R * 2); g.fillStyle = '#ff2a3d'; g.strokeStyle = world.ink; g.lineWidth = 2;
+    g.beginPath(); g.ellipse(x, y, m.ppu * .05, m.ppu * .03, 0, 0, Math.PI * 2); g.fill(); g.stroke(); g.restore();
+  }
+  if (reduced) return;
+  const frame = Math.floor(t / 42);
+  let seed = frame * 9301 + 49297; const rnd = () => ((seed = (seed * 233280 + 49297) % 233280) / 233280);
+  if (vis.accel > .05) {
+    // 加速“隧道视野”：四周压暗，强度随加速强度（全油门一眼可见）。
+    const R = Math.hypot(S.W, S.H) * .62, grad = g.createRadialGradient(S.W * .45, S.H * .55, R * (.55 - .2 * vis.accel), S.W * .45, S.H * .55, R);
+    grad.addColorStop(0, 'rgba(5,4,10,0)'); grad.addColorStop(1, `rgba(5,4,10,${(.55 * vis.accel).toFixed(2)})`);
+    g.save(); g.fillStyle = grad; g.fillRect(0, 0, S.W, S.H); g.restore();
+  }
+  if (vis.edgeLines > .05) {
+    // 画面上下边缘的速度线：密度随加速强度。
+    const n = Math.round(6 + 34 * vis.edgeLines), band = S.H * .14;
+    g.save(); g.fillStyle = '#ffffff'; g.globalAlpha = .6 * Math.min(1, vis.edgeLines * 1.4);
+    for (let i = 0; i < n; i++) {
+      const top = rnd() < .5, y = top ? rnd() * band : S.H - rnd() * band, len = S.W * (.08 + .3 * vis.edgeLines * rnd()), x = rnd() * S.W, h = 1.5 + rnd() * 3;
+      g.fillRect(x, y, len, h);
+    }
+    g.restore();
+  }
+}
+
+// 世界层上的曲速（在车之下）：缩放模糊——把世界按前方消失点放大叠两层半透明，背景被“拉成线”；再画发散的曲速线。
+function drawWarp(g, t, world, warp) {
+  const vx = S.W * 1.02, vy = S.L.horizon ?? S.H * .45;
+  let seed = Math.floor(t / 42) * 9301 + 49297; const rnd = () => ((seed = (seed * 233280 + 49297) % 233280) / 233280);
+  if (tier().particles >= .6) {
+    g.save(); g.setTransform(1, 0, 0, 1, 0, 0);
+    for (const [z, a] of [[1 + .05 * warp, .3], [1 + .11 * warp, .16]]) {
+      const dx = vx * S.dpr * (1 - z), dy = vy * S.dpr * (1 - z);
+      g.globalAlpha = a * warp; g.drawImage(sceneCanvas, dx, dy, sceneCanvas.width * z, sceneCanvas.height * z);
+    }
+    g.restore();
+  }
+  const n = Math.round(14 + 70 * warp), R = Math.hypot(S.W, S.H);
+  g.save(); g.lineCap = 'round';
+  for (let i = 0; i < n; i++) {
+    const a = Math.PI + (rnd() - .5) * 1.7, r0 = R * (.14 + rnd() * .3), r1 = r0 + R * (.14 + .6 * warp) * (.5 + rnd());
+    g.strokeStyle = i % 4 === 0 ? world.y : '#ffffff'; g.globalAlpha = (.25 + .55 * warp) * (.6 + .4 * rnd());
+    g.lineWidth = 1.2 + rnd() * 3.6 * warp;
+    g.beginPath(); g.moveTo(vx + Math.cos(a) * r0, vy + Math.sin(a) * r0); g.lineTo(vx + Math.cos(a) * r1, vy + Math.sin(a) * r1); g.stroke();
+  }
+  g.restore();
+}
+
+/* ---------- 回放（浏览器预览）：合成回放或用户选择的本机文件 ---------- */
+let replay = null;
+function startReplay(data, opts = {}) {
+  if (S.phase !== 'idle') return false;
+  sfx.unlock(); closeSheets();
+  const {label = '合成回放 · 非真实数据', startAt = 0, speedup = 1, endAt = null} = opts;
+  S.lastReplay = {data, opts};
+  S.mode = 'replay'; S.replayLabel = label;
+  replay = {player: createReplayPlayer(data, {simulated: true, speedup, startAt}), startAt, endAt, lastGps: null, t: startAt};
+  S.replayCountdown = {t0: now()}; setPhase('countdown'); S.burn = {t0: now(), auto: true};
+  $('replay-note') && ($('replay-note').textContent = label);
+  return true;
+}
+const MOTION_WORD = {stopped: 'stop', launching: 'launch', accelerating: 'accelerate', cruising: 'cruise', coasting: 'cruise', braking: 'brake', hardBraking: 'brake'};
+function replayFrame(t, dt) {
+  if (!replay) return;
+  if (S.phase === 'countdown' && S.replayCountdown) {
+    if ((t - S.replayCountdown.t0) / 1000 >= 4) { S.replayCountdown = null; goRide({t: 0, source: 'demo'}); }
+    return;
+  }
+  if (S.phase !== 'riding') return;
+  const out = replay.player.step(dt);
+  replay.t = out.t;
+  setVehicle(out.snapshot);
+  const rideT = Math.max(0, out.t - replay.startAt);
+  if (out.gps && out.gps !== replay.lastGps) {
+    replay.lastGps = out.gps;
+    const v = Number.isFinite(out.gps.v) ? out.gps.v * 3.6 : null;
+    const frame = {t: rideT, speedKmh: v, source: v === null ? 'unavailable' : 'demo', simulated: true, motion: S.vs?.turn !== 'none' && S.vs ? 'turn' : MOTION_WORD[S.vs?.motion] || 'cruise'};
+    ride.ingest(frame); milestoneReading(frame);
+    if (sound.mode === 'demo' && v !== null) sound.setDemoLevel(clamp(.12 + v / 120, 0, 1));
+  } else if (replay.lastGps && out.t - replay.lastGps.t > 2.5 && ride.reading?.source !== 'unavailable') {
+    // 回放文件里的 GPS 缺口照实显示为 “—”。
+    const frame = {t: rideT, speedKmh: null, source: 'unavailable', simulated: true}; ride.ingest(frame);
+  }
+  if (replay.player.done || (replay.endAt && out.t >= replay.endAt)) doFinish();
+}
+
 /* ---------- 每帧 ---------- */
 function paintWorld(dt) {
   const g = sceneCanvas.getContext('2d');
@@ -531,7 +716,11 @@ function paintWorld(dt) {
   st.misprint = t.misprint; st.particles = reduced ? 0 : t.particles;
   st.eq = S.sound.valid ? S.sound.bands : null;
   st.focus = S.focus; st.focusX = bike.point('tank').x; st.focusY = bike.point('tank').y + 20; st.focusJitter = Math.floor(st.t * 12);
+  const vis = S.phase === 'riding' && S.vis ? S.vis : VIS_REST;
+  st.bend = reduced ? 0 : vis.bend; st.innerSide = reduced ? null : vis.innerSide; st.innerFocus = reduced ? 0 : vis.innerFocus;
+  st.boost = vis.accel; st.reverse = vis.reverseLines; st.calm = vis.calm;
   painter.paint(g, S.W, S.H, S.L, S.world, st);
+  if (!reduced && vis.warp > .04) drawWarp(g, st.t * 1000, WORLDS[S.world], vis.warp);
   drawContactShadow(g, bike.point('rearContact'), bike.point('frontContact'), S.L.bike.ground, bikeMapping(S.L).ppu, WORLDS[S.world].ink);
 }
 function updatePose(t, dt) {
@@ -546,6 +735,13 @@ function updatePose(t, dt) {
   else if (t < S.cornerUntil) yaw = .3;
   let squash = 1 + clamp(accel * .012, -.03, .05);
   if (S.burn) squash = .965;
+  // 车辆状态：刹车点头（前叉压缩）、强加速抬头、过弯偏航；换挡顿挫一拍。
+  const vis = S.vis;
+  if (vis && riding) {
+    pitch += vis.dive * .085 - vis.wheelie * .2 + (t < S.joltUntil ? .035 : 0);
+    yaw += vis.bikeYaw;
+    squash *= 1 - vis.dive * .03 + vis.accel * .02;
+  }
   if (reduced) { pitch = 0; yaw = S.drag ? S.drag.yaw : 0; squash = 1; }
   spring(springs.pitch, pitch, dt); spring(springs.yaw, yaw, dt, 90, 14); spring(springs.squash, squash, dt, 200, 16);
   // 冲刺：先冲出画面右侧，再从左侧追回原位。
@@ -560,7 +756,7 @@ function updatePose(t, dt) {
   const p = bike.pose;
   p.pitch = springs.pitch.x; p.yaw = springs.yaw.x; p.squash = springs.squash.x; p.dz = dz;
   const snd = S.sound.valid ? S.sound.level : 0;
-  p.shake = reduced ? 0 : (S.burn ? .9 : t < S.revUntil ? .7 : 0) + snd * .5 + (riding ? S.speedVis / 260 : 0);
+  p.shake = reduced ? 0 : (S.burn ? .9 : t < S.revUntil ? .7 : 0) + snd * .5 + (riding ? S.speedVis / 260 : 0) + (vis ? vis.idleJitter * .55 + vis.accel * .25 : 0);
   p.impact = 0;
   // 突破剧场：车按剧目动作（前冲/后退、抬头、压低、甩尾、震动），仍按 12fps 步进渲染
   const mb = S.mcam?.bike;
@@ -574,9 +770,9 @@ function updatePose(t, dt) {
 function logic(t, dt) {
   const reduced = isReduced();
   if (player && (S.phase === 'countdown' || S.phase === 'riding' || S.phase === 'paused')) player.advance(dt);
-  if (S.phase === 'countdown' && (player || S.nativeCountdown)) {
+  if (S.phase === 'countdown' && (player || S.nativeCountdown || S.replayCountdown)) {
     // 原生出发：倒计时在记录开始之前播放，走完（或“跳过”）才把动作交给原生；记录时钟不受动画影响。
-    const c = S.nativeCountdown, w = c ? (t - c.t0) / 1000 : player.wallSeconds, label = w < 1 ? 'READY' : w < 2 ? '3' : w < 3 ? '2' : '1';
+    const c = S.nativeCountdown, w = c ? (t - c.t0) / 1000 : S.replayCountdown ? (t - S.replayCountdown.t0) / 1000 : player.wallSeconds, label = w < 1 ? 'READY' : w < 2 ? '3' : w < 3 ? '2' : '1';
     if (label !== S.countdownLabel && !(c && c.sent)) { S.countdownLabel = label; showCountdown(label, label === 'READY' ? 'ready' : ''); sfx.play('beep'); }
     if (c && !c.sent && w >= 4) commitNativeCountdown();
     if (c && c.sent && t - c.sentAt > 4000) cancelNativeCountdown('timeout');
@@ -588,6 +784,8 @@ function logic(t, dt) {
     director.update(t);
     if (!reduced) drawCutin(t); else hideCutin();
   }
+  if (S.mode === 'replay') replayFrame(t, dt);
+  vehicleFrame(t, dt);
   // 突破剧场
   if (S.phase === 'riding' || S.phase === 'gallery') {
     const next = S.phase === 'riding' ? mdir.update(t) : null;
@@ -602,7 +800,7 @@ function logic(t, dt) {
   const target = (S.phase === 'riding' && currentSpeed().known ? ride.reading.speedKmh : 0) + (S.phase === 'gallery' ? S.galleryReading || 0 : 0);
   S.idleBoost *= Math.exp(-dt * 1.6);
   S.speedVis += (target + S.idleBoost - S.speedVis) * (1 - Math.exp(-dt * 2.4));
-  if (S.phase !== 'paused' && !reduced) st.x += S.speedVis * 15 * S.L.scrollScale * dt * S.timeScale;
+  if (S.phase !== 'paused' && !reduced) st.x += S.speedVis * 15 * S.L.scrollScale * dt * S.timeScale * (S.vis?.parallax ?? 1);
   // 声浪
   // 原生：麦克风声浪来自原生快照；没有时只有显式（或演示骑行自动）的声浪 DEMO。
   S.sound = S.mode === 'native' ? (S.nativeSound?.valid ? S.nativeSound : sound.mode === 'demo' ? sound.sample(dt, S.phase === 'paused') : {valid: false}) : sound.sample(dt, S.phase === 'paused');
@@ -617,12 +815,16 @@ function logic(t, dt) {
   // 画面倾斜 + 震动（只作用于场景与车，不作用于速度与页角）
   if (S.phase !== 'paused') {
     const accel = S.phase === 'riding' ? (ride.accel ?? 0) : 0;
-    const tiltT = reduced ? 0 : clamp(-accel * 1.1, -4, 4) + (t < S.cornerUntil ? -2.4 : 0);
+    const vis = S.vis || VIS_REST;
+    const tiltT = reduced ? 0 : (vsLive() ? 0 : clamp(-accel * 1.1, -4, 4) + (t < S.cornerUntil ? -2.4 : 0)) + vis.tiltDeg;
     S.tilt += (tiltT - S.tilt) * (1 - Math.exp(-dt * 4));
     S.shake *= Math.exp(-dt * 9);
-    const j = reduced ? 0 : S.shake * 7;
+    // 急刹：镜头前冲后弹簧急停；其余时刻按强度连续轻震。都只作用于场景层（速度巨字不在 #camera 里）。
+    S.lungeKick *= Math.exp(-dt * 6);
+    const lunge = reduced ? 0 : -(S.lungeKick * Math.cos(Math.min(1, 1 - S.lungeKick) * 5) + vis.lunge * .25) * S.W * .028;
+    const j = reduced ? 0 : S.shake * 7 + vis.shakePx;
     const pan = (S.mcam?.panX || 0) * S.W;
-    camera.style.transform = `translate(${((Math.random() - .5) * j + pan).toFixed(1)}px,${((Math.random() - .5) * j).toFixed(1)}px) rotate(${S.tilt.toFixed(2)}deg) scale(1.06)`;
+    camera.style.transform = `translate(${((Math.random() - .5) * j + pan + lunge).toFixed(1)}px,${((Math.random() - .5) * j).toFixed(1)}px) rotate(${S.tilt.toFixed(2)}deg) scale(${(reduced ? 1.06 : vis.zoom).toFixed(3)})`;
   }
   renderSpeed(); renderHud();
 }
@@ -650,6 +852,7 @@ function fxTask(t, dt) {
     g.save(); g.lineWidth = 7; g.strokeStyle = world.ink; g.beginPath(); g.arc(r.x, r.y, m.ppu * .5, -Math.PI / 2, -Math.PI / 2 + charge * Math.PI * 2); g.stroke();
     g.lineWidth = 4; g.strokeStyle = charge >= 1 ? world.m : world.y; g.stroke(); g.restore();
   }
+  if (S.phase === 'riding' && S.vis) drawVehicleOverlay(g, t, world, m);
   fx.draw(g, world);
 }
 
@@ -744,6 +947,7 @@ setTimeout(() => { if (app.dataset.bike === 'loading') app.dataset.bike = 'slow'
 $('btn-skip').addEventListener('click', () => (S.nativeCountdown ? commitNativeCountdown() : player?.skipCountdown()));
 $('btn-pause').addEventListener('click', () => {
   if (S.mode === 'native') return native.send('primary');
+  if (S.mode === 'replay') return S.phase === 'riding' ? doPause() : doResume();
   if (S.phase === 'riding') player?.hold(); else if (S.phase === 'paused') player?.release();
 });
 $('btn-finish').addEventListener('click', () => (S.mode === 'native' ? native.send('finish') : doFinish()));
@@ -757,7 +961,7 @@ $('btn-save').addEventListener('click', async () => {
   }
   const out = await downloadComic(comicView.page('portrait').canvas); $('comic-note').textContent = `已保存 ${out.filename}`;
 });
-$('btn-again').addEventListener('click', () => { backToIdle(); startDemo(); });
+$('btn-again').addEventListener('click', () => { const again = S.lastReplay; backToIdle(); if (again) startReplay(again.data, again.opts); else startDemo(); });
 $('btn-detail').addEventListener('click', () => { native.send('rideDetail'); backToIdle(); });
 $('btn-close').addEventListener('click', () => { if (S.mode === 'native') native.send('wrappedDone'); backToIdle(); });
 
@@ -817,10 +1021,18 @@ document.querySelectorAll('[data-sound]').forEach(b => b.addEventListener('click
 document.querySelectorAll('[data-tier]').forEach(b => b.addEventListener('click', () => { prefs.tier = b.dataset.tier; savePrefs(); governor.setMode(prefs.tier); renderSettings(); }));
 document.querySelectorAll('[data-sfx]').forEach(b => b.addEventListener('click', () => { prefs.sfx = b.dataset.sfx === 'on'; savePrefs(); sfx.setEnabled(prefs.sfx); renderSettings(); }));
 document.querySelectorAll('[data-reduce]').forEach(b => b.addEventListener('click', () => { prefs.reduce = b.dataset.reduce; savePrefs(); applyReduced(); renderSettings(); }));
+document.querySelectorAll('[data-fx]').forEach(b => b.addEventListener('click', () => { prefs.fx = b.dataset.fx; savePrefs(); renderSettings(); }));
+$('btn-replay-synth')?.addEventListener('click', () => startReplay(generateSynthetic(), {label: '合成回放 · 非真实数据'}));
+$('replay-file')?.addEventListener('change', async e => {
+  const f = e.target.files?.[0]; if (!f) return;
+  try { startReplay(JSON.parse(await f.text()), {label: '回放 · 本机骑行文件'}); } catch (err) { $('replay-note').textContent = '回放文件读不了：' + String(err?.message || err).slice(0, 60); }
+  e.target.value = '';
+});
 function renderSettings() {
   document.querySelectorAll('[data-tier]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.tier === prefs.tier)));
   document.querySelectorAll('[data-sfx]').forEach(b => b.setAttribute('aria-pressed', String((b.dataset.sfx === 'on') === prefs.sfx)));
   document.querySelectorAll('[data-reduce]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.reduce === prefs.reduce)));
+  document.querySelectorAll('[data-fx]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.fx === prefs.fx)));
   setText('tier-now', `性能：${prefs.tier === 'auto' ? '自动' : '固定'} · ${tier().label}`);
 }
 function applyReduced() { app.classList.toggle('reduced', isReduced()); if (isReduced()) { director.cancel(); hideCutin(); fx.clear(); camera.style.transform = ''; } }
@@ -938,6 +1150,7 @@ const native = installNativeAdapter({
   // 原生不再等待网页复盘（用户完成、打开了详细复盘或原生兜底）：漫画收起，回到待机。
   nativeRecapReleased() { if (S.phase === 'comic' || S.phase === 'finishing') backToIdle(); },
   nativeStale() { ride.ingest({t: ride.rideT + .001, speedKmh: null, source: 'unavailable', simulated: false}); },
+  nativeVehicle(v) { setVehicle(v); },
 });
 if (native.native) {
   S.mode = 'native';
@@ -984,6 +1197,13 @@ Promise.all(FACES.map(f => document.fonts?.load?.(`20px "${f}"`, f === 'MotuoHan
 native.ready();
 bike.ready.then(() => { resize(); bike.setPaint({...PRESETS[prefs.paint], finish: prefs.finish}); });
 if (!native.native && new URLSearchParams(location.search).get('gallery') === 'milestones') Promise.all([document.fonts.ready, bike.ready]).then(openGallery);
+// ?replay=synthetic 或 ?replay=<本机 URL>（如 http://127.0.0.1:8767/ride.json）：读取后回放；文件不进 App 包、不进仓库。
+const replayParam = !native.native && new URLSearchParams(location.search).get('replay');
+if (replayParam) Promise.all([document.fonts.ready, bike.ready]).then(async () => {
+  const q = new URLSearchParams(location.search), opts = {startAt: Number(q.get('from')) || 0, speedup: Number(q.get('speed')) || 1, endAt: Number(q.get('to')) || null};
+  if (replayParam === 'synthetic') return startReplay(generateSynthetic(), {...opts, label: '合成回放 · 非真实数据'});
+  try { startReplay(await (await fetch(replayParam)).json(), {...opts, label: '回放 · 本机骑行文件'}); } catch (e) { noteError(e); }
+});
 
 // 测试 / 录制钩子（只读状态 + 少量驱动）。
 globalThis.__motuoV3 = {
@@ -999,4 +1219,6 @@ globalThis.__motuoV3 = {
   bikePoint: name => bike.point(name), speedRect,
   get milestones() { return {plans: mdir.plans.map(({layers, compare, ...p}) => ({...p, compare: compare?.id || null})), counters: mdir.counters, active: mplayer.active ? {main: mplayer.active.main, threshold: mplayer.active.threshold, tier: mplayer.active.tier, item: mplayer.active.item || null, startedAt: mplayer.active.startedAt, ms: mplayer.active.ms, now: performance.now()} : null, todayBestAtStart: mdir.todayBestAtStart}; },
   gallery: {open: openGallery, close: closeGallery, play: (i, opts = {}) => { Object.assign(S.gallery, opts); galleryPlay(i); }, items: GALLERY_ITEMS, get state() { return {...S.gallery}; }},
+  startReplay, replaySynthetic: (opts = {}) => startReplay(generateSynthetic(), {label: '合成回放 · 非真实数据', ...opts}), setFx: v => { prefs.fx = v; renderSettings(); },
+  get vehicle() { return {vs: S.vs, live: vsLive(), vis: S.vis && {...S.vis}, words: S.vsWords.slice(-40), replayT: replay?.t ?? null, tilt: S.tilt, roll: S.roll}; },
 };

@@ -77,6 +77,20 @@ final class MotuoUITests:XCTestCase {
         XCTAssertTrue(app.buttons["tab.garage"].waitForExistence(timeout:5))
     }
 
+    /// Long DEMO ride for screen recording (xcrun simctl io recordVideo): the bundled synthetic replay drives the cockpit's
+    /// vehicle-state interactions. Skipped unless MOTUO_RECORD_DEMO_SECONDS is set (TEST_RUNNER_ prefix via xcodebuild).
+    @MainActor func testRecordDemoVehicleStates() throws {
+        guard let value = ProcessInfo.processInfo.environment["MOTUO_RECORD_DEMO_SECONDS"], let seconds = Double(value) else { throw XCTSkip("录屏专用：设置 MOTUO_RECORD_DEMO_SECONDS 才运行") }
+        let app=launch()
+        XCUIDevice.shared.orientation = .landscapeLeft
+        let start=app.buttons["进入演示骑行"];XCTAssertTrue(start.waitForExistence(timeout:15));start.tap()
+        XCTAssertTrue(app.buttons["暂停"].waitForExistence(timeout:12))
+        let end=Date().addingTimeInterval(seconds)
+        while Date()<end { XCTAssertTrue(app.buttons["暂停"].exists, "still riding"); Thread.sleep(forTimeInterval:5) }
+        XCTAssertTrue(app.staticTexts["座舱脚本正常"].exists, scriptError(app))
+        app.buttons["结束"].tap();app.buttons["结束并生成复盘"].tap()
+        XCUIDevice.shared.orientation = .portrait
+    }
     /// Rotation while riding and while a milestone act plays: speed stays readable, recording time keeps counting, no crash.
     @MainActor func testRotationDuringRideAndMilestoneTheatre() throws {
         let app=launch()

@@ -37,7 +37,9 @@
       <canvas id="flip" class="layer flip" aria-hidden="true" hidden></canvas>
       <div id="flash" class="flash" aria-hidden="true"></div>
       <div id="impact" class="impact" aria-hidden="true"></div>
+      <div id="vs-dim" class="vs-dim" aria-hidden="true"></div>
       <div id="countdown" class="countdown" aria-live="assertive"></div>
+      <div id="vs-hint" class="vs-hint" role="status" hidden></div>
       <div id="tbc" class="tbc" hidden><span class="tbc-en">TO BE CONTINUED</span><span class="tbc-arrow">→</span><small>待续 · 记录已暂停</small></div>
 
       <!-- 速度巨字：骑行中任何时刻都在所有特效层之上 -->
@@ -98,6 +100,9 @@
     <div class="row"><span>界面音效</span><button class="chip" data-sfx="on">开</button><button class="chip" data-sfx="off">关</button></div>
     <div class="row"><span>突破剧场</span><button class="chip" id="btn-gallery">突破画廊</button><small class="note">预览每种剧目 × 世界 · 非骑行数据</small></div>
     <div class="row"><span>减少动态</span><button class="chip" data-reduce="system">跟随系统</button><button class="chip" data-reduce="on">开启</button></div>
+    <div class="row"><span>特效强度</span><button class="chip" data-fx="off">关</button><button class="chip" data-fx="low">弱</button><button class="chip" data-fx="std">标准</button><button class="chip" data-fx="max">强</button><small class="note">倾斜 / 震动 / 镜头；减少动态时只用颜色与图标</small></div>
+    <div class="row browser-only"><span>车辆状态回放</span><button class="chip" id="btn-replay-synth">合成回放</button><label class="chip" for="replay-file">回放真实骑行（选本机文件）</label><input id="replay-file" type="file" accept=".json,application/json" hidden></div>
+    <p class="note browser-only" id="replay-note">回放文件只在本机浏览器里读取，不上传、不打包进 App；也可用 ?replay=&lt;本机URL&gt;。</p>
     <p class="note">低档关闭套印与纸纹、减少粒子并降低画布分辨率。游戏分与连击只是游戏，非驾驶评价。</p>
   </section>
 

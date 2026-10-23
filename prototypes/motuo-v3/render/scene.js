@@ -290,12 +290,28 @@ function drawNear(ctx, world, W, H, L, x, t) {
   }
 }
 
-function drawRoad(ctx, world, W, H, L, x, cache) {
-  const rd = world.road, top = L.roadTop, unit = Math.max(W, H) / 844;
+/* 弯道弯曲：车前方（画面右侧）的路面向弯内侧抬起（左弯）或压低（右弯）。bend ∈ [-1, 1]，左弯为负。 */
+export const bendOffset = (px, W, span, bend) => (bend ? bend * span * Math.max(0, (px - W * 0.25) / (W * 0.75)) ** 2 : 0);
+function drawRoad(ctx, world, W, H, L, x, cache, bend = 0) {
+  const rd = world.road, top = L.roadTop, unit = Math.max(W, H) / 844, span = (H - top) * 0.55;
   ctx.fillStyle = rd.fill; ctx.fillRect(0, top, W, H - top);
+  if (bend) {
+    // 路面上沿按弯曲抬起 / 压低：抬起部分补路面色，压低部分让给近景。
+    ctx.beginPath(); ctx.moveTo(0, top);
+    for (let px = 0; px <= W; px += W / 24) ctx.lineTo(px, top + bendOffset(px, W, span, bend));
+    ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath(); ctx.fillStyle = rd.fill; ctx.fill();
+  }
   if (cache.roadDots) ctx.drawImage(cache.roadDots, 0, top);
-  ctx.fillStyle = world.ink; ctx.fillRect(0, top, W, 4);
-  ctx.fillStyle = rd.edge; ctx.fillRect(0, top + 4, W, 3 * unit);
+  if (bend) {
+    ctx.lineWidth = 4; ctx.strokeStyle = world.ink; ctx.beginPath();
+    for (let px = 0; px <= W; px += W / 24) { const y = top + bendOffset(px, W, span, bend); px ? ctx.lineTo(px, y) : ctx.moveTo(px, y); }
+    ctx.stroke(); ctx.lineWidth = 3 * unit; ctx.strokeStyle = rd.edge; ctx.beginPath();
+    for (let px = 0; px <= W; px += W / 24) { const y = top + 5 + bendOffset(px, W, span, bend); px ? ctx.lineTo(px, y) : ctx.moveTo(px, y); }
+    ctx.stroke();
+  } else {
+    ctx.fillStyle = world.ink; ctx.fillRect(0, top, W, 4);
+    ctx.fillStyle = rd.edge; ctx.fillRect(0, top + 4, W, 3 * unit);
+  }
   if (rd.grid) {
     ctx.strokeStyle = rd.edge; ctx.globalAlpha = .45; ctx.lineWidth = 1.5;
     const g = 70 * unit; ctx.beginPath();
@@ -308,9 +324,12 @@ function drawRoad(ctx, world, W, H, L, x, cache) {
     for (let k = 0; k < 6; k++) { const px = mod(k * 190 * unit - x * .98, W + 200 * unit) - 100 * unit; ctx.fillStyle = k % 2 ? world.c : world.m; ctx.fillRect(px, top + 10, 16 * unit, (H - top) * .8); }
     ctx.globalAlpha = 1;
   }
-  const ly = top + (H - top) * .84, dash = 64 * unit, gap = 54 * unit;
+  const ly = top + (H - top) * .84, dash = 64 * unit, gap = 54 * unit, laneSpan = (H - top) * 0.7;
   ctx.fillStyle = rd.lane; ctx.strokeStyle = world.ink; ctx.lineWidth = 2;
-  for (let px = mod(-x, dash + gap) - dash - gap; px < W; px += dash + gap) { ctx.beginPath(); ctx.moveTo(px + 8 * unit, ly); ctx.lineTo(px + dash + 8 * unit, ly); ctx.lineTo(px + dash, ly + 6 * unit); ctx.lineTo(px, ly + 6 * unit); ctx.closePath(); ctx.fill(); ctx.stroke(); }
+  for (let px = mod(-x, dash + gap) - dash - gap; px < W; px += dash + gap) {
+    const y0 = ly + bendOffset(px, W, laneSpan, bend), y1 = ly + bendOffset(px + dash, W, laneSpan, bend);
+    ctx.beginPath(); ctx.moveTo(px + 8 * unit, y0); ctx.lineTo(px + dash + 8 * unit, y1); ctx.lineTo(px + dash, y1 + 6 * unit); ctx.lineTo(px, y0 + 6 * unit); ctx.closePath(); ctx.fill(); ctx.stroke();
+  }
 }
 
 function buildRoadDots(world, W, H, L) {
@@ -322,30 +341,36 @@ function buildRoadDots(world, W, H, L) {
 }
 
 /* 速度线：手绘楔形，向左飞。lines 由调用方持有以保持连续。 */
-export function updateSpeedLines(lines, {W, H, top, bottom, dt, speed, accel, particles, seed = Math.random}) {
-  const target = Math.round(clamp(speed / 80) * 16 * particles + clamp(Math.abs(accel || 0) / 3) * 10 * particles);
+export function updateSpeedLines(lines, {W, H, top, bottom, dt, speed, accel, particles, seed = Math.random, boost = 0, reverse = 0}) {
+  // boost（加速强度）：线更多更长；reverse（刹车强度）：线变短变慢，像被往回收。
+  const target = Math.round(clamp(speed / 80) * 16 * particles * (1 + boost * 1.2) + clamp(Math.abs(accel || 0) / 3) * 10 * particles);
   while (lines.length < target) lines.push({x: W + seed() * W * .5, y: top + seed() * (bottom - top), len: 0, w: 1 + seed() * 3.5, v: .8 + seed() * .9});
   if (lines.length > target) lines.length = target;
-  const v = (300 + speed * 22) * (W / 844);
+  const v = (300 + speed * 22) * (W / 844) * (1 + boost * 0.8) * (1 - reverse * 0.65);
   for (const l of lines) {
-    l.len = (40 + speed * 4.5) * (W / 844) * l.v;
+    l.len = (40 + speed * 4.5) * (W / 844) * l.v * (1 + boost * 1.4) * (1 - reverse * 0.6);
     l.x -= v * l.v * dt;
     if (l.x + l.len < 0) { l.x = W + seed() * W * .3; l.y = top + seed() * (bottom - top); }
   }
 }
-export function drawSpeedLines(ctx, lines, color, alpha = .65) {
+export function drawSpeedLines(ctx, lines, color, alpha = .65, {bend = 0, W = 0, span = 0} = {}) {
   ctx.save(); ctx.fillStyle = color; ctx.globalAlpha = alpha;
   ctx.beginPath();
-  for (const l of lines) { ctx.moveTo(l.x, l.y); ctx.lineTo(l.x + l.len, l.y - l.w); ctx.lineTo(l.x + l.len * 1.04, l.y); ctx.lineTo(l.x + l.len, l.y + l.w * .6); ctx.closePath(); }
+  for (const l of lines) {
+    // 弯道：线按所在 x 位置抬起 / 压低，并顺着弯的切线倾斜，整片速度线弯成弧。
+    const y = l.y + bendOffset(l.x, W, span, bend), y2 = l.y + bendOffset(l.x + l.len, W, span, bend);
+    ctx.moveTo(l.x, y); ctx.lineTo(l.x + l.len, y2 - l.w); ctx.lineTo(l.x + l.len * 1.04, y2); ctx.lineTo(l.x + l.len, y2 + l.w * .6); ctx.closePath();
+  }
   ctx.fill(); ctx.restore();
 }
 
 /* 集中线：从画外向 (cx,cy) 汇聚的楔形，内圈留空。 */
-export function drawFocusLines(ctx, W, H, cx, cy, {color = '#000', count = 64, inner = .3, alpha = .9, seed = 3, jitter = 0} = {}) {
+export function drawFocusLines(ctx, W, H, cx, cy, {color = '#000', count = 64, inner = .3, alpha = .9, seed = 3, jitter = 0, arc = null} = {}) {
   const r = rng(seed + jitter), R = Math.hypot(W, H), r0 = Math.min(W, H) * inner;
   ctx.save(); ctx.fillStyle = color; ctx.globalAlpha = alpha; ctx.beginPath();
   for (let i = 0; i < count; i++) {
-    const a = (i + r() * .6) / count * TAU, w = (.004 + r() * .016) * TAU, start = r0 * (1 + r() * .5);
+    // arc：只画朝某个方向的扇区（弯内侧集中线），{center 弧度, span 弧度}。
+    const a = arc ? arc.center + ((i + r() * .6) / count - .5) * arc.span : (i + r() * .6) / count * TAU, w = (.004 + r() * .016) * TAU, start = r0 * (1 + r() * .5);
     ctx.moveTo(cx + Math.cos(a) * start, cy + Math.sin(a) * start);
     ctx.lineTo(cx + Math.cos(a - w) * R, cy + Math.sin(a - w) * R);
     ctx.lineTo(cx + Math.cos(a + w) * R, cy + Math.sin(a + w) * R);
@@ -392,7 +417,8 @@ export function createWorldPainter() {
     }
     return c;
   }
-  /* st: {x 路面滚动像素, t 秒, speed 视觉速度, accel, eq(16)|null, misprint, particles, weather[], lines[], focus, focusX, focusY, dt} */
+  /* st: {x 路面滚动像素, t 秒, speed 视觉速度, accel, eq(16)|null, misprint, particles, weather[], lines[], focus, focusX, focusY, dt,
+   *      车辆状态：bend 弯道弯曲(-1..1 左负), innerSide/innerFocus 弯内侧集中线, boost 加速强度, reverse 刹车收线, calm 巡航放缓} */
   function paint(ctx, W, H, L, worldKey, st) {
     const world = WORLDS[worldKey] || WORLDS.neon;
     const c = cacheFor(world, W, H, L, st.misprint);
@@ -413,13 +439,17 @@ export function createWorldPainter() {
       ctx.drawImage(it.canvas, 0, sy, it.canvas.width, visible, px - it.pad, mid.base - visible + it.pad * 0, it.canvas.width, visible);
     }
     drawNear(ctx, world, W, H, L, st.x, st.t);
-    drawRoad(ctx, world, W, H, L, st.x, c);
+    drawRoad(ctx, world, W, H, L, st.x, c, st.bend || 0);
     if (st.weather) { if (st.dt) updateWeather(st.weather, world.weather, {W, H, top: L.roadTop, dt: st.dt, speed: st.speed, particles: st.particles, r: Math.random}); drawWeather(ctx, st.weather, world.weather, world, st.speed, W); }
     if (st.lines) {
-      if (st.dt) updateSpeedLines(st.lines, {W, H, top: H * .06, bottom: L.roadTop + (H - L.roadTop) * .7, dt: st.dt, speed: st.speed, accel: st.accel, particles: st.particles});
-      drawSpeedLines(ctx, st.lines, world.line, .55);
+      if (st.dt) updateSpeedLines(st.lines, {W, H, top: H * .06, bottom: L.roadTop + (H - L.roadTop) * .7, dt: st.dt, speed: st.speed, accel: st.accel, particles: st.particles, boost: st.boost || 0, reverse: st.reverse || 0});
+      drawSpeedLines(ctx, st.lines, world.line, .55 * (1 - (st.calm || 0) * .35), {bend: st.bend || 0, W, span: H * .5});
     }
     if (st.focus > 0) drawFocusLines(ctx, W, H, st.focusX ?? W * .3, st.focusY ?? L.ground - 60, {color: isDark(world) ? world.paper : world.ink, alpha: .85 * st.focus, jitter: st.focusJitter || 0});
+    // 弯内侧集中线：车向右行驶，左弯的内侧在画面上方、右弯在下方；从内侧画外向车汇聚的扇区。
+    if (st.innerFocus > .02 && st.innerSide) drawFocusLines(ctx, W, H, st.focusX ?? W * .4, st.focusY ?? L.ground - 60,
+      {color: isDark(world) ? world.paper : world.ink, alpha: .7 * Math.min(1, st.innerFocus), count: 34, inner: .26, jitter: st.focusJitter || 0, seed: st.innerSide === 'left' ? 11 : 13,
+       arc: {center: st.innerSide === 'left' ? Math.PI * 1.42 : Math.PI * 0.58, span: Math.PI * 0.8}});
   }
   return {paint, clear() { caches.clear(); }};
 }

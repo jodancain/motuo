@@ -39,7 +39,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 .countdown b.ready{color:#fff}
 .countdown b.go{color:#ff4a3d;text-shadow:-.05em .02em 0 var(--c),.06em .07em 0 var(--yellow),.1em .12em 0 var(--ink)}
 .impact{position:absolute;inset:0;z-index:27;pointer-events:none;opacity:0;background:repeating-conic-gradient(from 0deg at var(--ix,50%) var(--iy,50%),var(--ink) 0deg 3.2deg,var(--paper) 3.2deg 7deg)}
-.speed{position:absolute;z-index:40;right:var(--speed-right);top:var(--speed-top);font-family:var(--font-num);font-weight:800;font-size:var(--speed-size);line-height:.82;letter-spacing:-.04em;font-variant-numeric:tabular-nums;transform:skewX(-8deg) scaleX(var(--speed-sx));transform-origin:100% 0;pointer-events:none;white-space:nowrap;text-align:right}
+.speed{position:absolute;z-index:40;right:var(--speed-right);top:var(--speed-top);font-family:var(--font-num);font-weight:800;font-size:var(--speed-size);line-height:.82;letter-spacing:-.04em;font-variant-numeric:tabular-nums;transform:skewX(var(--speed-skew,-8deg)) scaleX(calc(var(--speed-sx) * var(--speed-stretch,1)));transform-origin:100% 0;pointer-events:none;white-space:nowrap;text-align:right}
 .speed-value{position:relative;display:block;color:var(--heat);-webkit-text-stroke:.07em var(--ink);paint-order:stroke fill;text-shadow:.035em .045em 0 var(--ink)}
 .speed-value::after{content:attr(data-v);position:absolute;inset:0;color:transparent;-webkit-text-stroke:0;text-shadow:none;background:radial-gradient(circle,rgba(11,10,18,.32) 30%,transparent 33%) 0 0/.055em .055em;-webkit-background-clip:text;background-clip:text;pointer-events:none}
 .speed-ghost{position:absolute;right:0;top:0;line-height:.82;color:var(--c);opacity:.75;transform:translate(-.03em,.01em)}
@@ -185,3 +185,10 @@ button{font:inherit;color:inherit;cursor:pointer}
 .ax span{display:block}
 .ride-title{color:var(--yellow);margin-left:4px}
 .safe-probe{position:fixed;left:0;top:0;width:0;height:0;visibility:hidden;pointer-events:none;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+
+/* 车辆状态交互（core/vehicle-fx.js）：熄火压暗场景（在速度巨字之下）；减少动态 / 特效关时的文字图标示意。 */
+.vs-dim{position:absolute;inset:0;z-index:11;background:#05040a;opacity:0;pointer-events:none;transition:opacity .6s}
+.vs-hint{position:absolute;z-index:39;left:12px;bottom:calc(56px + env(safe-area-inset-bottom,0px));padding:4px 10px;font-family:var(--font-han);font-size:15px;color:var(--paper);background:var(--ink);border:3px solid var(--yellow);box-shadow:3px 3px 0 rgba(0,0,0,.4);pointer-events:none}
+.app[data-phase=idle] .vs-hint,.app[data-phase=comic] .vs-hint{display:none}
+.bike-layer{will-change:transform}
+.app[data-phase=riding] .panel{background-color:var(--ink,#0b0a12)}

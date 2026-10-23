@@ -71,3 +71,7 @@ Apple Music 授权、订阅和实际播放，以及真实手机与 Watch 的安�
 **构建开关：** `apple-release.py --archive` 默认 `--icloud auto`：如果已安装的 `Motuo App Store` 描述文件包含这个容器，就签入 iCloud 授权；否则用 `CODE_SIGN_ENTITLEMENTS=Motuo/Motuo-NoCloud.entitlements` 构建“仅本地”版本，并在输出里说明。`--icloud on` 时缺少能力直接报错，`--icloud off` 时始终不带 iCloud。`archive-verification.json` 的每个目标都会记录 `iCloudDocuments` 是否真的签进去了。没有 iCloud 能力的版本，路谱照常保存在本机，在“文件”App 里可见、可分享导出，设置页会显示“仅本地”及原因，不会崩溃。
 
 **注意：** App 有了 iCloud 授权后，SwiftData 默认（`.automatic`）会尝试为本地库开启 CloudKit 同步，而现有模型不满足 CloudKit 的要求，启动时会直接崩溃（模拟器上已复现）。现在 `ModelConfiguration(cloudKitDatabase: .none)`，本地库的路径和内容都不变。
+
+## 10 月 22 日：`0.4.0 (4)` 路谱采集模式（仅本地版）
+
+分支 `feature/roadlog`。签名 IPA 来自 `~/Library/Developer/MotuoBuilds/0.4.0-4/`：9,890,223 字节，SHA-256 `c6e905221a370c557ee215c80a0df91e344eee2f3489ce4642a613dcb6b8bf34`，授权中不含 iCloud（App ID 尚未启用 iCloud、容器未创建）。Apple 返回 `UPLOAD SUCCEEDED`，Delivery/Build ID `19bb618f-cf52-4749-81cf-db8ef5284aaf`，处理为 `VALID`，已写简体中文测试说明并加入 `Motuo Internal`，回读 `IN_BETA_TESTING`，组内构建 4/3/2/1。路谱仅保存在手机并可在“文件”App 查看；iCloud 自动上传需用户在 developer.apple.com 创建 `iCloud.cn.yundongyl.motuo` 并关联 App ID 后，`--refresh-profile` 重建描述文件再发下一版。
